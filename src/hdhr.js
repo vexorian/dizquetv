@@ -1,14 +1,14 @@
 const Router = require('express').Router
 const SSDP = require('node-ssdp').Server
 const fs = require('fs')
-
-const m3u = require('./m3u')
 const config = require('config-yml')
 
+const m3u = require('./m3u')
+
 var device = {
-  FriendlyName: "PsuedoTV",
+  FriendlyName: "PseudoTV-Plex",
   Manufacturer: "Silicondust",
-  ManufacturerURL: "https://github.com/DEFENDORe",
+  ManufacturerURL: "https://github.com/DEFENDORe/pseudotv-plex",
   ModelNumber: "HDTC-2US",
   FirmwareName: "hdhomeruntc_atsc",
   TunerCount: config.HDHR_OPTIONS.tuners,

@@ -6,11 +6,11 @@ Create Live TV/DVR channels from playlists in Plex.
 
 ### How it works
 
-1. psuedotv-plex will scan Plex for playlists. Playlists with a **summary** starting with **psuedotv** will be fetched.
-2. XMLTV and M3U files are generated.
-3. Add the psuedotv (spoofed HDHomeRun) tuner into Plex, use the XMLTV file for guide information.
+1. pseudotv-plex will scan Plex for playlists. Playlists with a **summary** starting with **pseudotv** will be fetched.
+2. XMLTV and M3U files are generated from fetched playlists
+3. Add the pseudotv (spoofed HDHomeRun) tuner into Plex, use the XMLTV file for guide information.
 4. When tuning to a channel, a VLC session will be **spawned on demand**, hosting the channel's video stream.
-5. Whenever a playlist change is detected, an updated XMLTV file will be written
+5. Whenever a playlist change is detected, the M3U and XMLTV files will be rewritten
 
 ### Features
 
@@ -36,7 +36,7 @@ npm start
 
 # Plex Playlist Setup
 
-To assign a playlist as a channel, edit the summary if the playlist and write **psuedotv**.
+To assign a playlist as a channel, edit the summary if the playlist and write **pseudotv**.
 
 Channel number and icon url are **optional** parameters. 
 
@@ -46,7 +46,7 @@ Default channel number is the random Plex playlist ID
 
 # Plex DVR Setup
 
-Add the psuedotv-plex tuner to Plex. Use the **"Don't see your HDHomerun device? Enter its network address manually"** option if it doesn't show up automatically.
+Add the pseudotv-plex tuner to Plex. Use the **"Don't see your HDHomerun device? Enter its network address manually"** option if it doesn't show up automatically.
 
 Click the **continue** button after clicking **connect**
 
@@ -56,7 +56,7 @@ Channels imported from Plex Playlists. **NOTE: If a new channel/playlist is adde
 
 ![DVR Setup - Step 2](docs/dvr2.png)
 
-**Use the XMLTV option and select the psuedotv-plex generated xmltv.xml file**
+**Use the XMLTV option and select the pseudotv-plex generated xmltv.xml file**
 
 ![DVR Setup - Step 3](docs/dvr3.png)
 
