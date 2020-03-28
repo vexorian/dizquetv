@@ -1,0 +1,23 @@
+{
+  "name": "psuedotv-plex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js -e js,json,yml"
+  },
+  "author": "Dan Ferguson",
+  "license": "ISC",
+  "dependencies": {
+    "config-yml": "^0.10.3",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "node-ssdp": "^4.0.0",
+    "plex-api": "^5.3.1",
+    "request": "^2.88.2",
+    "xml-reader": "^2.4.3",
+    "xml-writer": "^1.7.0"
+  }
+}
