@@ -30,7 +30,7 @@ plex(config.PLEX_OPTIONS, (result) => {
     app.use(pseudotv(client, xmltv, m3u))
 
     app.listen(config.PORT, () => {
-        console.log(`pseudotv-plex: http://${config.HOST}:${config.PORT}`)
+        console.log(`pseudotv-plex Web UI: http://${config.HOST}:${config.PORT}`)
         if (config.HDHOMERUN_OPTIONS.ENABLED && config.HDHOMERUN_OPTIONS.AUTODISCOVERY)
             hdhr.ssdp.start()
     })

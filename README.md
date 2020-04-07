@@ -6,15 +6,15 @@ Create Live TV/DVR channels from playlists in Plex.
 
 ### How it works
 
-1. pseudotv-plex will scan Plex for playlists. Playlists with a summary starting with **pseudotv** will be fetched.
-2. XMLTV and M3U files are generated from playlists, using metadata pulled from Plex.
+1. pseudotv-plex will scan your Plex library for playlists, looking for playlists with a summary starting with **pseudotv**.
+2. XMLTV and M3U files are generated from your **pseudotv** playlists, using metadata pulled from Plex.
 3. Add the PseudoTV (spoofed HDHomeRun) tuner into Plex, use the XMLTV file as your EPG provider.
 4. Watch your psudeo live tv channels
 
 ### Features
 
 - Plex transcoding (psuedotv-plex spoofs a Chrome Web Player, in order to receive a h264/aac stream from Plex)
-- Live FFMPEG or VLC mpegts transmuxing
+- FFMPEG or VLC mpegts transmuxing
 - Prebuffering (FFMPEG only) - transcodes entire video as fast as possible (not live stream)
 - Auto update Plex DVR channel mappings and EPG.
 - Web UI for manually triggering EPG updates
