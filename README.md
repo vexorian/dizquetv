@@ -6,18 +6,26 @@ Create Live TV/DVR channels from playlists in Plex.
 
 ### How it works
 
-1. pseudotv-plex will scan Plex for playlists. Playlists with a **summary** starting with **pseudotv** will be fetched.
-2. XMLTV and M3U files are generated from fetched playlists
-3. Add the pseudotv (spoofed HDHomeRun) tuner into Plex, use the XMLTV file for guide information.
-4. When tuning to a channel, a VLC session will be **spawned on demand**, hosting the channel's video stream.
-5. Whenever a playlist change is detected, the M3U and XMLTV files will be rewritten
+1. pseudotv-plex will scan Plex for playlists. Playlists with a summary starting with **pseudotv** will be fetched.
+2. XMLTV and M3U files are generated from playlists, using metadata pulled from Plex.
+3. Add the PseudoTV (spoofed HDHomeRun) tuner into Plex, use the XMLTV file as your EPG provider.
+4. Watch your psudeo live tv channels
 
 ### Features
 
-- Supports any video playlist in Plex, including Smart Playlists
-- VLC sessions are spawned on demand. There will only ever be one VLC session per channel, no matter the number of viewers.
-- VLC will **Direct Stream** if media is tagged **"optimizedForStreaming"** by Plex, otherwise VLC will transcode to h264/aac.
-- EPG/Channels update automatically
+- Plex transcoding (psuedotv-plex spoofs a Chrome Web Player, in order to receive a h264/aac stream from Plex)
+- Live FFMPEG or VLC mpegts transmuxing
+- Prebuffering (FFMPEG only) - transcodes entire video as fast as possible (not live stream)
+- Auto update Plex DVR channel mappings and EPG.
+- Web UI for manually triggering EPG updates
+
+**So far only tested in Windows. Should work cross platform. Docker container support coming soon.**
+
+**Critical Issues: Continuous playback is pretty much broken. I think the only way to get around that would be to transcode videos to a fixed framerate/bitrate. I really wish Plex documented their full API, there might be some parameters we can send to get such a stream..**
+
+## Prerequisites
+
+Install [NodeJS](https://nodejs.org/), and either [VLC](https://www.videolan.org/vlc/) or [FFMPEG](https://www.ffmpeg.org/)
 
 ## Install
 ```
@@ -25,9 +33,10 @@ npm install
 ```
 
 ## Configure
-### You must provide your Plex server details and the location of VLC
 
-Edit the **config.yml** configuration file
+You must provide your Plex server details and the location of VLC or FFMPEG
+
+### Edit the **`config.yml`** configuration file
 
 ## Start
 ```
@@ -36,30 +45,35 @@ npm start
 
 # Plex Playlist Setup
 
-To assign a playlist as a channel, edit the summary if the playlist and write **pseudotv**.
+To assign a playlist as a channel, edit the summary of the playlist in Plex and write **pseudotv** at the beginning.
 
-Channel number and icon url are **optional** parameters. 
+**optional parameters:** *channelNumber*, *iconURL* and/or *shuffle*. In any order..
 
-Default channel number is the random Plex playlist ID
-
-![Playlist Setup](docs/playlist.png)
+## Plex Playlist Example
+### Title
+```
+My Channel Name
+```
+### Summary
+```
+pseudotv 100 shuffle http://some.url/channel-icon.png
+```
 
 # Plex DVR Setup
 
-Add the pseudotv-plex tuner to Plex. Use the **"Don't see your HDHomerun device? Enter its network address manually"** option if it doesn't show up automatically.
+Add the PseudoTV tuner to Plex. Use the **"Don't see your HDHomerun device? Enter its network address manually"** option if it doesn't show up automatically.
 
-Click the **continue** button after clicking **connect**
+Use the generated XMLTV file as your EPG provider.
 
-![DVR Setup - Step 1](docs/dvr1.png)
+You wont be able to add the tuner to Plex until at least one channel has been generated.
 
-Channels imported from Plex Playlists. **NOTE: If a new channel/playlist is added, you have to remove and re-setup the tuner in plex.**
+# Plex Transcoding
+When a channel is requested, pseudotv-plex will determine the current playing program and request a transcoded stream from Plex. When pseudotv-plex recieves the h264/acc stream,it is remuxed (using vlc or ffmpeg) into a mpegts container to be utilized by Plex DVR.
 
-![DVR Setup - Step 2](docs/dvr2.png)
+![DVR Guide](docs/transcode.png)
 
-**Use the XMLTV option and select the pseudotv-plex generated xmltv.xml file**
+# PseudoTV Web UI
 
-![DVR Setup - Step 3](docs/dvr3.png)
+Manually trigger EPG updates and view active channels using the Web UI.
 
-Channels should automatically be matched. **Click continue**
-
-![DVR Setup - Step 4](docs/dvr4.png)
+![DVR Guide](docs/pseudotv.png)

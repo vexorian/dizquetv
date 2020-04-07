@@ -1,7 +1,7 @@
 {
-  "name": "psuedotv-plex",
+  "name": "pseudotv-plex",
   "version": "1.0.0",
-  "description": "",
+  "description": "Create Live TV/DVR channels from playlists in Plex.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,11 +13,11 @@
   "dependencies": {
     "config-yml": "^0.10.3",
     "express": "^4.17.1",
-    "morgan": "^1.10.0",
     "node-ssdp": "^4.0.0",
-    "plex-api": "^5.3.1",
+    "query-string": "^6.11.1",
     "request": "^2.88.2",
     "xml-reader": "^2.4.3",
-    "xml-writer": "^1.7.0"
+    "xml-writer": "^1.7.0",
+    "xml2json": "^0.12.0"
   }
 }

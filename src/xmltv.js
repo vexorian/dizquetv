@@ -3,8 +3,15 @@ const XMLReader = require('xml-reader')
 const fs = require('fs')
 const config = require('config-yml')
 
+module.exports = {
+    WriteXMLTV: WriteXMLTV,
+    UpdateXMLTV: UpdateXMLTV,
+    readXMLPrograms: readXMLPrograms,
+    readXMLChannels: readXMLChannels
+}
+
 function readXMLPrograms() {
-    var data = fs.readFileSync(config.XMLTV_OUTPUT)
+    var data = fs.readFileSync(config.XMLTV_FILE)
     var xmltv = XMLReader.parseSync(data.toString())
     var programs = []
     var tv = xmltv.children
@@ -15,16 +22,42 @@ function readXMLPrograms() {
             channel: tv[i].attributes.channel,
             start: createDate(tv[i].attributes.start),
             stop: createDate(tv[i].attributes.stop),
-            video: tv[i].attributes.video,
-            optimized: tv[i].attributes.optimized == "true" ? true : false
+            key: tv[i].attributes['plex-key']
         }
         programs.push(program)
     }
     return programs
 }
 
+function readXMLChannels() {
+    var data = fs.readFileSync(config.XMLTV_FILE)
+    var xmltv = XMLReader.parseSync(data.toString())
+    var channels = []
+    var tv = xmltv.children
+    for (var i = 0; i < tv.length; i++) {
+        if (tv[i].name == 'programme')
+            continue;
+        //console.log(tv[i])
+        var channel = {
+            channel: tv[i].attributes.id,
+            shuffle: tv[i].attributes.shuffle
+        }
+        for (var y = 0; y < tv[i].children.length; y++)
+        {
+            if (tv[i].children[y].name === 'display-name') {
+                channel.name = tv[i].children[y].children[0].value
+            }
+            if (tv[i].children[y].name === 'icon') {
+                channel.icon = tv[i].children[y].attributes.src
+            }
+        }
+        channels.push(channel)
+    }
+    return channels
+}
+
 function WriteXMLTV(channels, cb) {
-    var xw = new XMLWriter(true);
+    var xw = new XMLWriter(true)
     var time = new Date()
     // Build XMLTV and M3U files
     xw.startDocument()
@@ -32,57 +65,45 @@ function WriteXMLTV(channels, cb) {
     xw.startElement('tv')
     xw.writeAttribute('generator-info-name', 'psuedotv-plex')
     writeChannels(xw, channels)
-    // Programmes
+    // For each channel
     for (var i = 0; i < channels.length; i++) {
         var future = new Date()
         future.setHours(time.getHours() + config.EPG_CACHE)
         var tempDate = new Date(time.valueOf())
-        while (tempDate < future && channels[i].playlist.length > 0) {
-            for (var y = 0; y < channels[i].playlist.length; y++) {
+        // Loop items until EPG_CACHE is satisfied, starting time of first show is NOW.
+        while (tempDate < future && channels[i].items.length > 0) {
+            for (var y = 0; y < channels[i].items.length && tempDate < future; y++) {
                 var stopDate = new Date(tempDate.valueOf())
-                stopDate.setMilliseconds(stopDate.getMilliseconds() + channels[i].playlist[y].duration)
-                var plexURL = channels[i].playlist[y].Media[0].Part[0].key
-                var optimizedForStreaming = false
-                for (var z = 0; z < channels[i].playlist[y].Media.length; z++) {
-                    var part = channels[i].playlist[y].Media[z].Part[0]
-                    if (typeof part.optimizedForStreaming !== 'undefined' && part.optimizedForStreaming) {
-                        plexURL = part.key
-                        optimizedForStreaming = part.optimizedForStreaming
-                        break;
-                    }
-                }
-                plexURL = `http://${config.PLEX_OPTIONS.hostname}:${config.PLEX_OPTIONS.port}${plexURL}?X-Plex-Token=${config.PLEX_OPTIONS.token}`
+                stopDate.setMilliseconds(stopDate.getMilliseconds() + channels[i].items[y].duration)
                 var program = {
-                    info: channels[i].playlist[y],
+                    info: channels[i].items[y],
                     channel: channels[i].channel,
                     start: new Date(tempDate.valueOf()),
-                    stop: stopDate,
-                    plexURL: plexURL,
-                    optimizedForStreaming: optimizedForStreaming.toString()
+                    stop: stopDate
                 }
                 writeProgramme(xw, program)
-                tempDate.setMilliseconds(tempDate.getMilliseconds() + channels[i].playlist[y].duration)
+                tempDate.setMilliseconds(tempDate.getMilliseconds() + channels[i].items[y].duration)
             }
         }
     }
     // End TV
     xw.endElement()
     xw.endDocument()
-    fs.writeFileSync(config.XMLTV_OUTPUT, xw.toString())
+    fs.writeFileSync(config.XMLTV_FILE, xw.toString())
     if (typeof cb == 'function')
         cb()
 }
 
 function UpdateXMLTV(channels, cb) {
     var xw = new XMLWriter(true)
-    var data = fs.readFileSync(config.XMLTV_OUTPUT)
+    var data = fs.readFileSync(config.XMLTV_FILE)
     var xml = XMLReader.parseSync(data.toString())
     var time = new Date()
     xw.startDocument()
     xw.startElement('tv')
     xw.writeAttribute('generator-info-name', 'psuedotv-plex')
     writeChannels(xw, channels)
-    // Programmes
+    // Foreach channel
     for (var i = 0; i < channels.length; i++) {
         // get non-expired programmes for channel
         var validPrograms = []
@@ -94,97 +115,67 @@ function UpdateXMLTV(channels, cb) {
             }
         }
         // If Channel doesnt exists..
-        if (validPrograms.length == 0) {
-            // write out programs from plex
+        if (validPrograms.length === 0) {
             var future = new Date()
             future.setHours(time.getHours() + config.EPG_CACHE)
             var tempDate = new Date(time.valueOf())
+            // Loop items until EPG_CACHE is satisfied, starting time of first show is NOW.
             while (tempDate < future) {
-                for (var y = 0; y < channels[i].playlist.length; y++) { // foreach item in playlist
+                for (var y = 0; y < channels[i].items.length && tempDate < future; y++) { // foreach item in playlist
                     var stopDate = new Date(tempDate.valueOf())
-                    stopDate.setMilliseconds(stopDate.getMilliseconds() + channels[i].playlist[y].duration)
-                    var plexURL = channels[i].playlist[y].Media[0].Part[0].key
-                    var optimizedForStreaming = false
-                    for (var z = 0; z < channels[i].playlist[y].Media.length; z++) { // get optimed video if there is one
-                        var part = channels[i].playlist[y].Media[z].Part[0]
-                        if (typeof part.optimizedForStreaming !== 'undefined' && part.optimizedForStreaming) {
-                            plexURL = part.key
-                            optimizedForStreaming = part.optimizedForStreaming
-                            break;
-                        }
-                    }
-                    plexURL = `http://${config.PLEX_OPTIONS.hostname}:${config.PLEX_OPTIONS.port}${plexURL}?X-Plex-Token=${config.PLEX_OPTIONS.token}`
+                    stopDate.setMilliseconds(stopDate.getMilliseconds() + channels[i].items[y].duration)
                     var program = {
-                        info: channels[i].playlist[y],
+                        info: channels[i].items[y],
                         channel: channels[i].channel,
                         start: new Date(tempDate.valueOf()),
-                        stop: stopDate,
-                        plexURL: plexURL,
-                        optimizedForStreaming: optimizedForStreaming.toString()
+                        stop: stopDate
                     }
                     writeProgramme(xw, program)
-                    tempDate.setMilliseconds(tempDate.getMilliseconds() + channels[i].playlist[y].duration)
+                    tempDate.setMilliseconds(tempDate.getMilliseconds() + channels[i].items[y].duration)
                 }
             }
-        } else {
-            var playlistStartIndex = 0
-            var isFirstItemFound = false
+        } else { // Otherwise the channel already exists..
+            var playlistStartIndex = -1
             var startingDate = new Date(time.valueOf())
             var endDate = new Date(time.valueOf())
             endDate.setHours(endDate.getHours() + config.EPG_CACHE)
             // rewrite first valid xml programmes, if it still exists in the plex playlist..
-            for (var z = 0; z < channels[i].playlist.length; z++) {
-                if (channels[i].playlist[z].guid == validPrograms[0].attributes.guid) {
-
-                    isFirstItemFound = true
+            for (var z = 0; z < channels[i].items.length; z++) {
+                if (channels[i].items[z].key == validPrograms[0].attributes['plex-key']) {
                     playlistStartIndex = z
                     var program = {
                         channel: validPrograms[0].attributes.channel,
                         start: createDate(validPrograms[0].attributes.start),
                         stop: createDate(validPrograms[0].attributes.stop),
-                        plexURL: validPrograms[0].attributes.video,
-                        optimizedForStreaming: validPrograms[0].attributes.optimized,
-                        info: channels[i].playlist[z]
+                        info: channels[i].items[z]
                     }
                     startingDate = new Date(program.stop.valueOf())
                     writeProgramme(xw, program)
                     break;
                 }
             }
-            if (isFirstItemFound) {
+            if (playlistStartIndex !== -1) {
                 playlistStartIndex++
-                if (channels[i].playlist.length == playlistStartIndex)
+                if (playlistStartIndex === channels[i].items.length)
                     playlistStartIndex = 0
+            } else {
+                playlistStartIndex = 0
             }
-
             // write programs from plex, starting at the live playlist index.
             while (startingDate < endDate) {
-                for (var y = playlistStartIndex; y < channels[i].playlist.length; y++) {
+                for (var y = playlistStartIndex; y < channels[i].items.length && startingDate < endDate; y++) {
                     var stopDate = new Date(startingDate.valueOf())
-                    stopDate.setMilliseconds(stopDate.getMilliseconds() + channels[i].playlist[y].duration)
-                    var plexURL = channels[i].playlist[y].Media[0].Part[0].key
-                    var optimizedForStreaming = false
-                    for (var z = 0; z < channels[i].playlist[y].Media.length; z++) {
-                        var part = channels[i].playlist[y].Media[z].Part[0]
-                        if (typeof part.optimizedForStreaming !== 'undefined' && part.optimizedForStreaming) {
-                            plexURL = part.key
-                            optimizedForStreaming = part.optimizedForStreaming
-                            break;
-                        }
-                    }
-                    plexURL = `http://${config.PLEX_OPTIONS.hostname}:${config.PLEX_OPTIONS.port}${plexURL}?X-Plex-Token=${config.PLEX_OPTIONS.token}`
+                    stopDate.setMilliseconds(stopDate.getMilliseconds() + channels[i].items[y].duration)
                     var program = {
-                        info: channels[i].playlist[y],
+                        info: channels[i].items[y],
                         channel: channels[i].channel,
                         start: new Date(startingDate.valueOf()),
-                        stop: stopDate,
-                        plexURL: plexURL,
-                        optimizedForStreaming: optimizedForStreaming.toString()
+                        stop: stopDate
                     }
                     writeProgramme(xw, program)
-                    startingDate.setMilliseconds(startingDate.getMilliseconds() + channels[i].playlist[y].duration)
-                    playlistStartIndex = 0
+                    startingDate.setMilliseconds(startingDate.getMilliseconds() + channels[i].items[y].duration)
                 }
+                playlistStartIndex = 0
             }
         }
     }
@@ -192,23 +183,17 @@ function UpdateXMLTV(channels, cb) {
     xw.endElement()
     // End Doc
     xw.endDocument()
-    fs.writeFileSync(config.XMLTV_OUTPUT, xw.toString())
+    fs.writeFileSync(config.XMLTV_FILE, xw.toString())
     if (typeof cb == 'function')
         cb()
 }
 
-
-
-module.exports = {
-    WriteXMLTV: WriteXMLTV,
-    UpdateXMLTV: UpdateXMLTV,
-    readXMLPrograms: readXMLPrograms
-}
 function writeChannels(xw, channels) {
     // Channels
     for (var i = 0; i < channels.length; i++) {
         xw.startElement('channel')
         xw.writeAttribute('id', channels[i].channel)
+        xw.writeAttribute('shuffle', channels[i].shuffle ? 'yes': 'no')
         xw.startElement('display-name')
         xw.writeAttribute('lang', 'en')
         xw.text(channels[i].name)
@@ -221,16 +206,14 @@ function writeChannels(xw, channels) {
         xw.endElement()
     }
 }
+
 function writeProgramme(xw, program) {
     // Programme
     xw.startElement('programme')
     xw.writeAttribute('start', createXMLTVDate(program.start))
     xw.writeAttribute('stop', createXMLTVDate(program.stop))
     xw.writeAttribute('channel', program.channel)
-    // For VLC to handle...
-    xw.writeAttribute('video', program.plexURL)
-    xw.writeAttribute('optimized', program.optimizedForStreaming)
-    xw.writeAttribute('guid', program.info.guid)
+    xw.writeAttribute('plex-key', program.info.key) // Used to link this programme to Plex..
     // Title
     xw.startElement('title')
     xw.writeAttribute('lang', 'en')
@@ -255,9 +238,9 @@ function writeProgramme(xw, program) {
     // Icon
     xw.startElement('icon')
     if (program.info.type == 'movie')
-        xw.writeAttribute('src', 'http://' + config.PLEX_OPTIONS.hostname + ':' + config.PLEX_OPTIONS.port + program.info.thumb + '?X-Plex-Token=' + config.PLEX_OPTIONS.token)
+        xw.writeAttribute('src', 'http://' + config.PLEX_OPTIONS.hostname + ':' + config.PLEX_OPTIONS.port + program.info.thumb)
     else if (program.info.type == 'episode')
-        xw.writeAttribute('src', 'http://' + config.PLEX_OPTIONS.hostname + ':' + config.PLEX_OPTIONS.port + program.info.parentThumb + '?X-Plex-Token=' + config.PLEX_OPTIONS.token)
+        xw.writeAttribute('src', 'http://' + config.PLEX_OPTIONS.hostname + ':' + config.PLEX_OPTIONS.port + program.info.parentThumb)
     xw.endElement()
     // Desc
     xw.startElement('desc')

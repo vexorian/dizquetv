@@ -1,47 +1,37 @@
 const express = require('express')
-const fs = require('fs')
-var path = require("path")
-const config = require('config-yml')
+var config = require('config-yml')
 
-const hdhr = require('./src/hdhr')
-const vlc = require('./src/vlc')
+const plex = require('./src/plex')
 const xmltv = require('./src/xmltv')
 const m3u = require('./src/m3u')
-const plex = require('./src/plex')
+const ffmpeg = require('./src/ffmpeg')
+const vlc = require('./src/vlc')
+const hdhr = require('./src/hdhr')()
+const pseudotv = require('./src/pseudotv')
 
-// Plex does not update the playlists updatedAt property when the summary or title changes
-var lastPlaylistUpdate = 0      // to watch for playlist updates
-var channelsInfo  = ""          // to watch for playlist updates
+plex(config.PLEX_OPTIONS, (result) => {
+    if (result.err)
+        return console.error("Failed to create plex client.", result.err)
+    var client = result.client
 
-var refreshDate = new Date()    // when the EPG will be updated
-refreshDate.setHours(refreshDate.getHours() + config.EPG_REFRESH)
+    console.log("Plex authentication successful")
 
-plex.PlexChannelScan((channels, lastUpdate, info) => {
-    console.log(`Generating EPG data(XMLTV) and channel playlists (M3U) from Plex. Channels: ${channels.length}`)
-    lastPlaylistUpdate = lastUpdate
-    channelsInfo = info
-    m3u.WriteM3U(channels, () => { console.log(`M3U File Location: ${path.resolve(config.M3U_OUTPUT)}`) })
-    xmltv.WriteXMLTV(channels, () => { console.log(`XMLTV File Location: ${path.resolve(config.XMLTV_OUTPUT)}`) })
-})
+    var app = express()
+    if (config.MUXER.toLowerCase() === 'ffmpeg')
+        app.use(ffmpeg(client))
+    else if (config.MUXER.toLowerCase() === 'vlc')
+        app.use(vlc(client))
+    else
+        return console.error("Invalid MUXER specified in config.yml")
 
-setInterval(() => {
-    plex.PlexChannelScan((channels, lastUpdate, info) => {
-        var now = new Date()
-        // Update EPG whenever a psuedotv playlist is updated/added/removed, or at EPG_REFRESH interval
-        if (lastUpdate > lastPlaylistUpdate || channelsInfo !== info || now > refreshDate ) {
-            console.log(`Updating EPG data(XMLTV) and channel playlists (M3U) from Plex. Channels: ${channels.length}`)
-            m3u.WriteM3U(channels)
-            xmltv.UpdateXMLTV(channels)
-            lastPlaylistUpdate = lastUpdate
-            channelsInfo = info
-            refreshDate.setHours(refreshDate.getHours() + config.EPG_REFRESH)
-    }})
-}, config.PLEX_PLAYLIST_FETCH_TIMER * 1000)
+    if (config.HDHOMERUN_OPTIONS.ENABLED)
+        app.use(hdhr.router)
 
-var app = express()
-app.use(hdhr.router())
-app.use(vlc.router())
-app.listen(config.PORT, () => {
-    hdhr.start()
-    console.log(`Hosting VLC / HDHomeRun server at: http://${config.HOST}:${config.PORT}`)
+    app.use(pseudotv(client, xmltv, m3u))
+
+    app.listen(config.PORT, () => {
+        console.log(`pseudotv-plex: http://${config.HOST}:${config.PORT}`)
+        if (config.HDHOMERUN_OPTIONS.ENABLED && config.HDHOMERUN_OPTIONS.AUTODISCOVERY)
+            hdhr.ssdp.start()
+    })
 })
