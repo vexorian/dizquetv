@@ -9,7 +9,7 @@ Create Live TV/DVR channels from playlists in Plex.
 1. pseudotv-plex will scan your Plex library for playlists, looking for playlists with a summary starting with **pseudotv**.
 2. XMLTV and M3U files are generated from your **pseudotv** playlists, using metadata pulled from Plex.
 3. Add the PseudoTV (spoofed HDHomeRun) tuner into Plex, use the XMLTV file as your EPG provider.
-4. Watch your psudeo live tv channels
+4. Watch your pseudo live tv channels
 
 ### Features
 
@@ -19,11 +19,11 @@ Create Live TV/DVR channels from playlists in Plex.
 - Auto update Plex DVR channel mappings and EPG.
 - Web UI for manually triggering EPG updates
 
-**So far only tested in Windows. Should work cross platform. Docker container support coming soon.**
-
 **Critical Issues: Continuous playback is pretty much broken. I think the only way to get around that would be to transcode videos to a fixed framerate/bitrate. I really wish Plex documented their full API, there might be some parameters we can send to get such a stream..**
 
 ## Prerequisites
+
+**So far only tested in Windows. Should work cross platform. Docker container support coming soon.**
 
 Install [NodeJS](https://nodejs.org/), and either [VLC](https://www.videolan.org/vlc/) or [FFMPEG](https://www.ffmpeg.org/)
 
@@ -48,6 +48,8 @@ npm start
 To assign a playlist as a channel, edit the summary of the playlist in Plex and write **pseudotv** at the beginning.
 
 **optional parameters:** *channelNumber*, *iconURL* and/or *shuffle*. In any order..
+
+If no channel number is specifed, the Plex playist's id/key is used.
 
 ## Plex Playlist Example
 ### Title
