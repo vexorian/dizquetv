@@ -1,0 +1,51 @@
+<div>
+    <h5>FFMPEG Settings
+        
+        <button class="pull-right btn btn-sm btn-success" style="margin-left: 5px;" ng-click="updateSettings(settings)">
+            Update
+        </button>
+        <button class="pull-right btn btn-sm btn-info" ng-click="resetSettings(settings)">
+            Reset Options
+        </button>
+    </h5>
+    <h6>FFMPEG Path</h6>
+    <input type="text" class="form-control form-control-sm" ng-model="settings.ffmpegPath"/>
+    <hr/>
+    <h6>Miscellaneous Options</h6>
+    <div class="row">
+        <div class="col-sm-6">
+            <label>Threads</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.threads"/>
+        </div>
+        <div class="col-sm-6">
+            <label>Buffer Size</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.bufSize"/>
+        </div>
+    </div>
+    <hr/>
+    <div class="row">
+        <div class="col-sm-6">
+            <h6>Video Options</h6>
+            <label>Video Encoder</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder"/>
+            <label>Video Bitrate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.videoBitrate"/>
+            <label>Video Resolution</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.videoResolution"/>
+            <label>Video Framerate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.videoFrameRate"/>
+        </div>
+        <div class="col-sm-6">
+            <h6>Audio Options</h6>
+            <label>Audio Encoder</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.audioEncoder"/>
+            <label>Audio Channels</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.audioChannels"/>
+            <label>Audio Bitrate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.audioBitrate"/>
+            <label>Audio Rate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.audioRate"/>
+        </div>
+    </div>
+    
+</div>

@@ -1,0 +1,25 @@
+<div>
+    <h5>XMLTV Settings
+        
+        <button class="pull-right btn btn-sm btn-success" style="margin-left: 5px;" ng-click="updateSettings(settings)">
+            Update
+        </button>
+        <button class="pull-right btn btn-sm btn-info" ng-click="resetSettings(settings)">
+            Reset Options
+        </button>
+    </h5>
+    <h6>Output Path</h6>
+    <input type="text" class="form-control form-control-sm" ng-model="settings.file"/>
+    <br/>
+    <div class="row">
+        <div class="col-sm-6">
+            <label>EPG Cache (hours)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.cache"/>
+        </div>
+        <div class="col-sm-6">
+            <label>Refresh Timer (hours)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.refresh"/>
+        </div>
+    </div>
+    
+</div>

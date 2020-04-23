@@ -1,81 +1,73 @@
 # pseudotv-plex
 
-Create Live TV/DVR channels from playlists in Plex.
+Create your own Live TV channels from media on your Plex Server(s).
 
-![DVR Guide](docs/guide.png)
+Simply create your Channels, add the PseudoTV tuner to Plex, and enjoy your fake TV service.
 
-### How it works
+## How it works
 
-1. pseudotv-plex will scan your Plex library for playlists, looking for playlists with a summary starting with **pseudotv**.
-2. XMLTV and M3U files are generated from your **pseudotv** playlists, using metadata pulled from Plex.
-3. Add the PseudoTV (spoofed HDHomeRun) tuner into Plex, use the XMLTV file as your EPG provider.
-4. Watch your pseudo live tv channels
+FFMPEG is used to transcode media on the fly to MPEG2/AC3 mpegts streams (with constant bitrate, resolution, framerate). Cool thing about the MPEG2 codec and MPEGTS format is that files can be concatenated together without messing up the file structure. This allows PseudoTV to support continous playback and commercials without having Plex trip balls when a new video segment is hit.
 
-### Features
+## Features
 
-- Plex transcoding (psuedotv-plex spoofs a Chrome Web Player, in order to receive a h264/aac stream from Plex)
-- FFMPEG or VLC mpegts transmuxing
-- Prebuffering (FFMPEG only) - transcodes entire video as fast as possible (not live stream)
-- Auto update Plex DVR channel mappings and EPG.
-- Web UI for manually triggering EPG updates
+- Web UI for channel configuration and app settings
+- Select media across multiple Plex servers
+- Ability to auto update Plex EPG and channel mappings
+- Continuous playback support
+- Commercial support
+- Docker and prepackage binaries for Windows, Linux and Mac
 
-**Critical Issues: Continuous playback is pretty much broken. I think the only way to get around that would be to transcode videos to a fixed framerate/bitrate. I really wish Plex documented their full API, there might be some parameters we can send to get such a stream..**
+## Release Notes
+- Channels are now created through the Web UI
+- Plex Transcoding is disabled (media timeline updates are disabled too). If anybody can figure out how to get Plex to transcode to MPEG2, let me know.. If Plex could transcode to MPEG2/MPEGTS then we might not even need FFMPEG.
+- Previous versions of pseudotv (I think it was the first build) had a bug where everytime the app was restarted, a new client ID was registered with Plex. Plex would fill up with authorized devices and in some case would crash Plex Server or cripple performance. Please check your authorized devices in Plex and clean up any PseudoTV duplicates. I'm sorry I didn't spot this sooner, this may be a headache cleaning up.
+- Fixed the HDHR tuner count. You can now set the number of tuners availble to Plex.
 
-## Prerequisites
+## Installation
 
-**So far only tested in Windows. Should work cross platform. Docker container support coming soon.**
+Unless your are using the Docker image, you must download and install **ffmpeg** to your system and set the correct path in the Web UI.
 
-Install [NodeJS](https://nodejs.org/), and either [VLC](https://www.videolan.org/vlc/) or [FFMPEG](https://www.ffmpeg.org/)
+By default, pseudotv will create a directory (`.pseudotv`) where the app was lauched. Your xmltv.xml file and pseudotv databases are stored here.
 
-## Install
+**Do not use a URL when feeding Plex the xmltv.xml file, Plex fails to update it's EPG from a URL for some reason (at least on Windows)**
+
+#### Binary Release
+Download and run the PseudoTV executable (argument defaults below)
 ```
+./pseudotv-win.exe --host 127.0.0.1 --port 8000 --database ./pseudotv --xmltv ./pseudotv/xmltv.xml
+```
+Use the WebUI to provide PseudoTV the path to FFMPEG
+
+#### Docker Image
+```
+cd pseudotv-plex
+docker build -t pseudotv .
+docker run --name pseudotv -p 8000:8000 -v C:\.pseudotv:/home/node/app/.pseudotv pseudotv 
+```
+
+#### Source
+```
+cd pseudotv-plex
 npm install
+npm run build
+npm run start
 ```
 
-## Configure
 
-You must provide your Plex server details and the location of VLC or FFMPEG
 
-### Edit the **`config.yml`** configuration file
-
-## Start
+## Development
+Building Binaries:
 ```
-npm start
-```
-
-# Plex Playlist Setup
-
-To assign a playlist as a channel, edit the summary of the playlist in Plex and write **pseudotv** at the beginning.
-
-**optional parameters:** *channelNumber*, *iconURL* and/or *shuffle*. In any order..
-
-If no channel number is specifed, the Plex playist's id/key is used.
-
-## Plex Playlist Example
-### Title
-```
-My Channel Name
-```
-### Summary
-```
-pseudotv 100 shuffle http://some.url/channel-icon.png
+cd pseudotv-plex
+npm install
+npm run build
+npm run compile
+npm run package
 ```
 
-# Plex DVR Setup
-
-Add the PseudoTV tuner to Plex. Use the **"Don't see your HDHomerun device? Enter its network address manually"** option if it doesn't show up automatically.
-
-Use the generated XMLTV file as your EPG provider.
-
-You wont be able to add the tuner to Plex until at least one channel has been generated.
-
-# Plex Transcoding
-When a channel is requested, pseudotv-plex will determine the current playing program and request a transcoded stream from Plex. When pseudotv-plex recieves the h264/acc stream,it is remuxed (using vlc or ffmpeg) into a mpegts container to be utilized by Plex DVR.
-
-![DVR Guide](docs/transcode.png)
-
-# PseudoTV Web UI
-
-Manually trigger EPG updates and view active channels using the Web UI.
-
-![DVR Guide](docs/pseudotv.png)
+Live Development:
+```
+cd pseudotv-plex
+npm run dev-client
+npm run dev-server
+```

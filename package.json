@@ -1,23 +1,49 @@
 {
-  "name": "pseudotv-plex",
+  "name": "pseudotv",
   "version": "1.0.0",
-  "description": "Create Live TV/DVR channels from playlists in Plex.",
+  "description": "Create LiveTV channels from your Plex media",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js -e js,json,yml"
+    "build": "browserify ./web/app.js -o ./web/public/bundle.js",
+    "dev-client": "watchify ./web/app.js -o ./web/public/bundle.js",
+    "dev-server": "nodemon index.js --ignore ./web/ --ignore ./db/ --ignore ./xmltv.xml",
+    "compile": "babel index.js -d dist && babel src -d dist/src",
+    "package": "copyfiles ./web/public/**/* ./dist && pkg . --out-path bin",
+    "clean": "del-cli --force ./bin ./dist ./.pseudotv ./web/public/bundle.js"
   },
   "author": "Dan Ferguson",
   "license": "ISC",
   "dependencies": {
-    "config-yml": "^0.10.3",
+    "angular": "^1.7.9",
+    "angular-router-browserify": "0.0.2",
+    "body-parser": "^1.19.0",
+    "diskdb": "^0.1.17",
     "express": "^4.17.1",
     "node-ssdp": "^4.0.0",
-    "query-string": "^6.11.1",
     "request": "^2.88.2",
-    "xml-reader": "^2.4.3",
-    "xml-writer": "^1.7.0",
-    "xml2json": "^0.12.0"
+    "xml-writer": "^1.7.0"
+  },
+  "bin": "dist/index.js",
+  "pkg": {
+    "assets": "dist/web/public/**/*"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/preset-env": "^7.9.5",
+    "browserify": "^16.5.1",
+    "copyfiles": "^2.2.0",
+    "del-cli": "^3.0.0",
+    "nodemon": "^2.0.3",
+    "pkg": "^4.4.7",
+    "watchify": "^3.11.1"
+  },
+  "babel": {
+    "plugins": [
+      "@babel/plugin-proposal-class-properties"
+    ]
   }
 }

@@ -1,0 +1,29 @@
+<html>
+
+<head>
+    <title>PseudoTV</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <script src="bundle.js"></script>
+</head>
+
+<body ng-app="myApp" style="min-width: 340px;">
+    <div class="container">
+        <h1>PseudoTV</h1>
+        <a href="#!/channels">Channels</a> - <a href="#!/settings">Settings</a>
+        <span class="pull-right">
+            <span style="margin-right: 15px;">
+                <a href="/api/xmltv.xml">XMLTV <span class="fa fa-file-code-o"></span></a>
+            </span>
+            <span>
+                <a href="/api/channels.m3u">M3U <span class="fa fa-file-movie-o"></span></a>
+            </span>
+        </span>
+        <hr/>
+        <div ng-view></div>
+    </div>
+</body>
+
+</html>

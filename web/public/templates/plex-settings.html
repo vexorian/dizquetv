@@ -1,0 +1,87 @@
+<div>
+    <h5>Plex Settings</h5>
+<h6 ng-init="visible = false">Plex Servers
+    <button ng-hide="visible" class="pull-right btn btn-sm btn-primary" ng-click="toggleVisiblity()">
+        <span class="fa fa-plus"></span>
+    </button>
+</h6>
+<div ng-if="visible">
+    <form>
+    <h6>Add a Plex Server
+        <span class="pull-right text-danger">{{error}}</span>
+    </h6>
+    <div class="form-row">
+        <div class="form-group col-sm-2">
+            <select class="form-control form-control-sm" ng-model="plex.protocol">
+                <option value="http">http</option>
+                <option value="https">https</option>
+            </select>
+        </div>
+        <div class="form-group col-sm-5">
+            <input class="form-control form-control-sm" type="text" ng-model="plex.host" ng-disabled="isProcessing" placeholder="Plex host"/>
+        </div>
+        <div class="form-group col-sm-5">
+            <input class="form-control form-control-sm" type="text" ng-model="plex.port" ng-disabled="isProcessing" placeholder="Plex port"/>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-sm-6">
+            <input class="form-control form-control-sm" type="text" ng-model="plex.username" ng-disabled="isProcessing" placeholder="Plex admin username"/>
+        </div>
+        <div class="form-group col-sm-6">
+            <input class="form-control form-control-sm" type="password" ng-model="plex.password" ng-disabled="isProcessing" placeholder="Plex admin password"/>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-sm-4">
+            <div class="form-control form-control-sm">
+                <input id="arGuide" type="checkbox" ng-model="plex.arGuide" ng-disabled="isProcessing">
+                <label for="arGuide">Auto Refresh Guide</label>
+            </div>
+        </div>
+        <div class="form-group col-sm-4">
+            <div class="form-control form-control-sm">
+                <input id="arChannels" type="checkbox" ng-model="plex.arChannels" ng-disabled="isProcessing">
+                <label for="arChannels">Auto Map Channels</label>
+            </div>
+        </div>
+        <div class="form-group col-sm-4">
+            <span class="pull-right">
+                <button class="btn btn-sm btn-link" type="button" ng-click="toggleVisiblity()" ng-disabled="isProcessing">Cancel</button>
+                <input class="btn btn-sm btn-success" type="submit" ng-click="addPlexServer(plex)" ng-disabled="isProcessing" value="Add Server"/>
+            </span>
+        </div>
+    </div>
+    </form>
+    <p class="text-danger text-center">
+        Use your Plex servers network address (192.168.*.*) as your HOST. Avoid using loopbacks (127.0.0.1, localhost).<br/>
+        <b>WARNING - Do not check "Auto Map Channels" unless the PseudoTV tuner is the ONLY tuner added to your Plex Server.</b>
+    </p>
+</div>
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Refresh Guide</th>
+        <th>Refresh Channels</th>
+        <th></th>
+    </tr>
+    <tr ng-if="servers.length === 0">
+        <td colspan="5">
+            <p class="text-center text-danger">Add a Plex Server</p>
+        </td>
+    </tr>
+    <tr ng-repeat="x in servers">
+        <td>{{ x.name }}</td>
+        <td>{{ x.protocol }}://{{ x.host }}:{{ x.port }}</td>
+        <td>{{ x.arGuide }}</td>
+        <td>{{ x.arChannels }}</td>
+        <td>
+            <button class="btn btn-sm btn-danger" ng-click="deletePlexServer(x._id)">
+                <span class="fa fa-minus"></span>
+            </button>
+        </td>
+    </tr>
+</table>
+
+</div>

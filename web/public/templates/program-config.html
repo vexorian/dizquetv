@@ -1,0 +1,111 @@
+<div ng-show="program">
+    <div class="modal" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, .5);">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+            <div class="modal-content">
+                <div>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Program Config</h5>
+                    </div>
+                </div>
+                <div class="modal-body container">
+                    <select ng-model="program.type" class="pull-right">
+                        <option>movie</option>
+                        <option>episode</option>
+                    </select>
+                    <div ng-if="program.type === 'movie'">
+                        <label>Movie Title
+                            <span class="text-danger pull-right">{{error.title}}</span>
+                        </label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.title"/>
+                        <label>Subtitle</label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.subtitle"/>
+                        <label>Summary</label>
+                        <textarea class="form-control form-control-sm" ng-model="program.summary"></textarea>
+                        <label>Rating</label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.rating"/>
+                        <label>Icon</label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.icon"/>
+                        <b>Icon Preview</b>
+                        <div class="text-center">
+                            <img class="img" ng-src="{{program.icon}}" style="max-width: 200px;"/>
+                        </div>
+                    </div>
+                    <div ng-if="program.type === 'episode'">
+                        <label>Show Title
+                            <span class="text-danger pull-right">{{error.showTitle}}</span>
+                        </label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.showTitle"/>
+                        <label>Episode Title
+                            <span class="text-danger pull-right">{{error.title}}</span>
+                        </label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.title"/>
+                        <label>Season
+                            <span class="text-danger pull-right">{{error.season}}</span>
+                        </label>
+                        <input class="form-control form-control-sm" type="number" ng-model="program.season"/>
+                        <label>Episode
+                            <span class="text-danger pull-right">{{error.episode}}</span>
+                        </label>
+                        <input class="form-control form-control-sm" type="number" ng-model="program.episode"/>
+                        <label>Summary</label>
+                        <textarea class="form-control form-control-sm" ng-model="program.summary"></textarea>
+                        <label>Rating</label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.rating"/>
+                        <label>Icon</label>
+                        <input class="form-control form-control-sm" type="text" ng-model="program.icon"/>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <b>Icon Preview</b>
+                                <div class="text-center">
+                                    <img class="img" ng-src="{{program.icon}}" style="max-width: 200px;"/>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 row" ng-if="program.showIcon">
+                                <div class="col-sm-6 text-center">
+                                    <label>Show</label>
+                                    <img class="img" ng-src="{{program.showIcon}}" style="max-width: 75px; cursor: pointer;" ng-click="program.icon = program.showIcon"/>
+                                </div>
+                                <div class="col-sm-6 text-center">
+                                    <label>Season</label>
+                                    <img class="img" ng-src="{{program.seasonIcon}}" style="max-width: 75px; cursor: pointer;" ng-click="program.icon = program.seasonIcon"/>
+                                </div>
+                                <div class="col-sm-12 text-center">
+                                    <label>Episode</label>
+                                    <img class="img" ng-src="{{program.episodeIcon}}" style="max-width: 150px; cursor: pointer;" ng-click="program.icon = program.episodeIcon"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 style="margin-top: 10px;">Commercials
+                            <button class="btn btn-sm btn-primary pull-right" ng-click="showPlexLibrary = true">
+                                <span class="fa fa-plus"></span>
+                            </button>
+                        </h6>
+                        <div class="list-group list-group-root" dnd-list="program.commercials">
+                            <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.commercials" dnd-draggable="x" dnd-moved="program.commercials.splice($index, 1)" dnd-effect-allowed="move">
+                                {{x.title}}
+                                <div class="flex-pull-right">
+                                    <span class="small" style="display: inline-block;">
+                                        <b>Position</b><br/>
+                                        {{x.commercialPosition===0?'START':x.commercialPosition=== 1?'1/4':x.commercialPosition===2?'1/2':x.commercialPosition===3?'3/4':'END'}}
+                                    </span>
+                                    <span style="padding-top: 10px; display: inline-block;">
+                                        <input type="range" min="0" max="4" ng-model="x.commercialPosition"/>
+                                    </span>
+                                    <span class="btn fa fa-trash" ng-click="program.commercials.splice($index,1)"></span>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-link" ng-click="program = null">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-primary" ng-click="finished(program);">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <plex-library height="300" visible="showPlexLibrary" on-finish="selectedCommercials"></plex-library>
+</div>

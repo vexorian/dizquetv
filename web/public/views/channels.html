@@ -1,0 +1,32 @@
+<div>
+    <channel-config ng-if="showChannelConfig" channel="selectedChannel" channels="channels" on-done="onChannelConfigDone"></channel-config>
+
+    <h5>
+        Channels
+        <button class="pull-right btn btn-sm btn-primary" ng-click="selectChannel(-1)">
+            <span class="fa fa-plus"></span>
+        </button>
+    </h5>
+    <table class="table">
+        <tr>
+            <th>Number</th>
+            <th>Name</th>
+            <th></th>
+        </tr>
+        <tr ng-if="channels.length === 0">
+            <td colspan="3">
+                <p class="text-center text-danger">No channels found. Click the <span class="fa fa-plus"></span> to create a channel.</p>
+            </td>
+        </tr>
+        <tr ng-repeat="x in channels" ng-click="selectChannel($index)" style="cursor: pointer;">
+            <td>{{x.number}}</td>
+            <td>{{x.name}}</td>
+            <td class="text-right">
+                <button class="btn btn-sm" ng-click="removeChannel(x); $event.stopPropagation()">
+                    <span class="fa fa-trash"></span>
+                </button>
+            </td>
+        </tr>
+    </table>
+
+</div>
