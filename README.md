@@ -32,7 +32,7 @@ By default, pseudotv will create a directory (`.pseudotv`) where the app was lau
 **Do not use a URL when feeding Plex the xmltv.xml file, Plex fails to update it's EPG from a URL for some reason (at least on Windows)**
 
 #### Binary Release
-Download and run the PseudoTV executable (argument defaults below)
+[Download](https://gitlab.com/DEFENDORe/pseudotv-plex/-/releases) and run the PseudoTV executable (argument defaults below)
 ```
 ./pseudotv-win.exe --host 127.0.0.1 --port 8000 --database ./pseudotv --xmltv ./pseudotv/xmltv.xml
 ```
