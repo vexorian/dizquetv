@@ -37,6 +37,9 @@
                     <div>
                         
                         <h6>Programs
+                            <button class="btn btn-sm btn-secondary" style="margin-left: 10px" ng-click="showShuffleOptions = !showShuffleOptions"  ng-show="channel.programs.length !== 0">
+                                Shuffle / Sort
+                            </button>
                             <span class="pull-right">
                                 <span class="text-danger small">{{error.programs}}</span>
                                 <button class="btn btn-sm btn-primary" ng-click="displayPlexLibrary = true">
@@ -44,7 +47,24 @@
                                 </button>
                             </span>
                         </h6>
-
+                        <div ng-init="blockCount = 1; showShuffleOptions = false" ng-show="showShuffleOptions">
+                            <p class="text-center text-info small">"Block Shuffle" and "Sort TV Shows" will push any movies to the end of the channel.</p>
+                            <div class="input-group mb-1">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-sm btn-warning" type="button" ng-click="blockShuffle(blockCount)">Block Shuffle</button>
+                                </div>
+                                <input type="number" class="form-control form-control-sm" placeholder="Desired number of consecutive TV shows." min="1" max="10" ng-model="blockCount">
+                            </div>
+                            <div class="input-group mb-1">
+                                <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="randomShuffle()">Random Shuffle</button>
+                            </div>
+                            <div class="input-group mb-1">
+                                <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()">Sort TV Shows</button>
+                            </div>
+                            <div class="input-group mb-1">
+                                <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
+                            </div>
+                        </div>
                         <div ng-if="channel.programs.length === 0">
                             <div class="small">Add programs to this channel by selecting media from your Plex library
                             </div>

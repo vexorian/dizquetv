@@ -54,7 +54,9 @@
                                         <span ng-if="b.type === 'playlist'" class="flex-pull-right" ng-click="selectPlaylist(b); $event.stopPropagation()">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
-                                        
+                                        <span ng-if="b.type === 'show'" class="flex-pull-right" ng-click="selectShow(b); $event.stopPropagation()">
+                                            <span class="fa fa-plus btn"></span>
+                                        </span>
                                     </div>
                                     <ul ng-if="b.collapse" class="list-group">
                                         <li ng-repeat="c in b.nested"
@@ -75,6 +77,9 @@
                                                 <span ng-if="c.type === 'movie' || c.type === 'episode'"
                                                     class="flex-pull-right">
                                                     {{c.durationStr}}
+                                                </span>
+                                                <span ng-if="c.type === 'season'" class="flex-pull-right" ng-click="selectSeason(c); $event.stopPropagation()">
+                                                    <span class="fa fa-plus btn"></span>
                                                 </span>
                                             </div>
                                             <ul ng-if="c.collapse" class="list-group">

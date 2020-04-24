@@ -32,6 +32,9 @@ process.env.HOST = process.env.HOST || "127.0.0.1"
 if (!fs.existsSync(process.env.DATABASE))
     fs.mkdirSync(process.env.DATABASE)
 
+if(!fs.existsSync(path.join(process.env.DATABASE, 'images')))
+    fs.mkdirSync(path.join(process.env.DATABASE, 'images'))
+
 db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'xmltv-settings', 'hdhr-settings'])
 
 initDB(db)
@@ -89,6 +92,7 @@ let hdhr = HDHR(db)
 let app = express()
 app.use(bodyParser.json({limit: '50mb'}))
 app.use(express.static(path.join(__dirname, 'web/public')))
+app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(api.router(db, xmltvInterval))
 app.use(video.router(db))
 app.use(hdhr.router)

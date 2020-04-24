@@ -40,40 +40,41 @@ module.exports = function (plex, pseudotv) {
                         scope.$apply(() => {
                             scope.libraries = lib
                             if (play.length > 0)
-                                scope.libraries.push({ title: "Playlists", key: "", icon: "", nested: play, collapse: false })
+                                scope.libraries.push({ title: "Playlists", key: "", icon: "", nested: play })
                         })
                     })
                 }, (err) => {
                     console.log(err)
                 })
             }
-            scope.getNested = function (list) {
-                if (typeof list.collapse == 'undefined') {
-                    plex.getNested(scope.plexServer, list.key).then((res) => {
-                        list.nested = res
-                        list.collapse = true
-                        scope.$apply()
-                    }, (err) => {
-                        console.log(err)
-                    })
-                } else {
-                    list.collapse = !list.collapse
+            scope.getNested = async (list) => {
+                let r = false
+                if (typeof list.nested == 'undefined') {
+                    list.nested = await plex.getNested(scope.plexServer, list.key)
+                    r = true
                 }
+                list.collapse = !list.collapse
+                if (r)
+                    scope.$apply()
             }
-            scope.selectPlaylist = (playlist) => {
-                if (typeof playlist.collapse == 'undefined') {
-                    plex.getNested(scope.plexServer, playlist.key).then((res) => {
-                        playlist.nested = res
-                        for (let i = 0, l = playlist.nested.length; i < l; i++)
-                            scope.selectItem(playlist.nested[i])
-                        scope.$apply()
-                    }, (err) => {
-                        console.log(err)
-                    })
-                } else {
-                    for (let i = 0, l = playlist.nested.length; i < l; i++)
-                        scope.selectItem(playlist.nested[i])
-                }
+            
+            scope.selectSeason = async (season) => {
+                if (typeof season.nested == 'undefined')
+                    season.nested = await plex.getNested(scope.plexServer, season.key)
+                for (let i = 0, l = season.nested.length; i < l; i++)
+                    scope.$apply(() => { scope.selectItem(season.nested[i]) })
+            }
+            scope.selectShow = async (show) => {
+                if (typeof show.nested == 'undefined')
+                    show.nested = await plex.getNested(scope.plexServer, show.key)
+                for (let i = 0, l = show.nested.length; i < l; i++) 
+                    await scope.selectSeason(show.nested[i])
+            }
+            scope.selectPlaylist = async (playlist) => {
+                if (typeof playlist.nested == 'undefined')
+                    playlist.nested = await plex.getNested(scope.plexServer, playlist.key)
+                for (let i = 0, l = playlist.nested.length; i < l; i++)
+                    scope.$apply(() => { scope.selectItem(playlist.nested[i]) })
             }
             scope.createShowIdentifier = (season, ep) => {
                 return 'S' + (season.toString().padStart(2, '0')) + 'E' + (ep.toString().padStart(2, '0'))

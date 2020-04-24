@@ -39,6 +39,107 @@ module.exports = function ($timeout) {
             scope.$watch('channel.startTime', () => {
                 updateChannelDuration()
             })
+            scope.sortShows = () => {
+                let shows = {}
+                let movies = []
+                let newProgs = []
+                let progs = scope.channel.programs
+                for (let i = 0, l = progs.length; i < l; i++) {
+                    if (progs[i].type === 'movie') {
+                        movies.push(progs[i])
+                    } else {
+                        if (typeof shows[progs[i].showTitle] === 'undefined')
+                            shows[progs[i].showTitle] = []
+                        shows[progs[i].showTitle].push(progs[i])
+                    }
+                }
+                let keys = Object.keys(shows)
+                for (let i = 0, l = keys.length; i < l; i++) {
+                    shows[keys[i]].sort((a, b) => {
+                        if (a.season === b.season) {
+                            if (a.episode > b.episode) {
+                                return 1
+                            } else {
+                                return -1
+                            }
+                        } else if (a.season > b.season) {
+                            return 1;
+                        } else if (b.season > a.season) {
+                            return -1;
+                        } else {
+                            return 0
+                        }
+                    })
+                    newProgs = newProgs.concat(shows[keys[i]])
+                }
+                scope.channel.programs = newProgs.concat(movies)
+                updateChannelDuration()
+            }
+            scope.removeDuplicates = () => {
+                let tmpProgs = {}
+                let progs = scope.channel.programs
+                for (let i = 0, l = progs.length; i < l; i++) {
+                    if (progs[i].type === 'movie') {
+                        tmpProgs[progs[i].title + progs[i].durationStr] = progs[i]
+                    } else {
+                        tmpProgs[progs[i].showTitle + '-' + progs[i].season + '-' + progs[i].episode] = progs[i]
+                    }
+                }
+                let newProgs = []
+                let keys = Object.keys(tmpProgs)
+                for (let i = 0, l = keys.length; i < l; i++) {
+                    newProgs.push(tmpProgs[keys[i]])
+                }
+                scope.channel.programs = newProgs
+            }
+            scope.blockShuffle = (blockCount) => {
+                if (typeof blockCount === 'undefined' || blockCount == null)
+                    return
+                let shows = {}
+                let movies = []
+                let newProgs = []
+                let progs = scope.channel.programs
+                for (let i = 0, l = progs.length; i < l; i++) {
+                    if (progs[i].type === 'movie') {
+                        movies.push(progs[i])
+                    } else {
+                        if (typeof shows[progs[i].showTitle] === 'undefined')
+                            shows[progs[i].showTitle] = []
+                        shows[progs[i].showTitle].push(progs[i])
+                    }
+                }
+                let keys = Object.keys(shows)
+                let index = 0
+                while (keys.length > 0) {
+                    if (shows[keys[index]].length === 0) {
+                        keys.splice(index, 1)
+                        if (index >= keys.length)
+                            index = 0
+                        continue
+                    }
+                    for (let i = 0, l = blockCount; i < l; i++) {
+                        if (shows[keys[index]].length > 0)
+                            newProgs.push(shows[keys[index]].shift())
+                    }
+                    index++
+                    if (index >= keys.length)
+                        index = 0
+                }
+
+                scope.channel.programs = newProgs.concat(movies)
+                updateChannelDuration()
+            }
+            scope.randomShuffle = () => {
+                randomShuffle(scope.channel.programs)
+                updateChannelDuration()
+            }
+            function randomShuffle(a) {
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            }
             function updateChannelDuration() {
                 scope.channel.duration = 0
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
