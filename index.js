@@ -83,11 +83,12 @@ let xmltvInterval = {
 }
 
 xmltvInterval.updateXML()
+xmltvInterval.startInterval()
 
 let hdhr = HDHR(db)
 let app = express()
 app.use(bodyParser.json())
-app.use(express.static(__dirname + '/web/public'))
+app.use(express.static(path.join(__dirname, 'web/public')))
 app.use(api.router(db, xmltvInterval))
 app.use(video.router(db))
 app.use(hdhr.router)

@@ -1,4 +1,4 @@
-module.exports = function ($rootScope, $scope, pseudotv, plex, $location) {
+module.exports = function ($scope, $location) {
     $scope.selected = $location.hash()
     if ($scope.selected === '')
         $scope.selected = 'xmltv'

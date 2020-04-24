@@ -1,4 +1,4 @@
-module.exports = function (pseudotv, $interval) {
+module.exports = function (pseudotv) {
     return {
         restrict: 'E',
         templateUrl: 'templates/xmltv-settings.html',

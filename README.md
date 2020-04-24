@@ -13,6 +13,7 @@ FFMPEG is used to transcode media on the fly to MPEG2/AC3 mpegts streams (with c
 - Web UI for channel configuration and app settings
 - Select media across multiple Plex servers
 - Ability to auto update Plex EPG and channel mappings
+- Auto Update the xmltv.xml file at a set interval (in hours). You can also set the amount EPG cache (in hours).
 - Continuous playback support
 - Commercial support
 - Docker and prepackage binaries for Windows, Linux and Mac
@@ -25,21 +26,21 @@ FFMPEG is used to transcode media on the fly to MPEG2/AC3 mpegts streams (with c
 
 ## Installation
 
-Unless your are using the Docker image, you must download and install **ffmpeg** to your system and set the correct path in the Web UI.
+Unless your are using the Docker image, you must download and install **ffmpeg** to your system and set the correct path in the PseudoTV Web UI.
 
-By default, pseudotv will create a directory (`.pseudotv`) where the app was lauched. Your xmltv.xml file and pseudotv databases are stored here.
+By default, pseudotv will create the directory `.pseudotv` wherever pseudotv is launched from. Your `xmltv.xml` file and config databases are stored here. An M3U can also be downloaded via the Web UI (useful if using xTeVe).
 
-**Do not use a URL when feeding Plex the xmltv.xml file, Plex fails to update it's EPG from a URL for some reason (at least on Windows)**
+**Do not use the Web UI XMLTV URL when feeding Plex the xmltv.xml file. Plex fails to update it's EPG from a URL for some reason (at least on Windows). Use the local file path to xmltv.xml**
 
 #### Binary Release
 [Download](https://gitlab.com/DEFENDORe/pseudotv-plex/-/releases) and run the PseudoTV executable (argument defaults below)
 ```
 ./pseudotv-win.exe --host 127.0.0.1 --port 8000 --database ./pseudotv --xmltv ./pseudotv/xmltv.xml
 ```
-Use the WebUI to provide PseudoTV the path to FFMPEG
 
 #### Docker Image
 ```
+git clone https://gitlab.com/DEFENDORe/pseudotv-plex.git
 cd pseudotv-plex
 docker build -t pseudotv .
 docker run --name pseudotv -p 8000:8000 -v C:\.pseudotv:/home/node/app/.pseudotv pseudotv 
@@ -47,6 +48,7 @@ docker run --name pseudotv -p 8000:8000 -v C:\.pseudotv:/home/node/app/.pseudotv
 
 #### Source
 ```
+git clone https://gitlab.com/DEFENDORe/pseudotv-plex.git
 cd pseudotv-plex
 npm install
 npm run build
@@ -56,18 +58,15 @@ npm run start
 
 
 ## Development
-Building Binaries:
+Building Binaries: (uses `babel` and `pkg`)
 ```
-cd pseudotv-plex
-npm install
 npm run build
 npm run compile
 npm run package
 ```
 
-Live Development:
+Live Development: (using `nodemon` and `watchify`)
 ```
-cd pseudotv-plex
 npm run dev-client
 npm run dev-server
 ```

@@ -1,4 +1,4 @@
-module.exports = function (plex, $timeout) {
+module.exports = function ($timeout) {
     return {
         restrict: 'E',
         templateUrl: 'templates/channel-config.html',
