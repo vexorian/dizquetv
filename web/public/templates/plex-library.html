@@ -51,10 +51,10 @@
                                         <span ng-if="b.type === 'movie'" class="flex-pull-right">
                                             {{b.durationStr}}
                                         </span>
-                                        <span ng-if="b.type === 'playlist'" class="flex-pull-right" ng-click="selectPlaylist(b); $event.stopPropagation()">
+                                        <span ng-if="b.type === 'playlist'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectPlaylist(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
-                                        <span ng-if="b.type === 'show'" class="flex-pull-right" ng-click="selectShow(b); $event.stopPropagation()">
+                                        <span ng-if="b.type === 'show'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectShow(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
                                     </div>
@@ -78,7 +78,7 @@
                                                     class="flex-pull-right">
                                                     {{c.durationStr}}
                                                 </span>
-                                                <span ng-if="c.type === 'season'" class="flex-pull-right" ng-click="selectSeason(c); $event.stopPropagation()">
+                                                <span ng-if="c.type === 'season'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectSeason(c);">
                                                     <span class="fa fa-plus btn"></span>
                                                 </span>
                                             </div>

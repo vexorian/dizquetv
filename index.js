@@ -67,7 +67,7 @@ let xmltvInterval = {
                 })
             }
         }, (err) => {
-            console.error("Failed to write the xmltv.xml file. Check your output directory via the web UI and verify file permissions.")
+            console.error("Failed to write the xmltv.xml file. Something went wrong. Check your output directory via the web UI and verify file permissions?", err)
         })
     },
     startInterval: () => {

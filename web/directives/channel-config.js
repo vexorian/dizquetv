@@ -92,7 +92,7 @@ module.exports = function ($timeout) {
                 }
                 scope.channel.programs = newProgs
             }
-            scope.blockShuffle = (blockCount) => {
+            scope.blockShuffle = (blockCount, randomize) => {
                 if (typeof blockCount === 'undefined' || blockCount == null)
                     return
                 let shows = {}
@@ -110,20 +110,36 @@ module.exports = function ($timeout) {
                 }
                 let keys = Object.keys(shows)
                 let index = 0
+                if (randomize)
+                    index = getRandomInt(0, keys.length - 1)
                 while (keys.length > 0) {
                     if (shows[keys[index]].length === 0) {
                         keys.splice(index, 1)
-                        if (index >= keys.length)
-                            index = 0
+                        if (randomize) {
+                            let tmp = index
+                            index = getRandomInt(0, keys.length - 1)
+                            while (keys.length > 1 && tmp == index)
+                                index = getRandomInt(0, keys.length - 1)
+                        } else {
+                            if (index >= keys.length)
+                                index = 0
+                        }
                         continue
                     }
                     for (let i = 0, l = blockCount; i < l; i++) {
                         if (shows[keys[index]].length > 0)
                             newProgs.push(shows[keys[index]].shift())
                     }
-                    index++
-                    if (index >= keys.length)
-                        index = 0
+                    if (randomize) {
+                        let tmp = index
+                        index = getRandomInt(0, keys.length - 1)
+                        while (keys.length > 1 && tmp == index)
+                            index = getRandomInt(0, keys.length - 1)
+                    } else {
+                        index++
+                        if (index >= keys.length)
+                            index = 0
+                    }
                 }
 
                 scope.channel.programs = newProgs.concat(movies)
@@ -133,12 +149,17 @@ module.exports = function ($timeout) {
                 randomShuffle(scope.channel.programs)
                 updateChannelDuration()
             }
+            function getRandomInt(min, max) {
+                min = Math.ceil(min)
+                max = Math.floor(max)
+                return Math.floor(Math.random() * (max - min + 1)) + min
+            }
             function randomShuffle(a) {
                 for (let i = a.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [a[i], a[j]] = [a[j], a[i]];
+                    const j = Math.floor(Math.random() * (i + 1))
+                    [a[i], a[j]] = [a[j], a[i]]
                 }
-                return a;
+                return a
             }
             function updateChannelDuration() {
                 scope.channel.duration = 0
@@ -159,7 +180,6 @@ module.exports = function ($timeout) {
                     }
                     // validate
                     var now = new Date()
-                    console.log(channel.startTime.toLocaleString())
                     if (typeof channel.number === "undefined" || channel.number === null || channel.number === "") {
                         scope.error.number = "Select a channel number"
                     } else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) { // we need the parseInt for indexOf to work properly
