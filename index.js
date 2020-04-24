@@ -43,7 +43,7 @@ let xmltvInterval = {
         let channels = db['channels'].find()
         channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         let xmltvSettings = db['xmltv-settings'].find()[0]
-        xmltv.WriteXMLTV(channels, xmltvSettings).then(() => {    // Update XML
+        xmltv.WriteXMLTV(channels, xmltvSettings).then(async () => {    // Update XML
             xmltvInterval.lastRefresh = new Date()
             console.log('XMLTV Updated at ', xmltvInterval.lastRefresh.toLocaleString())
             let plexServers = db['plex-servers'].find()
@@ -56,11 +56,11 @@ let xmltvInterval = {
                     }
                 }
                 var plex = new Plex(plexServers[i])
-                plex.GetDVRS().then((dvrs) => {                         // Refresh guide and channel mappings
+                await plex.GetDVRS().then(async (dvrs) => {                         // Refresh guide and channel mappings
                     if (plexServers[i].arGuide)
-                        plex.RefreshGuide(dvrs).then(() => { }, (err) => { console.error(err) })
+                        plex.RefreshGuide(dvrs).then(() => { }, (err) => { console.error(err, i) })
                     if (plexServers[i].arChannels)
-                        plex.RefreshChannels(channels, dvrs).then(() => { }, (err) => { console.error(err) })
+                        plex.RefreshChannels(channels, dvrs).then(() => { }, (err) => { console.error(err, i) })
                 })
             }
         }, (err) => {
@@ -87,7 +87,7 @@ xmltvInterval.startInterval()
 
 let hdhr = HDHR(db)
 let app = express()
-app.use(bodyParser.json())
+app.use(bodyParser.json({limit: '50mb'}))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use(api.router(db, xmltvInterval))
 app.use(video.router(db))
