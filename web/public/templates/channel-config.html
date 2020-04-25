@@ -37,6 +37,7 @@
                     <div>
                         
                         <h6>Programs
+                            <span class="small">Total: {{channel.programs.length}}</span>
                             <span class="badge badge-dark" style="margin-left: 15px;" ng-show="channel.programs.length !== 0">Commercials</span>
                             <button class="btn btn-sm btn-secondary" style="margin-left: 10px" ng-click="showShuffleOptions = !showShuffleOptions"  ng-show="channel.programs.length !== 0">
                                 Shuffle / Sort&nbsp;&nbsp;<span class="fa {{ showShuffleOptions ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>

@@ -2,8 +2,9 @@ const angular = require('angular')
 require('angular-router-browserify')(angular)
 require('./ext/lazyload')(angular)
 require('./ext/dragdrop')
+require('./ext/angularjs-scroll-glue')
 
-var app = angular.module('myApp', ['ngRoute', 'angularLazyImg', 'dndLists'])
+var app = angular.module('myApp', ['ngRoute', 'angularLazyImg', 'dndLists', 'luegg.directives'])
 
 app.service('plex',             require('./services/plex'))
 app.service('pseudotv',         require('./services/pseudotv'))

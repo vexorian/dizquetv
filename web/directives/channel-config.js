@@ -141,12 +141,11 @@ module.exports = function ($timeout) {
                             index = 0
                     }
                 }
-
                 scope.channel.programs = newProgs.concat(movies)
                 updateChannelDuration()
             }
             scope.randomShuffle = () => {
-                randomShuffle(scope.channel.programs)
+                shuffle(scope.channel.programs)
                 updateChannelDuration()
             }
             function getRandomInt(min, max) {
@@ -154,12 +153,16 @@ module.exports = function ($timeout) {
                 max = Math.floor(max)
                 return Math.floor(Math.random() * (max - min + 1)) + min
             }
-            function randomShuffle(a) {
-                for (let i = a.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1))
-                    [a[i], a[j]] = [a[j], a[i]]
+            function shuffle(array) {
+                var currentIndex = array.length, temporaryValue, randomIndex
+                while (0 !== currentIndex) {
+                    randomIndex = Math.floor(Math.random() * currentIndex)
+                    currentIndex -= 1
+                    temporaryValue = array[currentIndex]
+                    array[currentIndex] = array[randomIndex]
+                    array[randomIndex] = temporaryValue
                 }
-                return a
+                return array
             }
             function updateChannelDuration() {
                 scope.channel.duration = 0

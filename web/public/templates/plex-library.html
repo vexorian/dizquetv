@@ -102,7 +102,7 @@
                     </ul>
                     <hr/>
                     <h6>Selected Items</h6>
-                    <ul class="list-group list-group-root"  style="height: 180px; overflow-y: scroll" dnd-list="selection">
+                    <ul class="list-group list-group-root"  style="height: 180px; overflow-y: scroll" dnd-list="selection" scroll-glue>
                         <div ng-if="selection.length === 0">Select media items from your plex library above.</div>
                         <li class="list-group-item" ng-repeat="x in selection" style="cursor:default;" dnd-draggable="x" dnd-moved="selection.splice($index, 1)" dnd-effect-allowed="move">
                             {{ (x.type !== 'episode') ? x.title : (x.showTitle + ' - S' + x.season.toString().padStart(2,'0') + 'E' + x.episode.toString().padStart(2,'0'))}}
