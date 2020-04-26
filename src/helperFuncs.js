@@ -47,7 +47,9 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
 }
 
 function createProgramStreamTimeline(obj) {
+    
     let timeElapsed = obj.timeElapsed
+    console.log(timeElapsed)
     let activeProgram = obj.program
     let lineup = []
     let programStartTimes = [0, activeProgram.actualDuration * .25, activeProgram.actualDuration * .50, activeProgram.actualDuration * .75, activeProgram.actualDuration]
@@ -56,6 +58,7 @@ function createProgramStreamTimeline(obj) {
         commercials[activeProgram.commercials[i].commercialPosition].push(activeProgram.commercials[i])
 
     let foundFirstVideo = false
+    let progTimeElapsed = 0
     for (let i = 0, l = commercials.length; i < l; i++) { // Foreach commercial slot
         for (let y = 0, l2 = commercials[i].length; y < l2; y++) {  // Foreach commercial in that slot
             if (!foundFirstVideo && timeElapsed - commercials[i][y].duration < 0) { // If havent already found the starting video AND the this is a the starting video
@@ -77,13 +80,13 @@ function createProgramStreamTimeline(obj) {
                 timeElapsed -= commercials[i][y].duration
             }
         }
-        if (i !== l - 1) { // The last commercial slot is END, so dont write a program..
+        if (i < l - 1) { // The last commercial slot is END, so dont write a program..
             if (!foundFirstVideo && timeElapsed - (programStartTimes[i + 1] - programStartTimes[i]) < 0) { // same shit as above..
                 foundFirstVideo = true
                 lineup.push({
                     type: 'program',
                     file: activeProgram.file,
-                    start: timeElapsed,
+                    start: progTimeElapsed + timeElapsed,
                     duration: (programStartTimes[i + 1] - programStartTimes[i]) - timeElapsed
                 })
             } else if (foundFirstVideo) {
@@ -99,6 +102,7 @@ function createProgramStreamTimeline(obj) {
                 }
             } else {
                 timeElapsed -= (programStartTimes[i + 1] - programStartTimes[i])
+                progTimeElapsed += (programStartTimes[i + 1] - programStartTimes[i])
             }
         }
     }
