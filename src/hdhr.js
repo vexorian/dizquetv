@@ -48,7 +48,7 @@ function hdhr(db) {
         var lineup = []
         var channels = db['channels'].find()
         for (let i = 0, l = channels.length; i < l; i++)
-            lineup.push({ GuideNumber: channels[i].number.toString(), GuideName: channels[i].name, URL: `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}` })
+            lineup.push({ GuideNumber: channels[i].number.toString(), GuideName: channels[i].name, URL: `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}|User-Agent=ffmpeg` })
         res.send(JSON.stringify(lineup))
     })
 

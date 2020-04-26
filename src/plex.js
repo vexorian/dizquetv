@@ -34,7 +34,8 @@ class Plex {
                         login: username,
                         password: password
                     }
-                }
+                },
+                jar: false
             }
             request(req, (err, res, body) => {
                 if (err || res.statusCode !== 201)
@@ -50,7 +51,8 @@ class Plex {
         var req = {
             method: 'get',
             url: `${this.URL}${path}`,
-            headers: this._headers
+            headers: this._headers,
+            jar: false
         }
         Object.assign(req, optionalHeaders)
         req.headers['X-Plex-Token'] = this._token
@@ -71,7 +73,8 @@ class Plex {
             method: 'put',
             url: `${this.URL}${path}`,
             headers: this._headers,
-            qs: query
+            qs: query,
+            jar: false
         }
         Object.assign(req, optionalHeaders)
         req.headers['X-Plex-Token'] = this._token
@@ -92,7 +95,8 @@ class Plex {
             method: 'post',
             url: `${this.URL}${path}`,
             headers: this._headers,
-            qs: query
+            qs: query,
+            jar: false
         }
         Object.assign(req, optionalHeaders)
         req.headers['X-Plex-Token'] = this._token

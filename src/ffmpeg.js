@@ -9,6 +9,7 @@ class ffmpeg extends events.EventEmitter {
     }
     spawn(lineupItem) {
         let args = [
+            '-headers', 'User-Agent: ffmpeg',
             '-threads', this.opts.threads,
             '-ss', lineupItem.start / 1000,
             '-t', lineupItem.duration / 1000,

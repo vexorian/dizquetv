@@ -140,8 +140,8 @@ function api(db, xmltvInterval) {
         let channels = db['channels'].find()
         var data = "#EXTM3U\n"
         for (var i = 0; i < channels.length; i++) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}",${channels[i].number}\n`
-            data += `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}\n`
+            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}",${channels[i].name}\n`
+            data += `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}|User-Agent=ffmpeg\n`
         }
         res.send(data)
     })

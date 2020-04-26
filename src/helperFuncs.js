@@ -47,9 +47,7 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
 }
 
 function createProgramStreamTimeline(obj) {
-    
     let timeElapsed = obj.timeElapsed
-    console.log(timeElapsed)
     let activeProgram = obj.program
     let lineup = []
     let programStartTimes = [0, activeProgram.actualDuration * .25, activeProgram.actualDuration * .50, activeProgram.actualDuration * .75, activeProgram.actualDuration]
@@ -86,7 +84,7 @@ function createProgramStreamTimeline(obj) {
                 lineup.push({
                     type: 'program',
                     file: activeProgram.file,
-                    start: progTimeElapsed + timeElapsed,
+                    start: progTimeElapsed + timeElapsed, // add the duration of already played program chunks to the timeElapsed
                     duration: (programStartTimes[i + 1] - programStartTimes[i]) - timeElapsed
                 })
             } else if (foundFirstVideo) {
@@ -102,7 +100,7 @@ function createProgramStreamTimeline(obj) {
                 }
             } else {
                 timeElapsed -= (programStartTimes[i + 1] - programStartTimes[i])
-                progTimeElapsed += (programStartTimes[i + 1] - programStartTimes[i])
+                progTimeElapsed += (programStartTimes[i + 1] - programStartTimes[i]) // add the duration of already played program chunks together
             }
         }
     }
