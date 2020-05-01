@@ -52,7 +52,6 @@ function video(db) {
 
         ffmpeg2.spawn(lineup.shift()) // Spawn the ffmpeg process, fire this bitch up
 
-
     })
     return router
 }

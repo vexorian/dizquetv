@@ -45,7 +45,12 @@ module.exports = function () {
             return client.Get(key).then(function (res) {
                 var nested = []
                 for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++) {
-                    var program = {
+                    // Skip any videos (movie or episode) without a duration set...
+                    if (typeof res.Metadata[i].duration === 'undefined' && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
+                        continue
+                    if (res.Metadata[i].duration <= 0 && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
+                        continue
+                    var program = { // can be show, season or playlist too.
                         title: res.Metadata[i].title,
                         key: res.Metadata[i].key,
                         icon: `${server.protocol}://${server.host}:${server.port}${res.Metadata[i].thumb}?X-Plex-Token=${server.token}`,

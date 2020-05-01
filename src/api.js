@@ -64,6 +64,7 @@ function api(db, xmltvInterval) {
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
         db['ffmpeg-settings'].update({ _id: req.body._id }, {
             ffmpegPath: req.body.ffmpegPath,
+            ffprobePath: req.body.ffprobePath,
             offset: 0,
             threads: '4',
             videoEncoder: 'mpeg2video',
@@ -74,7 +75,35 @@ function api(db, xmltvInterval) {
             audioChannels: '2',
             audioRate: '48000',
             bufSize: '1000k',
-            audioEncoder: 'ac3'
+            audioEncoder: 'ac3',
+            preferAudioLanguage: 'false',
+            audioLanguage: 'eng',
+            deinterlace: true,
+            logFfmpeg: true,
+            args: `-threads 4
+-ss STARTTIME
+-t DURATION
+-re
+-i INPUTFILE
+-vf yadif
+-map 0:v
+-map AUDIOSTREAM
+-c:v mpeg2video
+-c:a ac3
+-ac 2
+-ar 48000
+-b:a 192k
+-b:v 10000k
+-s 1280x720
+-r 30
+-flags cgop+ilme
+-sc_threshold 1000000000
+-minrate:v 10000k
+-maxrate:v 10000k
+-bufsize:v 1000k
+-f mpegts
+-output_ts_offset TSOFFSET
+OUTPUTFILE`
         })
         let ffmpeg = db['ffmpeg-settings'].find()[0]
         res.send(ffmpeg)
@@ -135,13 +164,14 @@ function api(db, xmltvInterval) {
         res.send(fs.readFileSync(xmltvSettings.file))
     })
 
+    // CHANNELS.M3U Download 
     router.get('/api/channels.m3u', (req, res) => {
         res.type('text')
         let channels = db['channels'].find()
         var data = "#EXTM3U\n"
         for (var i = 0; i < channels.length; i++) {
             data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}",${channels[i].name}\n`
-            data += `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}|User-Agent=ffmpeg\n`
+            data += `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}\n`
         }
         res.send(data)
     })
