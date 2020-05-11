@@ -10,18 +10,16 @@
     </h5>
     <h6>FFMPEG Executable Path (eg: C:\ffmpeg\bin\ffmpeg.exe || /usr/bin/ffmpeg)</h6>
     <input type="text" class="form-control form-control-sm" ng-model="settings.ffmpegPath"/>
-    <h6>FFPROBE Executable Path (eg: C:\ffmpeg\bin\ffprobe.exe || /usr/bin/ffprobe)</h6>
-    <input type="text" class="form-control form-control-sm" ng-model="settings.ffprobePath" ng-disabled="settings.preferAudioLanguage === 'false'"/>
     <hr/>
     <h6>Miscellaneous Options</h6>
     <div class="row">
         <div class="col-sm-4">
             <label>Threads</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.threads" ng-change="createArgString()"/>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.threads" ng-change="createArgString()"/>
         </div>
         <div class="col-sm-4">
-            <label>Buffer Size</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.bufSize" ng-change="createArgString()"/>
+            <label>Buffer Size (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.bufSize" ng-change="createArgString()"/>
         </div>
         <div class="col-sm-4">
             <label>Log FFMPEG</label><br/>
@@ -34,14 +32,12 @@
             <h6>Video Options</h6>
             <label>Video Encoder</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder" ng-change="createArgString()"/>
-            <label>Video Bitrate</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.videoBitrate" ng-change="createArgString()"/>
+            <label>Video Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.videoBitrate" ng-change="createArgString()"/>
             <label>Video Resolution</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.videoResolution" ng-change="createArgString()"/>
             <label>Video Framerate</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.videoFrameRate" ng-change="createArgString()"/>
-            <label>Deinterlace</label><br/>
-            <input id="deinterlace" type="checkbox" ng-model="settings.deinterlace" ng-change="createArgString()"/> <label for="deinterlace">Deinterlace Video</label>
         </div>
         <div class="col-sm-6">
             <h6>Audio Options</h6>
@@ -49,14 +45,10 @@
             <input type="text" class="form-control form-control-sm" ng-model="settings.audioEncoder" ng-change="createArgString()"/>
             <label>Audio Channels</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.audioChannels" ng-change="createArgString()"/>
-            <label>Audio Bitrate</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.audioBitrate" ng-change="createArgString()"/>
+            <label>Audio Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.audioBitrate" ng-change="createArgString()"/>
             <label>Audio Rate</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.audioRate" ng-change="createArgString()"/>
-            <label>Audio Stream Preference</label><br/>
-            <input id="preferAudioLanguage1" type="radio" ng-model="settings.preferAudioLanguage" value="false"/> <label for="preferAudioLanguage1">Default track</label>
-            <input id="preferAudioLanguage2" type="radio" ng-model="settings.preferAudioLanguage" value="true"/> <label for="preferAudioLanguage2">Prefer Select Language <small>(uses ffprobe)</small></label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.audioLanguage" ng-disabled="settings.preferAudioLanguage === 'false'"/>
         </div>
     </div>
     <hr/>

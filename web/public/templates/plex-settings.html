@@ -9,6 +9,7 @@
     <form>
     <h6>Add a Plex Server
         <span class="pull-right text-danger">{{error}}</span>
+        <span class="pull-right text-info">{{ isProcessing ? 'You have 2 minutes to sign into your Plex Account.' : ''}}</span>
     </h6>
     <div class="form-row">
         <div class="form-group col-sm-2">
@@ -22,14 +23,6 @@
         </div>
         <div class="form-group col-sm-5">
             <input class="form-control form-control-sm" type="text" ng-model="plex.port" ng-disabled="isProcessing" placeholder="Plex port"/>
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col-sm-6">
-            <input class="form-control form-control-sm" type="text" ng-model="plex.username" ng-disabled="isProcessing" placeholder="Plex admin username"/>
-        </div>
-        <div class="form-group col-sm-6">
-            <input class="form-control form-control-sm" type="password" ng-model="plex.password" ng-disabled="isProcessing" placeholder="Plex admin password"/>
         </div>
     </div>
     <div class="form-row">
@@ -48,14 +41,13 @@
         <div class="form-group col-sm-4">
             <span class="pull-right">
                 <button class="btn btn-sm btn-link" type="button" ng-click="toggleVisiblity()" ng-disabled="isProcessing">Cancel</button>
-                <input class="btn btn-sm btn-success" type="submit" ng-click="addPlexServer(plex)" ng-disabled="isProcessing" value="Add Server"/>
+                <input class="btn btn-sm btn-success" type="submit" ng-click="addPlexServer(plex)" ng-disabled="isProcessing" value="Sign In/Add Server"/>
             </span>
         </div>
     </div>
     </form>
     <p class="text-danger text-center">
-        Use your Plex servers network address (192.168.*.*) as your HOST. Avoid using loopbacks (127.0.0.1, localhost).<br/>
-        <b>WARNING - Do not check "Auto Map Channels" unless the PseudoTV tuner is the ONLY tuner added to your Plex Server.</b>
+        <b>WARNING - Do not check "Auto Map Channels" unless the PseudoTV tuner is added to this specific Plex server.</b>
     </p>
 </div>
 <table class="table">

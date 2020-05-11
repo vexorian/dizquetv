@@ -64,31 +64,29 @@ function api(db, xmltvInterval) {
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
         db['ffmpeg-settings'].update({ _id: req.body._id }, {
             ffmpegPath: req.body.ffmpegPath,
-            ffprobePath: req.body.ffprobePath,
             offset: 0,
-            threads: '4',
-            videoEncoder: 'mpeg2video',
+            threads: 4,
+            videoEncoder: 'libx264',
             videoResolution: '1280x720',
-            videoFrameRate: '30',
-            videoBitrate: '10000k',
-            audioBitrate: '192k',
-            audioChannels: '2',
-            audioRate: '48000',
-            bufSize: '1000k',
+            videoFrameRate: 30,
+            videoBitrate: 10000,
+            audioBitrate: 192,
+            audioChannels: 2,
+            audioRate: 48000,
+            bufSize: 1000,
             audioEncoder: 'ac3',
             preferAudioLanguage: 'false',
             audioLanguage: 'eng',
-            deinterlace: true,
-            logFfmpeg: true,
+            deinterlace: false,
+            logFfmpeg: false,
             args: `-threads 4
 -ss STARTTIME
--t DURATION
 -re
 -i INPUTFILE
--vf yadif
--map 0:v
+-t DURATION
+-map VIDEOSTREAM
 -map AUDIOSTREAM
--c:v mpeg2video
+-c:v libx264
 -c:a ac3
 -ac 2
 -ar 48000
@@ -101,8 +99,12 @@ function api(db, xmltvInterval) {
 -minrate:v 10000k
 -maxrate:v 10000k
 -bufsize:v 1000k
+-metadata service_provider="PseudoTV"
+-metadata CHANNELNAME
 -f mpegts
 -output_ts_offset TSOFFSET
+-muxdelay 0
+-muxpreload 0
 OUTPUTFILE`
         })
         let ffmpeg = db['ffmpeg-settings'].find()[0]
@@ -128,7 +130,7 @@ OUTPUTFILE`
             _id: req.body._id,
             cache: 12,
             refresh: 4,
-            file: process.env.XMLTV
+            file: process.env.DATABASE + '/xmltv.xml'
         })
         var xmltv = db['xmltv-settings'].find()[0]
         res.send(xmltv)
@@ -171,7 +173,11 @@ OUTPUTFILE`
         var data = "#EXTM3U\n"
         for (var i = 0; i < channels.length; i++) {
             data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}",${channels[i].name}\n`
-            data += `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}\n`
+            data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
+        }
+        if (channels.length === 0) {
+            data += `#EXTINF:0 tvg-id="1" tvg-name="PseudoTV" tvg-logo="",PseudoTV\n`
+            data += `${req.protocol}://${req.get('host')}/setup\n`
         }
         res.send(data)
     })

@@ -8,13 +8,11 @@ module.exports = function (plex, pseudotv, $timeout) {
             pseudotv.getPlexServers().then((servers) => {
                 scope.servers = servers
             })
-            scope.plex = { protocol: 'http', host: '127.0.0.1', port: '32400', username: '', password: '', arGuide: false, arChannels: false }
+            scope.plex = { protocol: 'http', host: '127.0.0.1', port: '32400', arGuide: false, arChannels: false }
             scope.addPlexServer = function (p) {
                 scope.isProcessing = true
                 plex.login(p)
                     .then((result) => {
-                        delete p['username']
-                        delete p['password']
                         p.token = result.token
                         p.name = result.name
                         return pseudotv.addPlexServer(p)

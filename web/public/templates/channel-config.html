@@ -1,6 +1,6 @@
 <div>
     <div class="modal" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, .5);">
-        <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-dialog modal-dialog-scrollable modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
@@ -9,38 +9,80 @@
                 </div>
                 <div class="modal-body">
                     <div>
-                        <div>
-                            <span class="pull-right text-danger">{{error.number}}</span>
-                            <label id="channelNumber" class="small">Ch. #</label>
-                            <input for="channelNumber" class="form-control form-control-sm" type="number"
-                                ng-model="channel.number"/>
+                        <span class="pull-right text-danger">{{error.number}}</span>
+                        <label id="channelNumber" class="small">Ch. #</label>
+                        <input for="channelNumber" class="form-control form-control-sm" type="number" ng-model="channel.number" />
+                    </div>
+                    <div>
+                        <span class="pull-right text-danger">{{error.name}}</span>
+                        <label id="channelName" class="small">Channel Name</label>
+                        <input for="channelName" class="form-control form-control-sm" type="text" ng-model="channel.name" />
+                    </div>
+                    <div>
+                        <span class="pull-right text-danger">{{error.icon}}</span>
+                        <label for="channelIcon" class="small">Channel Icon</label>
+                        <div class="input-group mb-1">
+                            <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon" />
+                            <div class="input-group-append">
+                                <div class="input-group-text" style="padding: 0">
+                                    <label class="small" for="overlayIcon" style="margin-bottom: 4px;">&nbsp;overlay over stream&nbsp;&nbsp;</label>
+                                    <input id="overlayIcon" type="checkbox" ng-model="channel.overlayIcon">&nbsp;
+                                </div>
+                            </div>
                         </div>
                         <div>
-                            <span class="pull-right text-danger">{{error.name}}</span>
-                            <label id="channelName" class="small">Channel Name</label>
-                            <input for="channelName" class="form-control form-control-sm" type="text"
-                                ng-model="channel.name"/>
+                            <h6>Channel Icon Preview</h6>
+                            <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
+                            <span ng-if="channel.icon === ''">{{channel.name}}</span>
                         </div>
-                        <div>
-                            <span class="pull-right text-danger">{{error.icon}}</span>
-                            <label id="channelIcon" class="small">Channel Icon</label>
-                            <input for="channelIcon" class="form-control form-control-sm" type="url"
-                                ng-model="channel.icon" />
+                        <div ng-show="channel.overlayIcon">
+                            <h6>Icon Overlay Options
+                                <small>Not applicable to commercials.</small>
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label for="channelIconPosition" class="small">Overlay Position</label>
+                                    <div class="input-group mb-1">
+                                        <select class="form-control form-control-sm" id="channelIconPosition" ng-model="channel.iconPosition">
+                                            <option value="0">Top Left</option>
+                                            <option value="1">Top Right</option>
+                                            <option value="2">Bottom Left</option>
+                                            <option value="3">Bottom Right</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="channelIconWidth" class="small">Overlay Width (pixels)</label>
+                                <div class="input-group mb-1">
+                                    <input id="channelIconWidth" class="form-control form-control-sm" type="number" ng-model="channel.iconWidth"/>
+                                </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="channelIconDuration" class="small">Overlay Duration (seconds) (0 = permanent)</label>
+                                    <div class="input-group mb-1">
+                                        <input id="channelIconDuration" class="form-control form-control-sm" type="number" ng-model="channel.iconDuration" />
+                                    </div>
+                                </div>
+                            </div>
+                            <hr/>
                         </div>
-                        <div>
-                            <span class="pull-right text-danger">{{error.startTime}}</span>
-                            <label id="channelStartTime" class="small">Channel Timeline Start {{maxDate}}</label>
-                            <input for="channelStartTime" class="form-control form-control-sm" type="datetime-local" ng-model="channel.startTime"/>
-                        </div>
+                    </div>
+                    <div>
+                        <span class="pull-right text-danger">{{error.startTime}}</span>
+                        <label id="channelStartTime" class="small">Channel Timeline Start {{maxDate}}</label>
+                        <input for="channelStartTime" class="form-control form-control-sm" type="datetime-local" ng-model="channel.startTime" />
                     </div>
                     <hr />
                     <div>
-                        
                         <h6>Programs
                             <span class="small">Total: {{channel.programs.length}}</span>
-                            <span class="badge badge-dark" style="margin-left: 15px;" ng-show="channel.programs.length !== 0">Commercials</span>
-                            <button class="btn btn-sm btn-secondary" style="margin-left: 10px" ng-click="showShuffleOptions = !showShuffleOptions"  ng-show="channel.programs.length !== 0">
-                                Shuffle / Sort&nbsp;&nbsp;<span class="fa {{ showShuffleOptions ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>
+                            <span class="badge badge-dark" style="margin-left: 15px;"
+                                ng-show="channel.programs.length !== 0">Commercials</span>
+                            <button class="btn btn-sm btn-secondary" style="margin-left: 10px"
+                                ng-click="showShuffleOptions = !showShuffleOptions"
+                                ng-show="channel.programs.length !== 0">
+                                Shuffle / Sort&nbsp;&nbsp;<span
+                                    class="fa {{ showShuffleOptions ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>
                             </button>
                             <span class="pull-right">
                                 <span class="text-danger small">{{error.programs}}</span>
@@ -51,40 +93,43 @@
                         </h6>
                         <div ng-init="blockCount = 1; showShuffleOptions = false" ng-show="showShuffleOptions">
                             <p class="text-center text-info small">"Block Shuffle" and "Sort TV Shows" will push any movies to the end of the channel.</p>
-                            <div class="input-group mb-1">
-                                <div class="input-group-prepend">
-                                    <button class="btn btn-sm btn-warning" type="button" ng-click="blockShuffle(blockCount, randomizeBlockShuffle)">Block Shuffle</button>
-                                </div>
-                                <input type="number" class="form-control form-control-sm" placeholder="Desired number of consecutive TV shows." min="1" max="10" ng-model="blockCount">
-                                
-                                <div class="input-group-append">
-                                    <div class="input-group-text" style="padding: 0">
-                                        <label class="small" for="randomizeBlockShuffle" style="margin-bottom: 4px;">&nbsp;Randomize&nbsp;&nbsp;</label>
-                                        <input id="randomizeBlockShuffle" type="checkbox" ng-model="randomizeBlockShuffle">&nbsp;
+                            <div class="row">
+                                <div class="col-md-6" style="padding: 5px;">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <input type="number" class="form-control form-control-sm" placeholder="Desired number of consecutive TV shows." min="1" max="10" ng-model="blockCount">
+                                        </div>
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text" style="padding: 0;">
+                                                <label class="small" for="randomizeBlockShuffle" style="margin-bottom: 4px;">&nbsp;Randomize&nbsp;&nbsp;</label>
+                                                <input id="randomizeBlockShuffle" type="checkbox" ng-model="randomizeBlockShuffle">&nbsp;
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="blockShuffle(blockCount, randomizeBlockShuffle)">Block Shuffle</button>
                                     </div>
                                 </div>
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="randomShuffle()">Random Shuffle</button>
+                                </div>
                             </div>
-                            <div class="input-group mb-1">
-                                <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="randomShuffle()">Random Shuffle</button>
+                            <div class="row">
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()">Sort TV Shows</button>
+                                </div>
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
+                                </div>
                             </div>
-                            <div class="input-group mb-1">
-                                <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()">Sort TV Shows</button>
-                            </div>
-                            <div class="input-group mb-1">
-                                <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
-                            </div>
+                            
                         </div>
                         <div ng-if="channel.programs.length === 0">
-                            <div class="small">Add programs to this channel by selecting media from your Plex library
-                            </div>
-                            <br />
+                            <div class="small">Add programs to this channel by selecting media from your Plex library</div>
+                            <br/>
                             <h5 class="text-center text-danger">No programs are currently scheduled</h5>
                         </div>
                         <div class="list-group list-group-root" dnd-list="channel.programs">
-                            <li class="list-group-item flex-container" ng-repeat="x in channel.programs"
-                                ng-click="selectProgram($index)" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1)"
-                                dnd-effect-allowed="move">
-                                <div class="small" style="width: 150px; margin-right: 5px;">
+                            <li class="list-group-item flex-container" ng-repeat="x in channel.programs" ng-click="selectProgram($index)" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1); updateChannelDuration()" dnd-effect-allowed="move">
+                                <div class="small" style="width: 180px; margin-right: 5px;">
                                     <div class="text-success">{{x.start.toLocaleString()}}</div>
                                     <div class="text-danger">{{x.stop.toLocaleString()}}</div>
                                 </div>
@@ -94,8 +139,7 @@
                                 <div style="margin-right: 5px;">
                                     {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
                                 </div>
-                                <span class="flex-pull-right btn fa fa-trash"
-                                    ng-click="removeItem($index);  $event.stopPropagation()"></span>
+                                <span class="flex-pull-right btn fa fa-trash" ng-click="removeItem($index);  $event.stopPropagation()"></span>
                             </li>
                         </div>
                     </div>

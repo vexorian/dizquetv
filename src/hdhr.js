@@ -21,14 +21,14 @@ function hdhr(db) {
     var router = express.Router()
 
     router.get('/device.xml', (req, res) => {
-        var device = getDevice(db)
+        var device = getDevice(db, req.protocol + '://' + req.get('host'))
         res.header("Content-Type", "application/xml")
         var data = device.getXml()
         res.send(data)
     })
 
     router.get('/discover.json', (req, res) => {
-        var device = getDevice(db)
+        var device = getDevice(db, req.protocol + '://' + req.get('host'))
         res.header("Content-Type", "application/json")
         res.send(JSON.stringify(device))
     })
@@ -48,14 +48,16 @@ function hdhr(db) {
         var lineup = []
         var channels = db['channels'].find()
         for (let i = 0, l = channels.length; i < l; i++)
-            lineup.push({ GuideNumber: channels[i].number.toString(), GuideName: channels[i].name, URL: `http://${process.env.HOST}:${process.env.PORT}/video?channel=${channels[i].number}` })
+            lineup.push({ GuideNumber: channels[i].number.toString(), GuideName: channels[i].name, URL: `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}` })
+        if (lineup.length === 0)
+            lineup.push({ GuideNumber: '1', GuideName: 'PseudoTV', URL: `${req.protocol}://${req.get('host')}/setup` })
         res.send(JSON.stringify(lineup))
     })
 
     return { router: router, ssdp: server }
 }
 
-function getDevice(db) {
+function getDevice(db, host) {
     let hdhrSettings = db['hdhr-settings'].find()[0]
     var device = {
         FriendlyName: "PseudoTV",
@@ -67,8 +69,8 @@ function getDevice(db) {
         FirmwareVersion: "20170930",
         DeviceID: 'PseudoTV',
         DeviceAuth: "",
-        BaseURL: `http://${process.env.HOST}:${process.env.PORT}`,
-        LineupURL: `http://${process.env.HOST}:${process.env.PORT}/lineup.json`
+        BaseURL: `${host}`,
+        LineupURL: `${host}/lineup.json`
     }
     device.getXml = () => {
         str =

@@ -11,23 +11,15 @@ const HDHR = require('./src/hdhr')
 const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex')
 
-const helperFuncs = require('./src/helperFuncs')
-
 for (let i = 0, l = process.argv.length; i < l; i++) {
     if ((process.argv[i] === "-p" || process.argv[i] === "--port") && i + 1 !== l)
         process.env.PORT = process.argv[i + 1]
-    if ((process.argv[i] === "-h" || process.argv[i] === "--host") && i + 1 !== l)
-        process.env.HOST = process.argv[i + 1]
     if ((process.argv[i] === "-d" || process.argv[i] === "--database") && i + 1 !== l)
         process.env.DATABASE = process.argv[i + 1]
-    if ((process.argv[i] === "-x" || process.argv[i] === "--xmltv") && i + 1 !== l)
-        process.env.XMLTV = process.argv[i + 1]
 }
 
 process.env.DATABASE = process.env.DATABASE || './.pseudotv'
-process.env.XMLTV = process.env.XMLTV || './.pseudotv/xmltv.xml'
 process.env.PORT = process.env.PORT || 8000
-process.env.HOST = process.env.HOST || "127.0.0.1"
 
 if (!fs.existsSync(process.env.DATABASE))
     fs.mkdirSync(process.env.DATABASE)
@@ -51,18 +43,11 @@ let xmltvInterval = {
             console.log('XMLTV Updated at ', xmltvInterval.lastRefresh.toLocaleString())
             let plexServers = db['plex-servers'].find()
             for (let i = 0, l = plexServers.length; i < l; i++) {       // Foreach plex server
-                let ips = helperFuncs.getIPAddresses()
-                for (let y = 0, l2 = ips.length; y < l2; y++) {
-                    if (ips[y] === plexServers[i].host) {
-                        plexServers[i].host = "127.0.0.1" // If the plex servers IP is the same as PseudoTV, just use the loopback cause for some reason PUT and POST requests will fail.
-                        break
-                    }
-                }
                 var plex = new Plex(plexServers[i])
-                await plex.GetDVRS().then(async (dvrs) => {                         // Refresh guide and channel mappings
+                await plex.GetDVRS().then(async (dvrs) => {             // Refresh guide and channel mappings
                     if (plexServers[i].arGuide)
                         plex.RefreshGuide(dvrs).then(() => { }, (err) => { console.error(err, i) })
-                    if (plexServers[i].arChannels)
+                    if (plexServers[i].arChannels && channels.length !== 0)
                         plex.RefreshChannels(channels, dvrs).then(() => { }, (err) => { console.error(err, i) })
                 })
             }
@@ -97,7 +82,7 @@ app.use(api.router(db, xmltvInterval))
 app.use(video.router(db))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
-    console.log(`HTTP server running on port: http://${process.env.HOST}:${process.env.PORT}`)
+    console.log(`HTTP server running on port: http://*:${process.env.PORT}`)
     let hdhrSettings = db['hdhr-settings'].find()[0]
     if (hdhrSettings.autoDiscovery === true)
         hdhr.ssdp.start()
@@ -105,34 +90,37 @@ app.listen(process.env.PORT, () => {
 
 function initDB(db) {
     let ffmpegSettings = db['ffmpeg-settings'].find()
+    if (!fs.existsSync(process.env.DATABASE + '/resources/font.ttf')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/font.ttf')))
+        fs.writeFileSync(process.env.DATABASE + '/font.ttf', data)
+    }
+
     if (ffmpegSettings.length === 0) {
         db['ffmpeg-settings'].save({
-            ffmpegPath: "/usr/bin/ffmpeg",
-            ffprobePath: "/usr/bin/ffprobe",
+            ffmpegPath: '/usr/bin/ffmpeg',
             offset: 0,
-            threads: '4',
-            videoEncoder: 'mpeg2video',
+            threads: 4,
+            videoEncoder: 'libx264',
             videoResolution: '1280x720',
-            videoFrameRate: '30',
-            videoBitrate: '10000k',
-            audioBitrate: '192k',
-            audioChannels: '2',
-            audioRate: '48000',
-            bufSize: '1000k',
+            videoFrameRate: 30,
+            videoBitrate: 10000,
+            audioBitrate: 192,
+            audioChannels: 2,
+            audioRate: 48000,
+            bufSize: 1000,
             audioEncoder: 'ac3',
             preferAudioLanguage: 'false',
             audioLanguage: 'eng',
-            deinterlace: true,
-            logFfmpeg: true,
+            deinterlace: false,
+            logFfmpeg: false,
             args: `-threads 4
 -ss STARTTIME
--t DURATION
 -re
 -i INPUTFILE
--vf yadif
--map 0:v
+-t DURATION
+-map VIDEOSTREAM
 -map AUDIOSTREAM
--c:v mpeg2video
+-c:v libx264
 -c:a ac3
 -ac 2
 -ar 48000
@@ -145,8 +133,12 @@ function initDB(db) {
 -minrate:v 10000k
 -maxrate:v 10000k
 -bufsize:v 1000k
+-metadata service_provider="PseudoTV"
+-metadata CHANNELNAME
 -f mpegts
 -output_ts_offset TSOFFSET
+-muxdelay 0
+-muxpreload 0
 OUTPUTFILE`
         })
     }
@@ -155,7 +147,7 @@ OUTPUTFILE`
         db['xmltv-settings'].save({
             cache: 12,
             refresh: 4,
-            file: process.env.XMLTV
+            file: `${process.env.DATABASE}/xmltv.xml`
         })
     }
     let hdhrSettings = db['hdhr-settings'].find()

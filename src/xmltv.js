@@ -12,9 +12,25 @@ function WriteXMLTV(channels, xmlSettings) {
         ws.on('close', () => { resolve() })
         ws.on('error', (err) => { reject(err) })
         _writeDocStart(xw)
-        _writeChannels(xw, channels)
-        for (var i = 0; i < channels.length; i++)
-            _writePrograms(xw, channels[i], date, xmlSettings.cache)
+        if (channels.length === 0) {
+            _writeChannels(xw, [{ number: 1, name: "PseudoTV", icon: null }])
+            let program = {
+                program: {
+                    type: 'movie',
+                    title: 'No Channels Configured',
+                    summary: 'Configure your channels using the PseudoTV Web UI.'
+                },
+                channel: '1',
+                start: date,
+                stop: new Date(date.valueOf() + xmlSettings.cache * 60 * 60 * 1000)
+            }
+            _writeProgramme(xw, program)
+        } else {
+            _writeChannels(xw, channels)
+            for (var i = 0; i < channels.length; i++)
+                _writePrograms(xw, channels[i], date, xmlSettings.cache)
+        }
+        
         _writeDocEnd(xw, ws)
         ws.close()
     })
@@ -79,7 +95,7 @@ function _writeProgramme(xw, program) {
     xw.startElement('title')
     xw.writeAttribute('lang', 'en')
 
-    if (program.program.type == 'episode') {
+    if (program.program.type === 'episode') {
         xw.text(program.program.showTitle)
         xw.endElement()
         xw.writeRaw('\n        <previously-shown/>')
@@ -98,9 +114,11 @@ function _writeProgramme(xw, program) {
         xw.endElement()
     }
     // Icon
-    xw.startElement('icon')
-    xw.writeAttribute('src', program.program.icon)
-    xw.endElement()
+    if (typeof program.program.icon !== 'undefined') {
+        xw.startElement('icon')
+        xw.writeAttribute('src', program.program.icon)
+        xw.endElement()
+    }
     // Desc
     xw.startElement('desc')
     xw.writeAttribute('lang', 'en')

@@ -1,12 +1,40 @@
 const express = require('express')
 const helperFuncs = require('./helperFuncs')
-const ffmpeg = require('./ffmpeg')
+const FFMPEG = require('./ffmpeg')
+const FFMPEG_TEXT = require('./ffmpegText')
 const fs = require('fs')
 
 module.exports = { router: video }
 
 function video(db) {
     var router = express.Router()
+
+    router.get('/setup', (req, res) => {
+        let ffmpegSettings = db['ffmpeg-settings'].find()[0]
+        // Check if ffmpeg path is valid
+        if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
+            res.status(500).send("FFMPEG path is invalid. The file (executable) doesn't exist.")
+            console.error("The FFMPEG Path is invalid. Please check your configuration.")
+            return
+        }
+
+        console.log(`\r\nStream starting. Channel: 1 (PseudoTV)`)
+
+        let ffmpeg = new FFMPEG_TEXT(ffmpegSettings, 'PseudoTV', 'Configure your channels using the PseudoTV Web UI')
+
+        ffmpeg.on('data', (data) => { res.write(data) })
+
+        ffmpeg.on('error', (err) => {
+            console.error("FFMPEG ERROR", err)
+            res.status(500).send("FFMPEG ERROR")
+        })
+
+        res.on('close', () => { // on HTTP close, kill ffmpeg
+            ffmpeg.kill()
+            console.log(`\r\nStream ended. Channel: 1 (PseudoTV)`)
+        })
+    })
+    
     router.get('/video', (req, res) => {
         // Check if channel queried is valid
         if (typeof req.query.channel === 'undefined') {
@@ -21,7 +49,8 @@ function video(db) {
         channel = channel[0]
 
         // Get video lineup (array of video urls with calculated start times and durations.)
-        let lineup = helperFuncs.getLineup(Date.now(), channel)
+        let prog = helperFuncs.getCurrentProgramAndTimeElapsed(Date.now(), channel)
+        let lineup = helperFuncs.createLineup(prog)
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
 
         // Check if ffmpeg path is valid
@@ -31,26 +60,31 @@ function video(db) {
             return
         }
 
-        console.log(`Stream started. Channel: ${channel.number} (${channel.name})`)
+        console.log(`\r\nStream starting. Channel: ${channel.number} (${channel.name})`)
 
-        let ffmpeg2 = new ffmpeg(ffmpegSettings)  // Set the transcoder options
+        let ffmpeg = new FFMPEG(ffmpegSettings, channel)  // Set the transcoder options
 
-        ffmpeg2.on('data', (data) => { res.write(data) })
+        ffmpeg.on('data', (data) => { res.write(data) })
 
-        ffmpeg2.on('error', (err) => { console.error("FFMPEG ERROR", err) })
+        ffmpeg.on('error', (err) => {
+            console.error("FFMPEG ERROR", err)
+            res.status(500).send("FFMPEG ERROR")
+        })
 
-        ffmpeg2.on('end', () => { // On finish transcode - END of program or commercial...
-            if (lineup.length === 0) // refresh the expired program/lineup
-                lineup = helperFuncs.getLineup(Date.now(), channel)
-            ffmpeg2.spawn(lineup.shift()) // Spawn the next ffmpeg process
+        ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...
+            if (lineup.length === 0) { // refresh the expired program/lineup
+                prog = helperFuncs.getCurrentProgramAndTimeElapsed(Date.now(), channel)
+                lineup = helperFuncs.createLineup(prog)
+            }
+            ffmpeg.spawn(lineup.shift(), prog.program) // Spawn the next ffmpeg process
         })
 
         res.on('close', () => { // on HTTP close, kill ffmpeg
-            ffmpeg2.kill()
-            console.log(`Stream ended. Channel: ${channel.number} (${channel.name})`)
+            ffmpeg.kill()
+            console.log(`\r\nStream ended. Channel: ${channel.number} (${channel.name})`)
         })
 
-        ffmpeg2.spawn(lineup.shift()) // Spawn the ffmpeg process, fire this bitch up
+        ffmpeg.spawn(lineup.shift(), prog.program) // Spawn the ffmpeg process, fire this bitch up
 
     })
     return router

@@ -112,18 +112,18 @@ class Plex {
                 })
         })
     }
-    GetDVRS = async function () {
+    async GetDVRS() {
         var result = await this.Get('/livetv/dvrs')
         var dvrs = result.Dvr
         dvrs = typeof dvrs === 'undefined' ? [] : dvrs
         return dvrs
     }
-    RefreshGuide = async function (_dvrs) {
+    async RefreshGuide(_dvrs) {
         var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS()
         for (var i = 0; i < dvrs.length; i++)
             this.Post(`/livetv/dvrs/${dvrs[i].key}/reloadGuide`).then(() => { }, (err) => { console.log(err) })
     }
-    RefreshChannels = async function (channels, _dvrs) {
+    async RefreshChannels(channels, _dvrs) {
         var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS()
         var _channels = []
         let qs = {}

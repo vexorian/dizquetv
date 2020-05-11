@@ -15,12 +15,19 @@ module.exports = function (plex, pseudotv, $timeout) {
                 updateLibrary(server)
             }
             scope._onFinish = (s) => {
-                scope.onFinish(JSON.parse(angular.toJson(s)))
+                scope.onFinish(s)
                 scope.selection = []
                 scope.visible = false
             }
             scope.selectItem = (item) => {
-                scope.selection.push(JSON.parse(angular.toJson(item)))
+                return new Promise((resolve, reject) => {
+                    $timeout(async () => {
+                        item.streams = await plex.getStreams(scope.plexServer, item.key)
+                        scope.selection.push(JSON.parse(angular.toJson(item)))
+                        scope.$apply()
+                        resolve()
+                    }, 0)
+                })
             }
             pseudotv.getPlexServers().then((servers) => {
                 if (servers.length === 0) {
@@ -50,39 +57,47 @@ module.exports = function (plex, pseudotv, $timeout) {
             scope.getNested = (list) => {
                 $timeout(async () => {
                     if (typeof list.nested === 'undefined')
-                    list.nested = await plex.getNested(scope.plexServer, list.key)
+                        list.nested = await plex.getNested(scope.plexServer, list.key)
                     list.collapse = !list.collapse
                     scope.$apply()
                 }, 0)
             }
             
-            scope.selectSeason = async (season) => {
-                $timeout(async () => {
-                    if (typeof season.nested === 'undefined') {
-                        season.nested = await plex.getNested(scope.plexServer, season.key)
-                    }
-                    for (let i = 0, l = season.nested.length; i < l; i++)
-                        scope.selectItem(season.nested[i])
-                    scope.$apply()
-                }, 0)
+            scope.selectSeason = (season) => {
+                return new Promise((resolve, reject) => {
+                    $timeout(async () => {
+                        if (typeof season.nested === 'undefined')
+                            season.nested = await plex.getNested(scope.plexServer, season.key)
+                        for (let i = 0, l = season.nested.length; i < l; i++)
+                            await scope.selectItem(season.nested[i])
+                        scope.$apply()
+                        resolve()
+                    }, 0)
+                })
             }
-            scope.selectShow = async (show) => {
-                $timeout(async () => {
-                    if (typeof show.nested === 'undefined')
-                        show.nested = await plex.getNested(scope.plexServer, show.key)
-                    for (let i = 0, l = show.nested.length; i < l; i++) 
-                        await scope.selectSeason(show.nested[i])
-                    scope.$apply()
-                }, 0)
+            scope.selectShow = (show) => {
+                return new Promise((resolve, reject) => {
+                    $timeout(async () => {
+                        if (typeof show.nested === 'undefined')
+                            show.nested = await plex.getNested(scope.plexServer, show.key)
+                        for (let i = 0, l = show.nested.length; i < l; i++) 
+                            await scope.selectSeason(show.nested[i])
+                        scope.$apply()
+                        resolve()
+                    }, 0)
+                })
             }
             scope.selectPlaylist = async (playlist) => {
-                $timeout(async () => {
-                    if (typeof playlist.nested === 'undefined')
-                        playlist.nested = await plex.getNested(scope.plexServer, playlist.key)
-                    for (let i = 0, l = playlist.nested.length; i < l; i++)
-                        scope.selectItem(playlist.nested[i])
-                    scope.$apply()
-                }, 0)
+                return new Promise((resolve, reject) => {
+                    $timeout(async () => {
+                        if (typeof playlist.nested === 'undefined')
+                            playlist.nested = await plex.getNested(scope.plexServer, playlist.key)
+                        for (let i = 0, l = playlist.nested.length; i < l; i++)
+                            await scope.selectItem(playlist.nested[i])
+                        scope.$apply()
+                        resolve()
+                    }, 0)
+                })
             }
             scope.createShowIdentifier = (season, ep) => {
                 return 'S' + (season.toString().padStart(2, '0')) + 'E' + (ep.toString().padStart(2, '0'))

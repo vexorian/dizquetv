@@ -14,6 +14,9 @@ module.exports = function ($timeout) {
                 scope.channel.programs = []
                 scope.isNewChannel = true
                 scope.channel.icon = ""
+                scope.channel.iconWidth = 120
+                scope.channel.iconDuration = 60
+                scope.channel.iconPosition = "2"
                 scope.channel.startTime = new Date()
                 scope.channel.startTime.setMilliseconds(0)
                 scope.channel.startTime.setSeconds(0)
@@ -154,7 +157,7 @@ module.exports = function ($timeout) {
                 return Math.floor(Math.random() * (max - min + 1)) + min
             }
             function shuffle(array) {
-                var currentIndex = array.length, temporaryValue, randomIndex
+                let currentIndex = array.length, temporaryValue, randomIndex
                 while (0 !== currentIndex) {
                     randomIndex = Math.floor(Math.random() * currentIndex)
                     currentIndex -= 1
@@ -164,6 +167,7 @@ module.exports = function ($timeout) {
                 }
                 return array
             }
+            scope.updateChannelDuration = updateChannelDuration
             function updateChannelDuration() {
                 scope.channel.duration = 0
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
@@ -178,31 +182,30 @@ module.exports = function ($timeout) {
                     scope.onDone()
                 else {
                     channelNumbers = []
-                    for (let i = 0, l = scope.channels.length; i < l; i++) {
+                    for (let i = 0, l = scope.channels.length; i < l; i++)
                         channelNumbers.push(scope.channels[i].number)
-                    }
                     // validate
                     var now = new Date()
-                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "") {
+                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "")
                         scope.error.number = "Select a channel number"
-                    } else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) { // we need the parseInt for indexOf to work properly
+                    else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) // we need the parseInt for indexOf to work properly
                         scope.error.number = "Channel number already in use."
-                    } else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1) {
+                    else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1)
                         scope.error.number = "Channel number already in use."
-                    } else if (channel.number <= 0 || channel.number >= 2000) {
+                    else if (channel.number <= 0 || channel.number >= 2000)
                         scope.error.name = "Enter a valid number (1-2000)"
-                    } else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "") {
+                    else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "")
                         scope.error.name = "Enter a channel name."
-                    } else if (channel.icon !== "" && !validURL(channel.icon)) {
+                    else if (channel.icon !== "" && !validURL(channel.icon))
                         scope.error.icon = "Please enter a valid image URL. Or leave blank."
-                    } else if (now < channel.startTime) {
+                    else if (channel.overlayIcon && !validURL(channel.icon))
+                        scope.error.icon = "Please enter a valid image URL. Cant overlay an invalid image."
+                    else if (now < channel.startTime)
                         scope.error.startTime = "Start time must not be set in the future."
-                    } else if (channel.programs.length === 0) {
+                    else if (channel.programs.length === 0)
                         scope.error.programs = "No programs have been selected. Select at least one program."
-                    } else {
-                        // DONE.
+                    else
                         scope.onDone(JSON.parse(angular.toJson(channel)))
-                    }
                     $timeout(() => { scope.error = {} }, 3500)
                 }
             }

@@ -9,7 +9,8 @@
     </h5>
     <table class="table">
         <tr>
-            <th>Number</th>
+            <th width="120">Number</th>
+            <th width="120">Icon</th>
             <th>Name</th>
             <th></th>
         </tr>
@@ -20,6 +21,10 @@
         </tr>
         <tr ng-repeat="x in channels" ng-click="selectChannel($index)" style="cursor: pointer;">
             <td>{{x.number}}</td>
+            <td style="padding: 0" class="text-center">
+                <img ng-if="x.icon !== ''" ng-src="{{x.icon}}" alt="{{x.name}}" style="max-height: 40px;"/>
+                <div ng-if="x.icon === ''" style="padding-top: 14px;"><small>{{x.name}}</small></div>
+            </td>
             <td>{{x.name}}</td>
             <td class="text-right">
                 <button class="btn btn-sm" ng-click="removeChannel(x); $event.stopPropagation()">

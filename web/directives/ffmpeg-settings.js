@@ -31,23 +31,27 @@
 -t DURATION
 -re
 -i INPUTFILE${ scope.settings.deinterlace ? `\n-vf yadif` : `` }
--map 0:v
+-map VIDEOSTREAM
 -map AUDIOSTREAM
--c:v ${ scope.settings.videoEncoder}
--c:a ${ scope.settings.audioEncoder}
--ac ${ scope.settings.audioChannels}
--ar ${ scope.settings.audioRate}
--b:a ${ scope.settings.audioBitrate}
--b:v ${ scope.settings.videoBitrate}
--s ${ scope.settings.videoResolution}
--r ${ scope.settings.videoFrameRate}
+-c:v ${ scope.settings.videoEncoder }
+-c:a ${ scope.settings.audioEncoder }
+-ac ${ scope.settings.audioChannels }
+-ar ${ scope.settings.audioRate }
+-b:a ${ scope.settings.audioBitrate }k
+-b:v ${ scope.settings.videoBitrate }k
+-s ${ scope.settings.videoResolution }
+-r ${ scope.settings.videoFrameRate }
 -flags cgop+ilme
 -sc_threshold 1000000000
--minrate:v ${ scope.settings.videoBitrate}
--maxrate:v ${ scope.settings.videoBitrate}
--bufsize:v ${ scope.settings.bufSize}
+-minrate:v ${ scope.settings.videoBitrate }k
+-maxrate:v ${ scope.settings.videoBitrate }k
+-bufsize:v ${ scope.settings.bufSize }k
+-metadata service_provider="PseudoTV"
+-metadata CHANNELNAME
 -f mpegts
 -output_ts_offset TSOFFSET
+-muxdelay 0
+-muxpreload 0
 OUTPUTFILE`
                 
             }

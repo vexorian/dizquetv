@@ -10,7 +10,7 @@
     "dev-client": "watchify ./web/app.js -o ./web/public/bundle.js",
     "dev-server": "nodemon index.js --ignore ./web/ --ignore ./db/ --ignore ./xmltv.xml",
     "compile": "babel index.js -d dist && babel src -d dist/src",
-    "package": "copyfiles ./web/public/**/* ./dist && pkg . --out-path bin",
+    "package": "copyfiles ./web/public/**/* ./dist && copyfiles ./resources/**/* ./dist && pkg . --out-path bin",
     "clean": "del-cli --force ./bin ./dist ./.pseudotv ./web/public/bundle.js"
   },
   "author": "Dan Ferguson",
@@ -27,7 +27,7 @@
   },
   "bin": "dist/index.js",
   "pkg": {
-    "assets": "dist/web/public/**/*",
+    "assets": ["dist/web/public/**/*","dist/resources/**/*"],
     "targets": ["x86", "x64", "linux", "macos", "windows"]
   },
   "devDependencies": {
