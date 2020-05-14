@@ -122,7 +122,7 @@ module.exports = function ($http, $window, $interval) {
                 }
                 if (program.type === 'episode' || program.type === 'movie') {
                     program.file = `${server.protocol}://${server.host}:${server.port}${res.Metadata[i].Media[0].Part[0].key}?X-Plex-Token=${server.token}`
-                    program.opts = { deinterlace: false, videoIndex: '-1', audioIndex: '-1', subtitleIndex: '-1' }
+                    program.opts = { deinterlace: false, videoIndex: '-1', audioIndex: '-1', subtitleIndex: '-2' }
                 }
                 if (program.type === 'episode') {
                     program.showTitle = res.Metadata[i].grandparentTitle
