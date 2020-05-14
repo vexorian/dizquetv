@@ -71,6 +71,16 @@ docker build -t pseudotv .
 docker run --name pseudotv -p 8000:8000 -v C:\.pseudotv:/home/node/app/.pseudotv pseudotv
 ```
 
+#### Unraid Install
+Add
+```
+https://github.com/powdermilkman/pseudotv
+```
+to your "Template repositories" in the Docker tab.
+Click the "Add Container" button
+Select either the pseudotv template or the pseudotv-nvidia template if you want nvidia hardware accelerated transcoding.
+Make sure you have the Unraid Nvidia plugin installed and change your video encoder to h264_nvenc in the pseudotv ffmpeg settings.
+
 #### Source
 ```
 git clone https://gitlab.com/DEFENDORe/pseudotv-plex.git
