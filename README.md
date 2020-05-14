@@ -1,3 +1,6 @@
+This is a fork from the official gitlab at https://gitlab.com/DEFENDORe/pseudotv-plex
+
+
 # pseudotv-plex
 
 PseudoTV is a Plex DVR plugin. It allows you to host your own fake live tv service by dynamically streaming media from your Plex servers(s). Your channels and settings are all manged throught the PseudoTV Web UI.
@@ -65,7 +68,7 @@ By default, pseudotv will create the directory `.pseudotv` wherever pseudotv is 
 git clone https://gitlab.com/DEFENDORe/pseudotv-plex.git
 cd pseudotv-plex
 docker build -t pseudotv .
-docker run --name pseudotv -p 8000:8000 -v C:\.pseudotv:/home/node/app/.pseudotv pseudotv 
+docker run --name pseudotv -p 8000:8000 -v C:\.pseudotv:/home/node/app/.pseudotv pseudotv
 ```
 
 #### Source
