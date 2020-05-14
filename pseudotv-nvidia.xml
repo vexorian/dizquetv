@@ -3,7 +3,7 @@
   <Name>pseudotv</Name>
   <Repository>powdermilkman/pseudotv:latest</Repository>
   <Registry>https://hub.docker.com/r/powdermilkman/pseudotv</Registry>
-  <Network>bridge</Network>
+  <Network>host</Network>
   <MyIP/>
   <Shell>bash</Shell>
   <Privileged>false</Privileged>
