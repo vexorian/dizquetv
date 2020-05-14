@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>pseudotv</Name>
-  <Repository>tcjdesign/pseudotv-plex:latest</Repository>
-  <Registry>https://hub.docker.com/r/tcjdesign/pseudotv-plex</Registry>
+  <Repository>powdermilkman/pseudotv:latest</Repository>
+  <Registry>https://hub.docker.com/r/powdermilkman/pseudotv</Registry>
   <Network>bridge</Network>
   <MyIP/>
   <Shell>bash</Shell>
