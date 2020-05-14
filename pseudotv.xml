@@ -26,7 +26,7 @@ PseudoTV will show up as a HDHomeRun device within Plex. When configuring your P
 &#xD;
 PseudoTV will show up as a HDHomeRun device within Plex. When configuring your Plex Tuner, simply use the generatered ./.pseudotv/xmltv.xml file for EPG data. PseudoTV will automatically refresh your Plex server's EPG data and channel mappings (if specified to do so in settings) when configuring channels via the Web UI. Ensure your FFMPEG path is set correctly via the Web UI, and enjoy!</Description>
   <Networking>
-    <Mode>bridge</Mode>
+    <Mode>host</Mode>
     <Publish>
       <Port>
         <HostPort>8000</HostPort>
@@ -46,7 +46,5 @@ PseudoTV will show up as a HDHomeRun device within Plex. When configuring your P
   </Environment>
   <Labels/>
   <Config Name="Webui &amp;amp; HDHR" Target="8000" Default="" Mode="tcp" Description="Container Port: 8000" Type="Port" Display="always" Required="false" Mask="false">8000</Config>
-  <Config Name="NVIDIA_VISIBLE_DEVICES" Target="NVIDIA_VISIBLE_DEVICES" Default="" Mode="" Description="Container Variable: NVIDIA_VISIBLE_DEVICES" Type="Variable" Display="always" Required="false" Mask="false">all</Config>
-  <Config Name="NVIDIA_DRIVER_CAPABILITIES" Target="NVIDIA_DRIVER_CAPABILITIES" Default="" Mode="" Description="Container Variable: NVIDIA_DRIVER_CAPABILITIES" Type="Variable" Display="always" Required="false" Mask="false">all</Config>
   <Config Name="Appdata" Target="/home/node/app/.pseudotv" Default="" Mode="rw" Description="Container Path: /home/node/app/.pseudotv" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/pseudotv/</Config>
 </Container>
