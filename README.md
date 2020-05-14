@@ -74,7 +74,7 @@ docker run --name pseudotv -p 8000:8000 -v C:\.pseudotv:/home/node/app/.pseudotv
 #### Unraid Install
 Add
 ```
-https://github.com/powdermilkman/pseudotv
+https://github.com/DEFENDORe/pseudotv
 ```
 to your "Template repositories" in the Docker tab.
 Click the "Add Container" button
