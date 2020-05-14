@@ -27,6 +27,7 @@ function video(db) {
         ffmpeg.on('error', (err) => {
             console.error("FFMPEG ERROR", err)
             res.status(500).send("FFMPEG ERROR")
+            return
         })
 
         res.on('close', () => { // on HTTP close, kill ffmpeg
@@ -34,7 +35,7 @@ function video(db) {
             console.log(`\r\nStream ended. Channel: 1 (PseudoTV)`)
         })
     })
-    
+
     router.get('/video', (req, res) => {
         // Check if channel queried is valid
         if (typeof req.query.channel === 'undefined') {
@@ -69,6 +70,7 @@ function video(db) {
         ffmpeg.on('error', (err) => {
             console.error("FFMPEG ERROR", err)
             res.status(500).send("FFMPEG ERROR")
+            return
         })
 
         ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...

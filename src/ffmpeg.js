@@ -72,7 +72,7 @@ class FFMPEG extends events.EventEmitter {
         if (videoIndex === '-1')
             videoIndex = 'v'
         if (audioIndex === '-1')
-            audioIndex === 'a'
+            audioIndex = 'a'
 
         let sub = (subtitleIndex === '-1' || subtitleIndex === '-2') ? null : lineupItem.streams[subtitleIndex]
 
@@ -112,7 +112,7 @@ class FFMPEG extends events.EventEmitter {
             }
         }
 
-        if (sub === null || lineupItem.type === 'commercial') { // No subs or icon overlays for Commercials  
+        if (sub === null || lineupItem.type === 'commercial') { // No subs or icon overlays for Commercials
             tmpargs[vidStream] = '[v]'
             tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace}[v]`)
             console.log("No Subtitles")
@@ -162,12 +162,14 @@ class FFMPEG extends events.EventEmitter {
                 this.emit('close', code)
             else if (code === 0)
                 this.emit('end')
+            else if (code === 255)
+                this.emit('close', code)
             else
                 this.emit('error', { code: code, cmd: `${tmpargs.join(' ')}` })
         })
     }
     kill() {
-        this.ffmpeg.kill()
+        this.ffmpeg.kill('SIGQUIT')
     }
 }
 
