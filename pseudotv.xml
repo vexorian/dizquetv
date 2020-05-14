@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>pseudotv</Name>
+  <Repository>tcjdesign/pseudotv-plex:latest</Repository>
+  <Registry>https://hub.docker.com/r/tcjdesign/pseudotv-plex</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project/>
+  <Overview>PseudoTV is a Plex DVR plugin. It allows you to host your own fake live tv service by dynamically streaming media from your Plex servers(s). Your channels and settings are all manged throught the PseudoTV Web UI.&#xD;
+&#xD;
+PseudoTV will show up as a HDHomeRun device within Plex. When configuring your Plex Tuner, simply use the generatered ./.pseudotv/xmltv.xml file for EPG data. PseudoTV will automatically refresh your Plex server's EPG data and channel mappings (if specified to do so in settings) when configuring channels via the Web UI. Ensure your FFMPEG path is set correctly via the Web UI, and enjoy!</Overview>
+  <Category/>
+  <WebUI>http://[IP]:[PORT:8000]</WebUI>
+  <TemplateURL/>
+  <Icon>https://gitlab.com/powdermilkman/pseudotv-plex/-/raw/master/pseudotv.png</Icon>
+  <ExtraParams></ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1589436589</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Description>PseudoTV is a Plex DVR plugin. It allows you to host your own fake live tv service by dynamically streaming media from your Plex servers(s). Your channels and settings are all manged throught the PseudoTV Web UI.&#xD;
+&#xD;
+PseudoTV will show up as a HDHomeRun device within Plex. When configuring your Plex Tuner, simply use the generatered ./.pseudotv/xmltv.xml file for EPG data. PseudoTV will automatically refresh your Plex server's EPG data and channel mappings (if specified to do so in settings) when configuring channels via the Web UI. Ensure your FFMPEG path is set correctly via the Web UI, and enjoy!</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>8000</HostPort>
+        <ContainerPort>8000</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/appdata/pseudotv/</HostDir>
+      <ContainerDir>/home/node/app/.pseudotv</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Environment>
+  </Environment>
+  <Labels/>
+  <Config Name="Webui &amp;amp; HDHR" Target="8000" Default="" Mode="tcp" Description="Container Port: 8000" Type="Port" Display="always" Required="false" Mask="false">8000</Config>
+  <Config Name="NVIDIA_VISIBLE_DEVICES" Target="NVIDIA_VISIBLE_DEVICES" Default="" Mode="" Description="Container Variable: NVIDIA_VISIBLE_DEVICES" Type="Variable" Display="always" Required="false" Mask="false">all</Config>
+  <Config Name="NVIDIA_DRIVER_CAPABILITIES" Target="NVIDIA_DRIVER_CAPABILITIES" Default="" Mode="" Description="Container Variable: NVIDIA_DRIVER_CAPABILITIES" Type="Variable" Display="always" Required="false" Mask="false">all</Config>
+  <Config Name="Appdata" Target="/home/node/app/.pseudotv" Default="" Mode="rw" Description="Container Path: /home/node/app/.pseudotv" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/pseudotv/</Config>
+</Container>
