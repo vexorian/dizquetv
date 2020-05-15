@@ -8,9 +8,24 @@ module.exports = function (plex, pseudotv, $timeout) {
             pseudotv.getPlexServers().then((servers) => {
                 scope.servers = servers
             })
-            scope.plex = { protocol: 'http', host: '127.0.0.1', port: '32400', arGuide: false, arChannels: false }
+            scope.plex = { protocol: 'http', host: '', port: '32400', arGuide: false, arChannels: false }
             scope.addPlexServer = function (p) {
                 scope.isProcessing = true
+                if (scope.plex.host === '') {
+                    scope.isProcessing = false
+                    scope.error = 'Invalid HOST set'
+                    $timeout(() => {
+                        scope.error = null
+                    }, 3500)
+                    return
+                } else if (scope.plex.port <= 0) {
+                    scope.isProcessing = false
+                    scope.error = 'Invalid PORT set'
+                    $timeout(() => {
+                        scope.error = null
+                    }, 3500)
+                    return
+                }
                 plex.login(p)
                     .then((result) => {
                         p.token = result.token

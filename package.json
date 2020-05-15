@@ -27,8 +27,17 @@
   },
   "bin": "dist/index.js",
   "pkg": {
-    "assets": ["dist/web/public/**/*","dist/resources/**/*"],
-    "targets": ["x86", "x64", "linux", "macos", "windows"]
+    "assets": [
+      "dist/web/public/**/*",
+      "dist/resources/**/*"
+    ],
+    "targets": [
+      "x86",
+      "x64",
+      "linux",
+      "macos",
+      "windows"
+    ]
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",

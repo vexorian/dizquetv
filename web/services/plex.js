@@ -18,7 +18,7 @@ module.exports = function ($http, $window, $interval) {
                 }).then((res) => {
                     $window.open('https://app.plex.tv/auth/#!?clientID=rg14zekk3pa5zp4safjwaa8z&context[device][version]=Plex OAuth&context[device][model]=Plex OAuth&code=' + res.data.code + '&context[device][product]=Plex Web')
                     let limit = 120000 // 2 minute time out limit
-                    let poll = 2500 // check every 2.5 seconds for token
+                    let poll = 2000 // check every 2 seconds for token
                     let interval = $interval(() => {
                         $http({
                             method: 'GET',
@@ -39,10 +39,14 @@ module.exports = function ($http, $window, $interval) {
                             if (r2.data.authToken !== null) {
                                 $interval.cancel(interval)
                                 client._token = r2.data.authToken
-                                const _res = await client.Get('/')
-                                res.name = _res.friendlyName
-                                res.token = client._token
-                                resolve(res)
+                                try { 
+                                    const _res = await client.Get('/')
+                                    res.name = _res.friendlyName
+                                    res.token = client._token
+                                    resolve(res)
+                                } catch (err) {
+                                    reject(err)
+                                }
                             }
                         }, (err) => {
                             $interval.cancel(interval)

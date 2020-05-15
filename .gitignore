@@ -1,0 +1,5 @@
+node_modules/
+dist/
+bin/
+.pseudotv/
+web/public/bundle.js
