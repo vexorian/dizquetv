@@ -90,9 +90,13 @@ app.listen(process.env.PORT, () => {
 
 function initDB(db) {
     let ffmpegSettings = db['ffmpeg-settings'].find()
-    if (!fs.existsSync(process.env.DATABASE + '/resources/font.ttf')) {
+    if (!fs.existsSync(process.env.DATABASE + '/font.ttf')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/font.ttf')))
         fs.writeFileSync(process.env.DATABASE + '/font.ttf', data)
+    }
+    if (!fs.existsSync(process.env.DATABASE + '/images/pseudotv.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/pseudotv.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/pseudotv.png', data)
     }
 
     if (ffmpegSettings.length === 0) {
@@ -109,9 +113,6 @@ function initDB(db) {
             audioRate: 48000,
             bufSize: 1000,
             audioEncoder: 'ac3',
-            preferAudioLanguage: 'false',
-            audioLanguage: 'eng',
-            deinterlace: false,
             logFfmpeg: false,
             args: `-threads 4
 -ss STARTTIME

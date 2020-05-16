@@ -75,9 +75,6 @@ function api(db, xmltvInterval) {
             audioRate: 48000,
             bufSize: 1000,
             audioEncoder: 'ac3',
-            preferAudioLanguage: 'false',
-            audioLanguage: 'eng',
-            deinterlace: false,
             logFfmpeg: false,
             args: `-threads 4
 -ss STARTTIME
@@ -176,7 +173,7 @@ OUTPUTFILE`
             data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
         }
         if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-name="PseudoTV" tvg-logo="",PseudoTV\n`
+            data += `#EXTINF:0 tvg-id="1" tvg-name="PseudoTV" tvg-logo="https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png",PseudoTV\n`
             data += `${req.protocol}://${req.get('host')}/setup\n`
         }
         res.send(data)

@@ -165,11 +165,11 @@ class FFMPEG extends events.EventEmitter {
             else if (code === 255)
                 this.emit('close', code)
             else
-                this.emit('error', { code: code, cmd: `${tmpargs.join(' ')}` })
+                this.emit('error', { code: code, cmd: `${opts.ffmpegPath} ${tmpargs.join(' ')}` })
         })
     }
     kill() {
-        this.ffmpeg.kill('SIGQUIT')
+        this.ffmpeg.kill()
     }
 }
 

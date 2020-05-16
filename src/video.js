@@ -20,7 +20,7 @@ function video(db) {
 
         console.log(`\r\nStream starting. Channel: 1 (PseudoTV)`)
 
-        let ffmpeg = new FFMPEG_TEXT(ffmpegSettings, 'PseudoTV', 'Configure your channels using the PseudoTV Web UI')
+        let ffmpeg = new FFMPEG_TEXT(ffmpegSettings, 'PseudoTV (No Channels Configured)', 'Configure your channels using the PseudoTV Web UI')
 
         ffmpeg.on('data', (data) => { res.write(data) })
 
@@ -28,6 +28,9 @@ function video(db) {
             console.error("FFMPEG ERROR", err)
             res.status(500).send("FFMPEG ERROR")
             return
+        })
+        ffmpeg.on('close', () => {
+            res.send()
         })
 
         res.on('close', () => { // on HTTP close, kill ffmpeg
@@ -71,6 +74,10 @@ function video(db) {
             console.error("FFMPEG ERROR", err)
             res.status(500).send("FFMPEG ERROR")
             return
+        })
+
+        ffmpeg.on('close', () => {
+            res.send()
         })
 
         ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...

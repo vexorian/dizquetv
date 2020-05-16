@@ -1,4 +1,4 @@
-module.exports = function ($timeout) {
+module.exports = function ($timeout, $location) {
     return {
         restrict: 'E',
         templateUrl: 'templates/channel-config.html',
@@ -13,7 +13,7 @@ module.exports = function ($timeout) {
                 scope.channel = {}
                 scope.channel.programs = []
                 scope.isNewChannel = true
-                scope.channel.icon = ""
+                scope.channel.icon = `${$location.protocol()}://${location.host}/images/pseudotv.png`
                 scope.channel.iconWidth = 120
                 scope.channel.iconDuration = 60
                 scope.channel.iconPosition = "2"
@@ -227,12 +227,6 @@ module.exports = function ($timeout) {
         }
     }
 }
-function validURL(str) {
-    var pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-        '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
-    return !!pattern.test(str);
+function validURL(url) {
+    return /^(ftp|http|https):\/\/[^ "]+$/.test(url);
 }

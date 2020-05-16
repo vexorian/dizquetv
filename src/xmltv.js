@@ -12,8 +12,8 @@ function WriteXMLTV(channels, xmlSettings) {
         ws.on('close', () => { resolve() })
         ws.on('error', (err) => { reject(err) })
         _writeDocStart(xw)
-        if (channels.length === 0) {
-            _writeChannels(xw, [{ number: 1, name: "PseudoTV", icon: null }])
+        if (channels.length === 0) { // Write Dummy PseudoTV Channel if no channel exists
+            _writeChannels(xw, [{ number: 1, name: "PseudoTV", icon: "https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png" }])
             let program = {
                 program: {
                     type: 'movie',
