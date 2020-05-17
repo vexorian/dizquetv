@@ -94,56 +94,96 @@ class FFMPEG extends events.EventEmitter {
         tmpargs[tsoffset] = this.offset
         tmpargs[output] = 'pipe:1'
 
-        let iconOverlay = `[0:${videoIndex}]null`
-        let deinterlace = 'null'
-        let posAry = [ '20:20', 'W-w-20:20', '20:H-h-20', 'W-w-20:H-h-20'] // top-left, top-right, bottom-left, bottom-right (with 20px padding)
-        let icnDur = ''
-        if (this.channel.iconDuration > 0)
-            icnDur = `:enable='between(t,0,${this.channel.iconDuration})'`
-        if (this.channel.icon !== '' && this.channel.overlayIcon && lineupItem.type === 'program') {
-            iconOverlay = `[1:v]scale=${this.channel.iconWidth}:-1[icn];[0:${videoIndex}][icn]overlay=${posAry[this.channel.iconPosition]}${icnDur}`
-            if (process.env.DEBUG) console.log('Channel Icon Overlay Enabled')
-        }
-
-        if (videoIndex !== 'v') {
-            if (typeof lineupItem.streams[videoIndex].scanType === 'undefined' || lineupItem.streams[videoIndex].scanType !== 'progressive') {
-                deinterlace = 'yadif'
-                if (process.env.DEBUG) console.log('Deinterlacing Video')
+        if (this.opts.videoStreamMode == "transcodeVideo") {
+            let iconOverlay = `[0:${videoIndex}]null`
+            let deinterlace = 'null'
+            let posAry = [ '20:20', 'W-w-20:20', '20:H-h-20', 'W-w-20:H-h-20'] // top-left, top-right, bottom-left, bottom-right (with 20px padding)
+            let icnDur = ''
+            if (this.channel.iconDuration > 0)
+                icnDur = `:enable='between(t,0,${this.channel.iconDuration})'`
+            if (this.channel.icon !== '' && this.channel.overlayIcon && lineupItem.type === 'program') {
+                iconOverlay = `[1:v]scale=${this.channel.iconWidth}:-1[icn];[0:${videoIndex}][icn]overlay=${posAry[this.channel.iconPosition]}${icnDur}`
+                if (process.env.DEBUG) console.log('Channel Icon Overlay Enabled')
             }
-        }
 
-        if (sub === null || lineupItem.type === 'commercial') { // No subs or icon overlays for Commercials
-            tmpargs[vidStream] = '[v]'
-            tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace}[v]`)
-            console.log("No Subtitles")
-        } else if (sub.codec === 'pgs') { // If program has PGS subs
-            tmpargs[vidStream] = '[v]'
-            if (typeof sub.index === 'undefined') { // If external subs
-                console.log("PGS SUBS (external) - Not implemented..")
+            if (videoIndex !== 'v') {
+                if (typeof lineupItem.streams[videoIndex].scanType === 'undefined' || lineupItem.streams[videoIndex].scanType !== 'progressive') {
+                    deinterlace = 'yadif'
+                    if (process.env.DEBUG) console.log('Deinterlacing Video')
+                }
+            }
+
+            if (sub === null || lineupItem.type === 'commercial') { // No subs or icon overlays for Commercials
+                tmpargs[vidStream] = '[v]'
                 tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace}[v]`)
-            } else {                    // Otherwise, internal/embeded pgs subs
-                console.log("PGS SUBS (embeded)")
-                tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v2];[v2]${deinterlace}[v1];[v1][0:${sub.index}]overlay[v]`)
+                console.log("No Subtitles")
+            } else if (sub.codec === 'pgs') { // If program has PGS subs
+                tmpargs[vidStream] = '[v]'
+                if (typeof sub.index === 'undefined') { // If external subs
+                    console.log("PGS SUBS (external) - Not implemented..")
+                    tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace}[v]`)
+                } else {                    // Otherwise, internal/embeded pgs subs
+                    console.log("PGS SUBS (embeded)")
+                    tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v2];[v2]${deinterlace}[v1];[v1][0:${sub.index}]overlay[v]`)
+                }
+            } else if (sub.codec === 'srt' || sub.codec === 'ass') {
+                tmpargs[vidStream] = '[v]'
+                if (typeof sub.index === 'undefined') {
+                    console.log("SRT SUBS (external)")
+                    await this.createSubsFromStream(sub.key, lineupItem.start / 1000, lineupItem.duration / 1000, 0, `${process.env.DATABASE}/${uniqSubFileName}.ass`)
+                    tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace},ass=${process.env.DATABASE}/${uniqSubFileName}.ass[v]`)
+                } else {
+                    console.log("SRT SUBS (embeded) - This may take a few seconds..")
+                    await this.createSubsFromStream(lineupItem.file, lineupItem.start / 1000, lineupItem.duration / 1000, sub.index, `${process.env.DATABASE}/${uniqSubFileName}.ass`)
+                    tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace},ass=${process.env.DATABASE}/${uniqSubFileName}.ass[v]`)
+                }
+            } else { // Can't do VobSub's as plex only hosts the .idx file, there is no access to the .sub file.. Who the fuck uses VobSubs anyways.. SRT/ASS FTW
+                tmpargs[vidStream] = '[v]'
+                tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace}[v]`)
+                console.log("No Compatible Subtitles")
             }
-        } else if (sub.codec === 'srt' || sub.codec === 'ass') {
-            tmpargs[vidStream] = '[v]'
-            if (typeof sub.index === 'undefined') {
-                console.log("SRT SUBS (external)")
-                await this.createSubsFromStream(sub.key, lineupItem.start / 1000, lineupItem.duration / 1000, 0, `${process.env.DATABASE}/${uniqSubFileName}.ass`)
-                tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace},ass=${process.env.DATABASE}/${uniqSubFileName}.ass[v]`)
-            } else {
-                console.log("SRT SUBS (embeded) - This may take a few seconds..")
-                await this.createSubsFromStream(lineupItem.file, lineupItem.start / 1000, lineupItem.duration / 1000, sub.index, `${process.env.DATABASE}/${uniqSubFileName}.ass`)
-                tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace},ass=${process.env.DATABASE}/${uniqSubFileName}.ass[v]`)
-            }
-        } else { // Can't do VobSub's as plex only hosts the .idx file, there is no access to the .sub file.. Who the fuck uses VobSubs anyways.. SRT/ASS FTW
-            tmpargs[vidStream] = '[v]'
-            tmpargs.splice(vidStream - 1, 0, "-filter_complex", `${iconOverlay}[v1];[v1]${deinterlace}[v]`)
-            console.log("No Compatible Subtitles")
+
+            if (this.channel.icon !== '' && this.channel.overlayIcon && lineupItem.type === 'program') // Add the channel icon to ffmpeg input if enabled
+                tmpargs.splice(vidStream - 1, 0, '-i', this.channel.icon)
         }
 
-        if (this.channel.icon !== '' && this.channel.overlayIcon && lineupItem.type === 'program') // Add the channel icon to ffmpeg input if enabled
-            tmpargs.splice(vidStream - 1, 0, '-i', this.channel.icon)
+        if (this.opts.audioStreamMode === "transcodeAudioBestMatch") {
+            let audChannels = lineupItem.streams[audioIndex].channels
+            let audCodec = lineupItem.streams[audioIndex].codec
+            let audSettingsIndex = tmpargs.indexOf('AUDIOBESTMATCHSETTINGS')
+
+            console.log("Transcoding audio by best match")
+            console.log("  Audio Channels: " + audChannels)
+            console.log("  Audio Codec: " + audCodec)
+
+            // don't transcode audio if audio format is known to work
+            if (this.opts.reduceAudioTranscodes && (audCodec === "aac" || audCodec === "ac3") && audChannels <= 6) {
+                tmpargs.splice(audSettingsIndex, 1, "copy")       
+                console.log("  Decision: Copied existing audio")     
+            } else if (audChannels === 7 && this.opts.transcodeSixPointOneAudioToFivePointOne === false) {
+                if ((audCodec === "aac" || audCodec === "ac3") && this.opts.reduceAudioTranscodes) {
+                    tmpargs.splice(audSettingsIndex, 1, "copy") 
+                    console.log("  Decision: Copied existing audio")     
+                } else {
+                    tmpargs.splice(audSettingsIndex, 1, this.opts.sixPointOneChAudioEncoder, "-ac", "7", "-ar", this.opts.sixPointOneChAudioRate, "-b:a", this.opts.sixPointOneChAudioBitrate + "k")
+                    console.log("  Decision: Transcoding audio to 6.1 - " + this.opts.sixPointOneChAudioEncoder)  
+                }
+            } else if (audChannels >= 6) {
+                if ((audCodec === "aac" || audCodec === "ac3") && this.opts.reduceAudioTranscodes) {
+                    tmpargs.splice(audSettingsIndex, 1, audCodec, "-ac", "6")
+                    console.log("  Decision: Transcoding audio to 5.1 - " + audCodec)  
+                } else {
+                    tmpargs.splice(audSettingsIndex, 1, this.opts.fivePointOneChAudioEncoder, "-ac", "6", "-ar", this.opts.fivePointOneChAudioRate, "-b:a", this.opts.fivePointOneChAudioBitrate + "k") 
+                    console.log("  Decision: Transcoding audio to 5.1 - " + this.opts.fivePointOneChAudioEncoder)  
+                }  
+            } else if (audChannels === 1) {
+                tmpargs.splice(audSettingsIndex, 1, this.opts.oneChAudioEncoder, "-ac", "1", "-ar", this.opts.oneChAudioRate, "-b:a", this.opts.oneChAudioBitrate + "k")
+                console.log("  Decision: Transcoding audio to 1.0 - " + this.opts.onePointOneChAudioEncoder)  
+            } else { // Last transcoding scenario, just go to 2 channel audio, boost center channel if specified
+                tmpargs.splice(audSettingsIndex, 1, this.opts.twoChAudioEncoder, "-ac", "2", "-ar", this.opts.twoChAudioRate, "-b:a", this.opts.twoChAudioBitrate + "k") 
+                console.log("  Decision: Transcoding audio to 2.0 - " + this.opts.twoChAudioEncoder)  
+            }
+        }
 
         this.offset += lineupItem.duration / 1000
         this.ffmpeg = spawn(this.ffmpegPath, tmpargs)
