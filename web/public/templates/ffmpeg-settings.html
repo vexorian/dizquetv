@@ -18,10 +18,6 @@
             <input type="number" class="form-control form-control-sm" ng-model="settings.threads" ng-change="createArgString()"/>
         </div>
         <div class="col-sm-4">
-            <label>Buffer Size (k)</label>
-            <input type="number" class="form-control form-control-sm" ng-model="settings.bufSize" ng-change="createArgString()"/>
-        </div>
-        <div class="col-sm-4">
             <label>Log FFMPEG</label><br/>
             <input id="logFfmpeg" type="checkbox" ng-model="settings.logFfmpeg"/> <label for="logFfmpeg">Log FFMPEG to console</label>
         </div>
@@ -29,6 +25,12 @@
     <hr/>
     <div class="row">
         <div class="col-sm-6">
+            <h6>Video Stream Mode</h6>
+            <select ng-model="settings.videoStreamMode" 
+                ng-options="o.id as o.description for o in videoStreamOptions" 
+                ng-change="createArgString()"/>
+        </div>
+        <div class="col-sm-6" ng-hide="hideIfNotTranscodeVideo()">
             <h6>Video Options</h6>
             <label>Video Encoder</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder" ng-change="createArgString()"/>
@@ -38,8 +40,22 @@
             <input type="text" class="form-control form-control-sm" ng-model="settings.videoResolution" ng-change="createArgString()"/>
             <label>Video Framerate</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.videoFrameRate" ng-change="createArgString()"/>
+            <label>Video Buffer Size (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufSize" ng-change="createArgString()"/>
         </div>
+        <div class="col-sm-6" ng-hide="hideIfNotDirectStreamVideo()">
+            <small>Notice: Under no circumstances, will video transcode. This means subtitles and channel logos are not supported.</small>
+        </div>
+    </div>
+    <hr/>
+    <div class="row">
         <div class="col-sm-6">
+            <h6>Audio Stream Mode</h6>
+            <select ng-model="settings.audioStreamMode" 
+                ng-options="o.id as o.description for o in audioStreamOptions" 
+                ng-change="createArgString()"/>
+        </div>
+        <div class="col-sm-6" ng-hide="hideIfNotTranscodeAudio2ch()">
             <h6>Audio Options</h6>
             <label>Audio Encoder</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.audioEncoder" ng-change="createArgString()"/>
@@ -49,6 +65,65 @@
             <input type="number" class="form-control form-control-sm" ng-model="settings.audioBitrate" ng-change="createArgString()"/>
             <label>Audio Rate</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.audioRate" ng-change="createArgString()"/>
+        </div>
+        <div class="col-sm-6" ng-hide="hideIfNotDirectStreamAudio()">
+            <small>Notice: If a audio codec is not supported by your player you may run into issues (no audio, video won't play, etc).</small>
+        </div>
+        <div class="col-sm-6" ng-hide="hideIfNotTranscodeAudioBestMatch()">
+            <small>Notice: In this mode audio with more channels than 6.1 will be transcoded down to 5.1.</small>
+        </div>
+    </div>
+    <br ng-hide="hideIfNotTranscodeAudioBestMatch()">
+    <div class="row" ng-hide="hideIfNotTranscodeAudioBestMatch()">
+        <div class="col-sm-6">
+          <input id="reduceAudioTranscodes" type="checkbox" ng-model="settings.reduceAudioTranscodes"/>
+          <label for="reduceAudioTranscodes">Don't transcode if known working format</label>
+          <small>(5.1 channels or less & AAC/AC3)</small>
+        </div>
+    </div>
+    <br ng-hide="hideIfNotTranscodeAudioBestMatch()">
+    <div class="row" ng-hide="hideIfNotTranscodeAudioBestMatch()">
+        <div class="col-sm-6">
+            <h6>1.0 Audio Options</h6>
+            <label>Audio Encoder</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.oneChAudioEncoder" ng-change="createArgString()"/>
+            <label>Audio Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.oneChAudioBitrate" ng-change="createArgString()"/>
+            <label>Audio Rate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.oneChAudioRate" ng-change="createArgString()"/>
+        </div>
+        <div class="col-sm-6">
+            <h6>2.0 Audio Options</h6>
+            <label>Audio Encoder</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.twoChAudioEncoder" ng-change="createArgString()"/>
+            <label>Audio Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.twoChAudioBitrate" ng-change="createArgString()"/>
+            <label>Audio Rate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.twoChAudioRate" ng-change="createArgString()"/>
+        </div>
+    </div>
+    <br ng-hide="hideIfNotTranscodeAudioBestMatch()">
+    <div class="row" ng-hide="hideIfNotTranscodeAudioBestMatch()">
+        <div class="col-sm-6">
+            <h6>5.1 Audio Options</h6>
+            <label>Audio Encoder</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.fivePointOneChAudioEncoder" ng-change="createArgString()"/>
+            <label>Audio Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.fivePointOneChAudioBitrate" ng-change="createArgString()"/>
+            <label>Audio Rate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.fivePointOneChAudioRate" ng-change="createArgString()"/>
+        </div>
+        <div class="col-sm-6">
+            <h6>6.1 Audio Options</h6>
+            <input id="transcodeSixPointOneAudioToFivePointOne" type="checkbox" ng-model="settings.transcodeSixPointOneAudioToFivePointOne"/>
+            <label for="reduceAudioTranscodes">Transcode 6.1 to 5.1</label>
+            <br>
+            <label>Audio Encoder</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.sixPointOneChAudioEncoder" ng-change="createArgString()" />
+            <label>Audio Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.sixPointOneChAudioBitrate" ng-change="createArgString()"/>
+            <label>Audio Rate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.sixPointOneChAudioRate" ng-change="createArgString()"/>
         </div>
     </div>
     <hr/>
