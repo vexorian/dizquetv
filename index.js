@@ -1,3 +1,5 @@
+var pseudotvVersion = "0.5.1";
+
 const db = require('diskdb')
 const fs = require('fs')
 const path = require('path')
@@ -10,6 +12,8 @@ const HDHR = require('./src/hdhr')
 
 const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex')
+
+console.log("PseudoTV Version: " + pseudotvVersion)
 
 for (let i = 0, l = process.argv.length; i < l; i++) {
     if ((process.argv[i] === "-p" || process.argv[i] === "--port") && i + 1 !== l)
