@@ -165,7 +165,7 @@ class FFMPEG extends events.EventEmitter {
             else if (code === 255)
                 this.emit('close', code)
             else
-                this.emit('error', { code: code, cmd: `${opts.ffmpegPath} ${tmpargs.join(' ')}` })
+                this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${tmpargs.join(' ')}` })
         })
     }
     kill() {
