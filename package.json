@@ -36,7 +36,8 @@
       "x64",
       "linux",
       "macos",
-      "windows"
+      "windows",
+      "armv7"
     ]
   },
   "devDependencies": {
