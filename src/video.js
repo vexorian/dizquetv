@@ -2,6 +2,7 @@ const express = require('express')
 const helperFuncs = require('./helperFuncs')
 const FFMPEG = require('./ffmpeg')
 const FFMPEG_TEXT = require('./ffmpegText')
+const PlexTranscoder = require('./plexTranscoder')
 const fs = require('fs')
 
 module.exports = { router: video }
@@ -55,7 +56,9 @@ function video(db) {
         // Get video lineup (array of video urls with calculated start times and durations.)
         let prog = helperFuncs.getCurrentProgramAndTimeElapsed(Date.now(), channel)
         let lineup = helperFuncs.createLineup(prog)
+        let lineupItem = lineup.shift()
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
+        let plexSettings = db['plex-settings'].find()[0]
 
         // Check if ffmpeg path is valid
         if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
@@ -66,35 +69,84 @@ function video(db) {
 
         console.log(`\r\nStream starting. Channel: ${channel.number} (${channel.name})`)
 
-        let ffmpeg = new FFMPEG(ffmpegSettings, channel)  // Set the transcoder options
+        let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+        let plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
+
+        let enableChannelIcon = helperFuncs.isChannelIconEnabled(ffmpegSettings.enableChannelOverlay, channel.icon, channel.overlayIcon, lineupItem.type)
+        let deinterlace = enableChannelIcon // Tell plex to deinterlace video if channel overlay is enabled
 
         ffmpeg.on('data', (data) => { res.write(data) })
 
         ffmpeg.on('error', (err) => {
-            console.error("FFMPEG ERROR", err)
-            res.status(500).send("FFMPEG ERROR")
-            return
+            plexTranscoder.stopUpdatingPlex();
+            console.error("FFMPEG ERROR", err);
+            res.status(500).send("FFMPEG ERROR");
+            return;
         })
 
         ffmpeg.on('close', () => {
-            res.send()
+            res.send();
         })
 
         ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...
-            if (lineup.length === 0) { // refresh the expired program/lineup
-                prog = helperFuncs.getCurrentProgramAndTimeElapsed(Date.now(), channel)
-                lineup = helperFuncs.createLineup(prog)
+            plexTranscoder.stopUpdatingPlex();
+            if (ffmpegSettings.enableAutoPlay == true) {    
+                oldVideoStats = plexTranscoder.getVideoStats(enableChannelIcon, ffmpegSettings.videoEncoder);
+
+                if (lineup.length === 0) { // refresh the expired program/lineup
+                    prog = helperFuncs.getCurrentProgramAndTimeElapsed(Date.now(), channel);
+                    lineup = helperFuncs.createLineup(prog);
+                }
+                lineupItem = lineup.shift();
+
+                enableChannelIcon = helperFuncs.isChannelIconEnabled(ffmpegSettings.enableChannelOverlay, channel.icon, channel.overlayIcon, lineupItem.type)
+                deinterlace = enableChannelIcon
+
+                streamDuration = lineupItem.streamDuration / 1000;
+                // Only episode in this lineup, or item is a commercial, let stream end naturally
+                if (lineup.length === 0 || lineupItem.type === 'commercial' || lineup.length === 1 && lineup[0].type === 'commercial')
+                    streamDuration = -1
+
+                plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
+
+                plexTranscoder.getStreamUrl(deinterlace).then(
+                    function(streamUrl) { 
+                        newVideoStats = plexTranscoder.getVideoStats(enableChannelIcon);
+                        // Start stream if stats are the same. Changing codecs mid stream is not good
+                        if (ffmpegSettings.breakStreamOnCodecChange == false || oldVideoStats.length == newVideoStats.length
+                            && oldVideoStats.every(function(u, i) {
+                                return u === newVideoStats[i];
+                            })
+                        ) {
+                            ffmpeg.spawn(streamUrl, streamDuration, enableChannelIcon, plexTranscoder.getResolutionHeight());
+                            plexTranscoder.startUpdatingPlex();
+                        } else {
+                            console.log(`\r\nEnding Stream, video or audio format has changed. Channel: ${channel.number} (${channel.name})`);
+                            console.log(`   Old Stream: ${oldVideoStats}`);
+                            console.log(`   New Stream: ${newVideoStats}`);
+                            ffmpeg.kill();
+                        }
+                    });
+            } else {
+                console.log(`\r\nEnding Stream, autoplay is disabled. Channel: ${channel.number} (${channel.name})`);
+                ffmpeg.kill();
             }
-            ffmpeg.spawn(lineup.shift(), prog.program) // Spawn the next ffmpeg process
         })
 
         res.on('close', () => { // on HTTP close, kill ffmpeg
-            ffmpeg.kill()
-            console.log(`\r\nStream ended. Channel: ${channel.number} (${channel.name})`)
+            plexTranscoder.stopUpdatingPlex();
+            console.log(`\r\nStream ended. Channel: ${channel.number} (${channel.name})`);
+            ffmpeg.kill();
         })
 
-        ffmpeg.spawn(lineup.shift(), prog.program) // Spawn the ffmpeg process, fire this bitch up
+        let streamDuration = lineupItem.streamDuration / 1000;
 
+        // Only episode in this lineup, or item is a commercial, let stream end naturally
+        if (lineup.length === 0 || lineupItem.type === 'commercial' || lineup.length === 1 && lineup[0].type === 'commercial')
+            streamDuration = -1
+        
+        plexTranscoder.getStreamUrl(deinterlace).then(streamUrl => ffmpeg.spawn(streamUrl, streamDuration, enableChannelIcon, plexTranscoder.getResolutionHeight())); // Spawn the ffmpeg process, fire this bitch up
+        plexTranscoder.startUpdatingPlex();
     })
     return router
 }

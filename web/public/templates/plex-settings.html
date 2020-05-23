@@ -76,4 +76,77 @@
     </tr>
 </table>
 
+<hr>
+<h6>Plex Transcoder Settings
+
+    <button class="pull-right btn btn-sm btn-success" style="margin-left: 5px;" ng-click="updateSettings(settings)">
+        Update
+    </button>
+    <button class="pull-right btn btn-sm btn-info" ng-click="resetSettings(settings)">
+        Reset Options
+    </button>
+</h6>
+<hr>
+<div class="row" >
+    <div class="col-sm-6">
+        <h6 style="font-weight: bold">Video Options</h6>
+        <div class="form-group">
+            <label>Max Playable Resolution</label>
+            <select ng-model="settings.maxPlayableResolution" 
+                ng-options="o.id as o.description for o in resolutionOptions" />
+        </div>
+        <div class="form-group">
+            <label>Max Transcode Resolution</label>
+            <select ng-model="settings.maxTranscodeResolution" 
+                ng-options="o.id as o.description for o in resolutionOptions "/>
+        </div>
+        <div class="form-group">
+            <input id="enableHEVC" type="checkbox" ng-model="settings.enableHEVC"/>
+            <label for="enableHEVC">Enable H265</label>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <h6 style="font-weight: bold">Audio Options</h6>
+        <div class="form-group">
+            <label>Supported Audio Formats</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.audioCodecs" />
+        </div>
+        <div class="form-group">
+            <label>Maximum Audio Channels</label>
+            <select ng-model="settings.maxAudioChannels" 
+                ng-options="o.id as o.description for o in maxAudioChannelsOptions" ria-describedby="maxAudioChannelsHelp"/>
+            <small id="maxAudioChannelsHelp" class="form-text text-muted">Note: 7.1 audio and on some clients, 6.1, is known to cause playback issues.</small>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-6">
+        <h6 style="font-weight: bold">Miscellaneous Options</h6>
+        <div class="form-group">
+            <label>Max Direct Stream Bitrate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.directStreamBitrate" />
+        </div>
+        <div class="form-group">
+            <label>Max Transcode Bitrate</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeBitrate" />
+        </div>
+        <div class="form-group">
+            <input id="updatePlayStatus" type="checkbox" ng-model="settings.updatePlayStatus" ria-describedby="updatePlayStatusHelp"/>
+            <label for="updatePlayStatus">Send play status to Plex</label>
+            <small id="updatePlayStatusHelp" class="form-text text-muted">Note: This affects the "on deck" for your plex account.</small>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <h6 style="font-weight: bold">Subtitle Options</h6>
+        <div class="form-group">
+            <label>Subtitle Size</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.subtitleSize" />
+        </div>
+        <div class="form-group">
+            <input id="enableSubtitles" type="checkbox" ng-model="settings.enableSubtitles"/>
+            <label for="enableSubtitles">Enable Subtitles (Requires Transcoding)</label>
+        </div>
+    </div>
+</div>
+
 </div>

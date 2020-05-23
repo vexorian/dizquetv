@@ -19,6 +19,25 @@ module.exports = function ($http) {
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
         },
+        getPlexSettings: () => {
+            return $http.get('/api/plex-settings').then((d) => { return d.data })
+        },
+        updatePlexSettings: (config) => {
+            return $http({
+                method: 'PUT',
+                url: '/api/plex-settings',
+                data: angular.toJson(config),
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            }).then((d) => { return d.data })
+        },
+        resetPlexSettings: (config) => {
+            return $http({
+                method: 'POST',
+                url: '/api/plex-settings',
+                data: angular.toJson(config),
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            }).then((d) => { return d.data })
+        },
         getFfmpegSettings: () => {
             return $http.get('/api/ffmpeg-settings').then((d) => { return d.data })
         },
