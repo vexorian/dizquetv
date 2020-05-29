@@ -77,33 +77,6 @@
                         </div>
                     </div>
                     <div>
-                        <h6>Streams</h6>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label for="videoStream">Video Track</label><br/>
-                                <select class="form-control form-control-sm" ng-model="program.opts.videoIndex">
-                                    <option value="-1">Plex Default</option>
-                                    <option ng-repeat="x in program.streams" ng-if="x.streamType === 1" value="{{x.index}}">{{x.displayTitle}}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="audioStream">Audio Track</label><br/>
-                                <select class="form-control form-control-sm" ng-model="program.opts.audioIndex">
-                                    <option value="-1">Plex Default</option>
-                                    <option ng-repeat="x in program.streams" ng-if="x.streamType === 2" value="{{x.index}}">{{x.displayTitle}}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="subtitleStream">Subtitle Track</label><br/>
-                                <select class="form-control form-control-sm" ng-model="program.opts.subtitleIndex">
-                                    <option value="-2">No Subtitles</option>
-                                    <option value="-1">Plex Default</option>
-                                    <option ng-repeat="x in program.streams" ng-if="x.streamType === 3" value="{{$index}}">{{x.displayTitle}}</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
                         <h6 style="margin-top: 10px;">Commercials
                             <button class="btn btn-sm btn-primary pull-right" ng-click="showPlexLibrary = true">
                                 <span class="fa fa-plus"></span>

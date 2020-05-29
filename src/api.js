@@ -64,65 +64,47 @@ function api(db, xmltvInterval) {
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
         db['ffmpeg-settings'].update({ _id: req.body._id }, {
             ffmpegPath: req.body.ffmpegPath,
-            videoStreamMode: 'transcodeVideo',
-            audioStreamMode: 'transcodeAudio',
-            reduceAudioTranscodes: true,
-            offset: 0,
+            enableChannelOverlay: false,
             threads: 4,
-            videoEncoder: 'libx264',
-            videoResolution: '1280x720',
-            videoFrameRate: 30,
+            videoEncoder: 'mpeg2video',
+            videoResolutionHeight: 'unchanged',
             videoBitrate: 10000,
-            videoBufSize: 1000,
-            audioBitrate: 192,
-            audioChannels: 2,
-            audioRate: 48000,
-            audioEncoder: 'ac3',
-            oneChAudioBitrate: 156,
-            oneChAudioRate: 48000,
-            oneChAudioEncoder: 'ac3',
-            twoChAudioBitrate: 192,
-            twoChAudioRate: 48000,
-            twoChAudioEncoder: 'ac3',
-            fivePointOneChAudioBitrate: 336,
-            fivePointOneChAudioRate: 48000,
-            fivePointOneChAudioEncoder: 'ac3',
-            sixPointOneChAudioBitrate: 350,
-            sixPointOneChAudioRate: 48000,
-            sixPointOneChAudioEncoder: 'ac3',
-            transcodeSixPointOneAudioToFivePointOne: false,
-            logFfmpeg: false,
-            args: `-threads 4
--ss STARTTIME
--re
--i INPUTFILE
--t DURATION
--map VIDEOSTREAM
--map AUDIOSTREAM
--c:v libx264
--c:a ac3
--ac 2
--ar 48000
--b:a 192k
--b:v 10000k
--s 1280x720
--r 30
--flags cgop+ilme
--sc_threshold 1000000000
--minrate:v 10000k
--maxrate:v 10000k
--bufsize:v 1000k
--metadata service_provider="PseudoTV"
--metadata CHANNELNAME
--f mpegts
--output_ts_offset TSOFFSET
--muxdelay 0
--muxpreload 0
-OUTPUTFILE`
+            videoBufSize: 2000,
+            enableAutoPlay: true,
+            breakStreamOnCodecChange: true,
+            logFfmpeg: true
         })
         let ffmpeg = db['ffmpeg-settings'].find()[0]
         res.send(ffmpeg)
     })
+
+    // PLEX SETTINGS
+    router.get('/api/plex-settings', (req, res) => {
+        let plex = db['plex-settings'].find()[0]
+        res.send(plex)
+    })
+    router.put('/api/plex-settings', (req, res) => {
+        db['plex-settings'].update({ _id: req.body._id }, req.body)
+        let plex = db['plex-settings'].find()[0]
+        res.send(plex)
+    })
+    router.post('/api/plex-settings', (req, res) => { // RESET
+        db['plex-settings'].update({ _id: req.body._id }, {
+            directStreamBitrate: '40000',
+            transcodeBitrate: '3000',
+            maxPlayableResolution: "1920x1080",
+            maxTranscodeResolution: "1920x1080",
+            enableHEVC: true,
+            audioCodecs: 'ac3,aac,mp3',
+            maxAudioChannels: '6',
+            enableSubtitles: false,
+            subtitleSize: '100',
+            updatePlayStatus: false
+        })
+        let plex = db['plex-settings'].find()[0]
+        res.send(plex)
+    })
+
     router.get('/api/xmltv-last-refresh', (req, res) => {
         res.send(JSON.stringify({ value: xmltvInterval.lastUpdated.valueOf() }))
     })

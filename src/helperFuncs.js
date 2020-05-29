@@ -1,6 +1,7 @@
 module.exports = {
     getCurrentProgramAndTimeElapsed: getCurrentProgramAndTimeElapsed,
-    createLineup: createLineup
+    createLineup: createLineup,
+    isChannelIconEnabled: isChannelIconEnabled
 }
 
 function getCurrentProgramAndTimeElapsed(date, channel) {
@@ -25,6 +26,12 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
 
 function createLineup(obj) {
     let timeElapsed = obj.timeElapsed
+    // Start time of a file is never consistent unless 0. Run time of an episode can vary. 
+    // When within 30 seconds of start time, just make the time 0 to smooth things out
+    // Helps prevents loosing first few seconds of an episode upon lineup change
+    if (timeElapsed < 30000) {
+        timeElapsed = 0
+    }
     let activeProgram = obj.program
     let lineup = []
     let programStartTimes = [0, activeProgram.actualDuration * .25, activeProgram.actualDuration * .50, activeProgram.actualDuration * .75, activeProgram.actualDuration]
@@ -40,23 +47,25 @@ function createLineup(obj) {
                 foundFirstVideo = true // We found the fucker
                 lineup.push({
                     type: 'commercial',
-                    file: commercials[i][y].file,
-                    streams: commercials[i][y].streams,
+                    key: commercials[i][y].key,
+                    ratingKey: commercials[i][y].ratingKey,
                     start: timeElapsed, // start time will be the time elapsed, cause this is the first video
-                    duration: commercials[i][y].duration - timeElapsed, // duration set accordingly
-                    opts: commercials[i][y].opts
+                    streamDuration: commercials[i][y].duration - timeElapsed, // stream duration set accordingly
+                    duration: commercials[i][y].duration,
+                    server: commercials[i][y].server
                 })
             } else if (foundFirstVideo) {   // Otherwise, if weve already found the starting video
                 lineup.push({   // just add the video, starting at 0, playing the entire duration
                     type: 'commercial',
-                    file: commercials[i][y].file,
-                    streams: commercials[i][y].streams,
+                    key: commercials[i][y].key,
+                    ratingKey: commercials[i][y].ratingKey,
                     start: 0,
-                    duration: commercials[i][y].duration,
-                    opts: commercials[i][y].opts
+                    streamDuration: commercials[i][y].actualDuration,
+                    duration: commercials[i][y].actualDuration,
+                    server: commercials[i][y].server
                 })
             } else {    // Otherwise, this bitch has already been played.. Reduce the time elapsed by its duration
-                timeElapsed -= commercials[i][y].duration
+                timeElapsed -= commercials[i][y].actualDuration
             }
         }
         if (i < l - 1) { // The last commercial slot is END, so dont write a program..
@@ -64,23 +73,25 @@ function createLineup(obj) {
                 foundFirstVideo = true
                 lineup.push({
                     type: 'program',
-                    file: activeProgram.file,
-                    streams: activeProgram.streams,
+                    key: activeProgram.key,
+                    ratingKey: activeProgram.ratingKey,
                     start: progTimeElapsed + timeElapsed, // add the duration of already played program chunks to the timeElapsed
-                    duration: (programStartTimes[i + 1] - programStartTimes[i]) - timeElapsed,
-                    opts: activeProgram.opts
+                    streamDuration: (programStartTimes[i + 1] - programStartTimes[i]) - timeElapsed,
+                    duration: activeProgram.actualDuration,
+                    server: activeProgram.server
                 })
             } else if (foundFirstVideo) {
                 if (lineup[lineup.length - 1].type === 'program') { // merge consecutive programs..
-                    lineup[lineup.length - 1].duration += (programStartTimes[i + 1] - programStartTimes[i])
+                    lineup[lineup.length - 1].streamDuration += (programStartTimes[i + 1] - programStartTimes[i])
                 } else {
                     lineup.push({
                         type: 'program',
-                        file: activeProgram.file,
-                        streams: activeProgram.streams,
+                        key: activeProgram.key,
+                        ratingKey: activeProgram.ratingKey,
                         start: programStartTimes[i],
-                        duration: (programStartTimes[i + 1] - programStartTimes[i]),
-                        opts: activeProgram.opts
+                        streamDuration: (programStartTimes[i + 1] - programStartTimes[i]),
+                        duration: activeProgram.actualDuration,
+                        server: activeProgram.server
                     })
                 }
             } else {
@@ -90,4 +101,8 @@ function createLineup(obj) {
         }
     }
     return lineup
+}
+
+function isChannelIconEnabled(enableChannelOverlay, icon, overlayIcon, type) {
+    return enableChannelOverlay == true && icon !== '' && overlayIcon && type === 'program'
 }

@@ -112,6 +112,7 @@ module.exports = function ($http, $window, $interval) {
                 var program = {
                     title: res.Metadata[i].title,
                     key: res.Metadata[i].key,
+                    ratingKey: res.Metadata[i].ratingKey,
                     server: server,
                     icon: `${server.protocol}://${server.host}:${server.port}${res.Metadata[i].thumb}?X-Plex-Token=${server.token}`,
                     type: res.Metadata[i].type,
@@ -123,10 +124,6 @@ module.exports = function ($http, $window, $interval) {
                     rating: res.Metadata[i].contentRating,
                     date: res.Metadata[i].originallyAvailableAt,
                     year: res.Metadata[i].year,
-                }
-                if (program.type === 'episode' || program.type === 'movie') {
-                    program.file = `${server.protocol}://${server.host}:${server.port}${res.Metadata[i].Media[0].Part[0].key}?X-Plex-Token=${server.token}`
-                    program.opts = { deinterlace: false, videoIndex: '-1', audioIndex: '-1', subtitleIndex: '-2' }
                 }
                 if (program.type === 'episode') {
                     program.showTitle = res.Metadata[i].grandparentTitle
