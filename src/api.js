@@ -92,14 +92,17 @@ function api(db, xmltvInterval) {
         db['plex-settings'].update({ _id: req.body._id }, {
             directStreamBitrate: '40000',
             transcodeBitrate: '3000',
+            mediaBufferSize: 1000,
+            transcodeMediaBufferSize: 20000,
             maxPlayableResolution: "1920x1080",
             maxTranscodeResolution: "1920x1080",
-            enableHEVC: true,
+            videoCodecs: 'h264,hevc,mpeg2video',
             audioCodecs: 'ac3,aac,mp3',
             maxAudioChannels: '6',
             enableSubtitles: false,
             subtitleSize: '100',
-            updatePlayStatus: false
+            updatePlayStatus: false,
+            streamProtocol: 'http'
         })
         let plex = db['plex-settings'].find()[0]
         res.send(plex)
@@ -167,11 +170,11 @@ function api(db, xmltvInterval) {
         let channels = db['channels'].find()
         var data = "#EXTM3U\n"
         for (var i = 0; i < channels.length; i++) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}",${channels[i].name}\n`
+            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="PseudoTV",${channels[i].name}\n`
             data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
         }
         if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-name="PseudoTV" tvg-logo="https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png",PseudoTV\n`
+            data += `#EXTINF:0 tvg-id="1" tvg-name="PseudoTV" tvg-logo="https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png" group-title="PseudoTV",PseudoTV\n`
             data += `${req.protocol}://${req.get('host')}/setup\n`
         }
         res.send(data)

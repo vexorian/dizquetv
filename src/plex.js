@@ -1,8 +1,9 @@
 const request = require('request')
 class Plex {
     constructor(opts) {
-        this._token = typeof opts.token !== 'undefined' ? opts.token : ''
+        this._accessToken = typeof opts.accessToken !== 'undefined' ? opts.accessToken : ''
         this._server = {
+            uri: typeof opts.uri !== 'undefined' ? opts.uri : 'http://127.0.0.1:32400',
             host: typeof opts.host !== 'undefined' ? opts.host : '127.0.0.1',
             port: typeof opts.port !== 'undefined' ? opts.port : '32400',
             protocol: typeof opts.protocol !== 'undefined' ? opts.protocol : 'http'
@@ -19,7 +20,7 @@ class Plex {
         }
     }
 
-    get URL() { return `${this._server.protocol}://${this._server.host}:${this._server.port}` }
+    get URL() { return `${this._server.uri}` }
 
     SignIn(username, password) {
         return new Promise((resolve, reject) => {
@@ -41,8 +42,8 @@ class Plex {
                 if (err || res.statusCode !== 201)
                     reject("Plex 'SignIn' Error - Username/Email and Password is incorrect!.")
                 else {
-                    this._token = JSON.parse(body).user.authToken
-                    resolve({ token: this._token })
+                    this._accessToken = JSON.parse(body).user.authToken
+                    resolve({ accessToken: this._accessToken })
                 }
             })
         })
@@ -55,9 +56,9 @@ class Plex {
             jar: false
         }
         Object.assign(req, optionalHeaders)
-        req.headers['X-Plex-Token'] = this._token
+        req.headers['X-Plex-Token'] = this._accessToken
         return new Promise((resolve, reject) => {
-            if (this._token === '')
+            if (this._accessToken === '')
                 reject("No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.")
             else
                 request(req, (err, res) => {
@@ -77,9 +78,9 @@ class Plex {
             jar: false
         }
         Object.assign(req, optionalHeaders)
-        req.headers['X-Plex-Token'] = this._token
+        req.headers['X-Plex-Token'] = this._accessToken
         return new Promise((resolve, reject) => {
-            if (this._token === '')
+            if (this._accessToken === '')
                 reject("No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.")
             else
                 request(req, (err, res) => {
@@ -99,9 +100,9 @@ class Plex {
             jar: false
         }
         Object.assign(req, optionalHeaders)
-        req.headers['X-Plex-Token'] = this._token
+        req.headers['X-Plex-Token'] = this._accessToken
         return new Promise((resolve, reject) => {
-            if (this._token === '')
+            if (this._accessToken === '')
                 reject("No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.")
             else
                 request(req, (err, res) => {

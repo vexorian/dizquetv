@@ -123,14 +123,17 @@ function initDB(db) {
         db['plex-settings'].save({
             directStreamBitrate: '40000',
             transcodeBitrate: '3000',
+            mediaBufferSize: 1000,
+            transcodeMediaBufferSize: 20000,
             maxPlayableResolution: "1920x1080",
             maxTranscodeResolution: "1920x1080",
-            enableHEVC: true,
+            videoCodecs: 'h264,hevc,mpeg2video',
             audioCodecs: 'ac3,aac,mp3',
             maxAudioChannels: '6',
             enableSubtitles: false,
             subtitleSize: '100',
-            updatePlayStatus: false
+            updatePlayStatus: false,
+            streamProtocol: 'http'
         })
     }
 
