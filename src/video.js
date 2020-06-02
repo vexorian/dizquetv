@@ -103,9 +103,6 @@ function video(db) {
                 deinterlace = enableChannelIcon
 
                 streamDuration = lineupItem.streamDuration / 1000;
-                // Only episode in this lineup, or item is a commercial, let stream end naturally
-                if (lineup.length === 0 || lineupItem.type === 'commercial' || lineup.length === 1 && lineup[0].type === 'commercial')
-                    streamDuration = -1
 
                 plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
 
@@ -140,11 +137,7 @@ function video(db) {
         })
 
         let streamDuration = lineupItem.streamDuration / 1000;
-
-        // Only episode in this lineup, or item is a commercial, let stream end naturally
-        if (lineup.length === 0 || lineupItem.type === 'commercial' || lineup.length === 1 && lineup[0].type === 'commercial')
-            streamDuration = -1
-        
+       
         plexTranscoder.getStreamUrl(deinterlace).then(streamUrl => ffmpeg.spawn(streamUrl, streamDuration, enableChannelIcon, plexTranscoder.getResolutionHeight())); // Spawn the ffmpeg process, fire this bitch up
         plexTranscoder.startUpdatingPlex();
     })

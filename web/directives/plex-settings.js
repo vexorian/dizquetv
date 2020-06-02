@@ -8,34 +8,21 @@ module.exports = function (plex, pseudotv, $timeout) {
             pseudotv.getPlexServers().then((servers) => {
                 scope.servers = servers
             })
-            scope.plex = { protocol: 'http', host: '', port: '32400', arGuide: false, arChannels: false }
-            scope.addPlexServer = function (p) {
+            scope.addPlexServer = function () {
                 scope.isProcessing = true
-                if (scope.plex.host === '') {
-                    scope.isProcessing = false
-                    scope.error = 'Invalid HOST set'
-                    $timeout(() => {
-                        scope.error = null
-                    }, 3500)
-                    return
-                } else if (scope.plex.port <= 0) {
-                    scope.isProcessing = false
-                    scope.error = 'Invalid PORT set'
-                    $timeout(() => {
-                        scope.error = null
-                    }, 3500)
-                    return
-                }
-                plex.login(p)
+                plex.login()
                     .then((result) => {
-                        p.token = result.token
-                        p.name = result.name
-                        return pseudotv.addPlexServer(p)
+                        result.servers.forEach((server) => {
+                            // add in additional settings
+                            server.arGuide = true
+                            server.arChannels = false // should not be enabled unless PseudoTV tuner already added to plex
+                            pseudotv.addPlexServer(server)
+                        });
+                        return pseudotv.getPlexServers()
                     }).then((servers) => {
                         scope.$apply(() => {
                             scope.servers = servers
                             scope.isProcessing = false
-                            scope.visible = false
                         })
                     }, (err) => {
                         scope.$apply(() => {
@@ -52,9 +39,6 @@ module.exports = function (plex, pseudotv, $timeout) {
                     .then((servers) => {
                         scope.servers = servers
                     })
-            }
-            scope.toggleVisiblity = function () {
-                scope.visible = !scope.visible
             }
             pseudotv.getPlexSettings().then((settings) => {
                 scope.settings = settings
@@ -87,6 +71,10 @@ module.exports = function (plex, pseudotv, $timeout) {
                 {id:"1280x720",description:"1280x720"},
                 {id:"1920x1080",description:"1920x1080"},
                 {id:"3840x2160",description:"3840x2160"}
+            ];
+            scope.streamProtocols=[
+                {id:"http",description:"HTTP"},
+                {id:"hls",description:"HLS"}
             ];
         }
     };

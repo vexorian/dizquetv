@@ -10,12 +10,11 @@ class FFMPEG extends events.EventEmitter {
         this.ffmpegPath = opts.ffmpegPath
     }
     async spawn(streamUrl, duration, enableIcon, videoResolution) {
-        let ffmpegArgs = [`-threads`, this.opts.threads];
-
-        if (duration > 0)
-            ffmpegArgs.push(`-t`, duration);
-
-        ffmpegArgs.push(`-re`, `-i`, streamUrl);
+        let ffmpegArgs = [`-threads`, this.opts.threads,
+            `-t`, duration,
+            `-re`,
+            `-fflags`, `+genpts`,
+            `-i`, streamUrl];
 
         if (enableIcon == true) {
             if (process.env.DEBUG) console.log('Channel Icon Overlay Enabled')
@@ -83,7 +82,9 @@ class FFMPEG extends events.EventEmitter {
         })
     }
     kill() {
-        this.ffmpeg.kill()
+        if (typeof this.ffmpeg != "undefined") {
+            this.ffmpeg.kill('SIGQUIT')
+        }
     }
 }
 

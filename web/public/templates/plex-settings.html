@@ -1,54 +1,16 @@
 <div>
     <h5>Plex Settings</h5>
-<h6 ng-init="visible = false">Plex Servers
-    <button ng-hide="visible" class="pull-right btn btn-sm btn-primary" ng-click="toggleVisiblity()">
-        <span class="fa fa-plus"></span>
+<h6>Plex Servers
+    <button class="pull-right btn btn-sm btn-success" style="margin-bottom:10px;" ng-disabled="isProcessing" ng-click="addPlexServer()">
+        Sign In/Add Servers
     </button>
 </h6>
-<div ng-if="visible">
-    <form>
-    <h6>Add a Plex Server
-        <span class="pull-right text-danger">{{error}}</span>
+<div ng-if="isProcessing">
+    <br>
+    <h6>
         <span class="pull-right text-info">{{ isProcessing ? 'You have 2 minutes to sign into your Plex Account.' : ''}}</span>
     </h6>
-    <div class="form-row">
-        <div class="form-group col-sm-2">
-            <select class="form-control form-control-sm" ng-model="plex.protocol">
-                <option value="http">http</option>
-                <option value="https">https</option>
-            </select>
-        </div>
-        <div class="form-group col-sm-5">
-            <input class="form-control form-control-sm" type="text" ng-model="plex.host" ng-disabled="isProcessing" placeholder="Use network address. Do NOT use 127.0.0.1 or localhost)"/>
-        </div>
-        <div class="form-group col-sm-5">
-            <input class="form-control form-control-sm" type="text" ng-model="plex.port" ng-disabled="isProcessing" placeholder="Plex port"/>
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col-sm-4">
-            <div class="form-control form-control-sm">
-                <input id="arGuide" type="checkbox" ng-model="plex.arGuide" ng-disabled="isProcessing">
-                <label for="arGuide">Auto Refresh Guide</label>
-            </div>
-        </div>
-        <div class="form-group col-sm-4">
-            <div class="form-control form-control-sm">
-                <input id="arChannels" type="checkbox" ng-model="plex.arChannels" ng-disabled="isProcessing">
-                <label for="arChannels">Auto Map Channels</label>
-            </div>
-        </div>
-        <div class="form-group col-sm-4">
-            <span class="pull-right">
-                <button class="btn btn-sm btn-link" type="button" ng-click="toggleVisiblity()" ng-disabled="isProcessing">Cancel</button>
-                <input class="btn btn-sm btn-success" type="submit" ng-click="addPlexServer(plex)" ng-disabled="isProcessing" value="Sign In/Add Server"/>
-            </span>
-        </div>
-    </div>
-    </form>
-    <p class="text-danger text-center">
-        <b>WARNING - Do not check "Auto Map Channels" unless the PseudoTV tuner is added to this specific Plex server.</b>
-    </p>
+    <br>
 </div>
 <table class="table">
     <tr>
@@ -65,7 +27,7 @@
     </tr>
     <tr ng-repeat="x in servers">
         <td>{{ x.name }}</td>
-        <td>{{ x.protocol }}://{{ x.host }}:{{ x.port }}</td>
+        <td>{{ x.uri }}</td>
         <td>{{ x.arGuide }}</td>
         <td>{{ x.arChannels }}</td>
         <td>
@@ -91,6 +53,10 @@
     <div class="col-sm-6">
         <h6 style="font-weight: bold">Video Options</h6>
         <div class="form-group">
+            <label>Supported Video Formats</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.videoCodecs" ria-describedby="videoCodecsHelp"/>
+        </div>
+        <div class="form-group">
             <label>Max Playable Resolution</label>
             <select ng-model="settings.maxPlayableResolution" 
                 ng-options="o.id as o.description for o in resolutionOptions" />
@@ -99,10 +65,6 @@
             <label>Max Transcode Resolution</label>
             <select ng-model="settings.maxTranscodeResolution" 
                 ng-options="o.id as o.description for o in resolutionOptions "/>
-        </div>
-        <div class="form-group">
-            <input id="enableHEVC" type="checkbox" ng-model="settings.enableHEVC"/>
-            <label for="enableHEVC">Enable H265</label>
         </div>
     </div>
     <div class="col-sm-6">
@@ -131,9 +93,22 @@
             <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeBitrate" />
         </div>
         <div class="form-group">
+            <label>Direct Stream Media Buffer Size</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.mediaBufferSize" />
+        </div>
+        <div class="form-group">
+            <label>Transcode Media Buffer Size</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeMediaBufferSize" />
+        </div>
+        <div class="form-group">
             <input id="updatePlayStatus" type="checkbox" ng-model="settings.updatePlayStatus" ria-describedby="updatePlayStatusHelp"/>
             <label for="updatePlayStatus">Send play status to Plex</label>
             <small id="updatePlayStatusHelp" class="form-text text-muted">Note: This affects the "on deck" for your plex account.</small>
+        </div>
+        <div class="form-group">
+            <label>Stream Protocol</label>
+            <select ng-model="settings.streamProtocol" 
+                ng-options="o.id as o.description for o in streamProtocols" />
         </div>
     </div>
     <div class="col-sm-6">

@@ -36,50 +36,50 @@ class PlexTranscoder {
              await this.getDecision();
         }
 
-        return `${this.server.protocol}://${this.server.host}:${this.server.port}/video/:/transcode/universal/start.m3u8?${this.transcodingArgs}`
+        return `${this.server.uri}/video/:/transcode/universal/start.m3u8?${this.transcodingArgs}`
     }
 
     setTranscodingArgs(directStream, deinterlace) {   
         let resolution = (directStream == true) ? this.settings.maxPlayableResolution : this.settings.maxTranscodeResolution
         let bitrate = (directStream == true) ? this.settings.directStreamBitrate : this.settings.transcodeBitrate
-        let videoCodecs = (this.settings.enableHEVC == true) ? "h264,hevc" : "h264"
+        let mediaBufferSize = (directStream == true) ? this.settings.mediaBufferSize : this.settings.transcodeMediaBufferSize
         let subtitles = (this.settings.enableSubtitles == true) ? "burn" : "none" // subtitle options: burn, none, embedded, sidecar
-        
+        let streamContainer = "mpegts" // Other option is mkv, mkv has the option of copying it's subs for later processing
+
         let videoQuality=`100` // Not sure how this applies, maybe this works if maxVideoBitrate is not set
         let audioBoost=`100` // only applies when downmixing to stereo I believe, add option later?
-        let mediaBufferSize=`30720` // Not sure what this should be set to
         let profileName=`Generic` // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
         
         let resolutionArr = resolution.split("x")
 
-        let clientProfileHLS=`add-transcode-target(type=videoProfile&protocol=hls&container=mpegts&videoCodec=${videoCodecs}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
-add-transcode-target-settings(type=videoProfile&context=streaming&protocol=hls&CopyMatroskaAttachments=true)+\
+        let clientProfile=`add-transcode-target(type=videoProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&videoCodec=${this.settings.videoCodecs}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
+add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&CopyMatroskaAttachments=true)+\
 add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.width&value=${resolutionArr[0]})+\
 add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&value=${resolutionArr[1]})`
     
         // Set transcode settings per audio codec
         this.settings.audioCodecs.split(",").forEach(function (codec) {
-            clientProfileHLS+=`+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=hls&audioCodec=${codec})`
+            clientProfile+=`+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&audioCodec=${codec})`
             if (codec == "mp3") {
-                clientProfileHLS+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}type=upperBound&name=audio.channels&value=2)`
+                clientProfile+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}type=upperBound&name=audio.channels&value=2)`
             } else {
-                clientProfileHLS+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}type=upperBound&name=audio.channels&value=${this.settings.maxAudioChannels})`
+                clientProfile+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}type=upperBound&name=audio.channels&value=${this.settings.maxAudioChannels})`
             }
           }.bind(this));
 
         // deinterlace video if specified, only useful if overlaying channel logo later
         if (deinterlace == true) {
-            clientProfileHLS+=`+add-limitation(scope=videoCodec&scopeName=*&type=notMatch&name=video.scanType&value=interlaced)`
+            clientProfile+=`+add-limitation(scope=videoCodec&scopeName=*&type=notMatch&name=video.scanType&value=interlaced)`
         }
 
-        let clientProfileHLS_enc=encodeURIComponent(clientProfileHLS)
+        let clientProfile_enc=encodeURIComponent(clientProfile)
         this.transcodingArgs=`X-Plex-Platform=${profileName}&\
 X-Plex-Client-Platform=${profileName}&\
 X-Plex-Client-Profile-Name=${profileName}&\
 X-Plex-Platform=${profileName}&\
-X-Plex-Token=${this.server.token}&\
-X-Plex-Client-Profile-Extra=${clientProfileHLS_enc}&\
-protocol=hls&\
+X-Plex-Token=${this.server.accessToken}&\
+X-Plex-Client-Profile-Extra=${clientProfile_enc}&\
+protocol=${this.settings.streamProtocol}&\
 Connection=keep-alive&\
 hasMDE=1&\
 path=${this.key}&\
@@ -146,7 +146,7 @@ lang=en`
     }
 
     async getDecision() {
-        const response = await fetch(`${this.server.protocol}://${this.server.host}:${this.server.port}/video/:/transcode/universal/decision?${this.transcodingArgs}`, { 
+        const response = await fetch(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, { 
             method: 'GET', headers: {
                 Accept: 'application/json'
             }
@@ -160,7 +160,7 @@ lang=en`
         let containerKey=`/video/:/transcode/universal/decision?${this.transcodingArgs}`;
         let containerKey_enc=encodeURIComponent(containerKey);
 
-        let statusUrl=`${this.server.protocol}://${this.server.host}:${this.server.port}/:/timeline?\
+        let statusUrl=`${this.server.uri}/:/timeline?\
 containerKey=${containerKey_enc}&\
 ratingKey=${this.ratingKey}&\
 state=${this.playState}&\
@@ -174,7 +174,7 @@ X-Plex-Device-Name=PseudoTV-Plex&\
 X-Plex-Device=PseudoTV-Plex&\
 X-Plex-Client-Identifier=${this.session}&\
 X-Plex-Platform=${profileName}&\
-X-Plex-Token=${this.server.token}`;
+X-Plex-Token=${this.server.accessToken}`;
 
         return statusUrl;
     }
