@@ -35,6 +35,14 @@
                 {id:"2160",description:"3840x2160"},
                 {id:"unchanged",description:"Same as source"}
             ];
+            scope.muxDelayOptions=[
+                {id:"0",description:"0 Seconds"},
+                {id:"1",description:"1 Seconds"},
+                {id:"2",description:"2 Seconds"},
+                {id:"3",description:"3 Seconds"},
+                {id:"4",description:"4 Seconds"},
+                {id:"5",description:"5 Seconds"}
+            ];
         }
     }
 }

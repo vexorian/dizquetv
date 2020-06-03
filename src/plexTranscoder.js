@@ -22,6 +22,13 @@ class PlexTranscoder {
         this.playState = "stopped"
     }
 
+    async getStream(deinterlace) {
+        let stream = {}
+        stream.streamUrl = await this.getStreamUrl(deinterlace);
+        stream.streamStats = this.getVideoStats();
+        return stream;
+    }
+
     async getStreamUrl(deinterlace) {
         // Set transcoding parameters based off direct stream params
         this.setTranscodingArgs(true, deinterlace)
@@ -45,7 +52,7 @@ class PlexTranscoder {
         let mediaBufferSize = (directStream == true) ? this.settings.mediaBufferSize : this.settings.transcodeMediaBufferSize
         let subtitles = (this.settings.enableSubtitles == true) ? "burn" : "none" // subtitle options: burn, none, embedded, sidecar
         let streamContainer = "mpegts" // Other option is mkv, mkv has the option of copying it's subs for later processing
-
+        
         let videoQuality=`100` // Not sure how this applies, maybe this works if maxVideoBitrate is not set
         let audioBoost=`100` // only applies when downmixing to stereo I believe, add option later?
         let profileName=`Generic` // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
@@ -54,6 +61,7 @@ class PlexTranscoder {
 
         let clientProfile=`add-transcode-target(type=videoProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&videoCodec=${this.settings.videoCodecs}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
 add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&CopyMatroskaAttachments=true)+\
+add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&BreakNonKeyframes=true)+\
 add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.width&value=${resolutionArr[0]})+\
 add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&value=${resolutionArr[1]})`
     
@@ -110,36 +118,25 @@ lang=en`
         return this.decisionJson["MediaContainer"]["Metadata"][0]["Media"][0]["Part"][0]["Stream"][0]["height"];
     }
 
-    getVideoStats(channelIconEnabled, ffmpegEncoderName) {
-        let ret = []
+    getVideoStats() {
+        let ret = {}
         let streams = this.decisionJson["MediaContainer"]["Metadata"][0]["Media"][0]["Part"][0]["Stream"]
 
         streams.forEach(function (stream) {
             // Video
             if (stream["streamType"] == "1") {
-                ret.push(stream["width"],
-                    stream["height"],
-                    Math.round(stream["frameRate"])) 
-                    // Rounding framerate avoids scenarios where
-                    // 29.9999999 & 30 don't match. Probably close enough
-                    // to continue the stream as is.
-
-                // Implies future transcoding
-                if (channelIconEnabled == true)
-                    if (ffmpegEncoderName.includes('mpeg2'))
-                        ret.push("mpeg2video")
-                    else if (ffmpegEncoderName.includes("264"))
-                        ret.push("h264")
-                    else if (ffmpegEncoderName.includes("hevc") || ffmpegEncoderName.includes("265"))
-                        ret.push("hevc") 
-                    else
-                        ret.push("unknown")
-                else
-                    ret.push(stream["codec"])
+                ret.videoCodec = stream["codec"];
+                ret.videoWidth = stream["width"];
+                ret.videoHeight = stream["height"];
+                ret.videoFramerate = Math.round(stream["frameRate"]);
+                // Rounding framerate avoids scenarios where
+                // 29.9999999 & 30 don't match. 
             }
             // Audio. Only look at stream being used
-            if (stream["streamType"] == "2" && stream["selected"] == "1")
-                ret.push(stream["channels"], stream["codec"])
+            if (stream["streamType"] == "2" && stream["selected"] == "1") {
+                ret.audioChannels = stream["channels"];
+                ret.audioCodec = stream["codec"];
+            }
         })
 
         return ret
@@ -151,6 +148,14 @@ lang=en`
         })
         .then((res) => {
             this.decisionJson = res.data;
+
+            // Print error message if transcode not possible
+            // TODO: handle failure better
+            let transcodeDecisionCode = res.data.MediaContainer.transcodeDecisionCode
+            if (transcodeDecisionCode != "1001") {
+                console.log(`IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`)
+                console.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
+            }
         })
         .catch((err) => {
             console.log(err);

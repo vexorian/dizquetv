@@ -9,17 +9,26 @@
         </button>
     </h5>
     <h6>FFMPEG Executable Path (eg: C:\ffmpeg\bin\ffmpeg.exe || /usr/bin/ffmpeg)</h6>
-    <input type="text" class="form-control form-control-sm" ng-model="settings.ffmpegPath"/>
+    <input type="text" class="form-control form-control-sm" ria-describedby="ffmpegHelp" ng-model="settings.ffmpegPath"/>
+    <small id="ffmpegHelp" class="form-text text-muted">FFMPEG version 4.2+ required. Check by running '{{settings.ffmpegPath}} -version' from the command line</small>
     <hr/>
     <h6>Miscellaneous Options</h6>
     <div class="row">
         <div class="col-sm-4">
-            <label>Threads</label>
-            <input type="number" class="form-control form-control-sm" ng-model="settings.threads"/>
+            <div class="form-group">
+                <div class="form-group">
+                    <label>Threads</label>
+                    <input type="number" class="form-control form-control-sm" ng-model="settings.threads"/>
+                </div>
+            </div>
         </div>
         <div class="col-sm-4">
-            <label>Log FFMPEG</label><br/>
-            <input id="logFfmpeg" type="checkbox" ng-model="settings.logFfmpeg"/> <label for="logFfmpeg">Log FFMPEG to console</label>
+            <div class="form-group">
+                <label>Logging</label>
+                <br>
+                <input id="logFfmpeg" type="checkbox" ng-model="settings.logFfmpeg"/>
+                <label for="logFfmpeg">Log FFMPEG to console</label>
+            </div>
         </div>
     </div>
     <hr/>
@@ -31,38 +40,37 @@
                 <small id="enableChannelOverlayHelp" class="form-text text-muted">Note: This transcoding is done by PseudoTV, not Plex.</small>
             </div>
             <div class="form-group">
-                <input id="enableAutoPlay" type="checkbox" ng-model="settings.enableAutoPlay"/>
-                <label for="enableAutoPlay">Play next episode automatically</label>
-            </div>
-            <div class="form-group" ng-hide="hideIfNotAutoPlay()">
-                <input id="breakStreamOnCodecChange" type="checkbox" ng-model="settings.breakStreamOnCodecChange" ria-describedby="breakStreamOnCodecChangeHelp"/>
-                <label for="breakStreamOnCodecChange">Break stream if codec changes</label>
-                <small id="enableChannelOverlayHelp" class="form-text text-muted">Clients typically cannot handle resolution, video/audio codec, framerate, or audio channels changing between programs/commercials</small>
+                <label>Video Buffer</label>
+                <select ng-model="settings.concatMuxDelay" ria-describedby="concatMuxDelayHelp"
+                    ng-options="o.id as o.description for o in muxDelayOptions" />
+                <small id="concatMuxDelayHelp" class="form-text text-muted">Note: If you experience playback issues upon stream start, try increasing this.</small>
             </div>
         </div>
-        <div class="col-sm-6" ng-hide="hideIfNotEnableChannelOverlay()">
-            <div class="form-group">
-                <label>Video Encoder</label>
-                <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder" ria-describedby="videoEncoderHelp"/>
-                <small id="videoEncoderHelp" class="form-text text-muted">Some possible values are:</small>
-                <small id="videoEncoderHelp" class="form-text text-muted">Intel Quick Sync: h264_qsv, mpeg2_qsv</small>
-                <small id="videoEncoderHelp" class="form-text text-muted">NVIDIA: GPU: h264_nvenc</small>
-                <small id="videoEncoderHelp" class="form-text text-muted">MPEG2: mpeg2video (default)</small>
-                <small id="videoEncoderHelp" class="form-text text-muted">H264: libx264</small>
-                <small id="videoEncoderHelp" class="form-text text-muted">MacOS: h264_videotoolbox</small>
-            </div>
-            <div class="form-group">
-                <label>Video Bitrate (k)</label>
-                <input type="number" class="form-control form-control-sm" ng-model="settings.videoBitrate"/>
-            </div>
-            <div class="form-group">
-                <label>Max Video Resolution</label>
-                <select ng-model="settings.videoResolutionHeight" 
-                    ng-options="o.id as o.description for o in resolutionOptions" />
-            </div>
-            <div class="form-group">
-                <label>Video Buffer Size (k)</label>
-                <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufSize"/>
+        <div class="col-sm-6">
+            <div ng-hide="hideIfNotEnableChannelOverlay()">
+                <div class="form-group">
+                    <label>Video Encoder</label>
+                    <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder" ria-describedby="videoEncoderHelp"/>
+                    <small id="videoEncoderHelp" class="form-text text-muted">Some possible values are:</small>
+                    <small id="videoEncoderHelp" class="form-text text-muted">Intel Quick Sync: h264_qsv, mpeg2_qsv</small>
+                    <small id="videoEncoderHelp" class="form-text text-muted">NVIDIA: GPU: h264_nvenc</small>
+                    <small id="videoEncoderHelp" class="form-text text-muted">MPEG2: mpeg2video (default)</small>
+                    <small id="videoEncoderHelp" class="form-text text-muted">H264: libx264</small>
+                    <small id="videoEncoderHelp" class="form-text text-muted">MacOS: h264_videotoolbox</small>
+                </div>
+                <div class="form-group">
+                    <label>Video Bitrate (k)</label>
+                    <input type="number" class="form-control form-control-sm" ng-model="settings.videoBitrate"/>
+                </div>
+                <div class="form-group">
+                    <label>Max Video Resolution</label>
+                    <select ng-model="settings.videoResolutionHeight" 
+                        ng-options="o.id as o.description for o in resolutionOptions" />
+                </div>
+                <div class="form-group">
+                    <label>Video Buffer Size (k)</label>
+                    <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufSize"/>
+                </div>
             </div>
         </div>
     </div>

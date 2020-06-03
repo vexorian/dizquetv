@@ -36,6 +36,11 @@
             </button>
         </td>
     </tr>
+    <tr ng-if="servers.length !== 0">
+        <td colspan="5">
+            <p class="text-center text-danger">Edit server values in plex-servers.json</p>
+        </td>
+    </tr>
 </table>
 
 <hr>
@@ -102,7 +107,7 @@
         </div>
         <div class="form-group">
             <input id="updatePlayStatus" type="checkbox" ng-model="settings.updatePlayStatus" ria-describedby="updatePlayStatusHelp"/>
-            <label for="updatePlayStatus">Send play status to Plex</label>
+            <label for="updatePlayStatus">Send play status to Plex when possible</label>
             <small id="updatePlayStatusHelp" class="form-text text-muted">Note: This affects the "on deck" for your plex account.</small>
         </div>
         <div class="form-group">
