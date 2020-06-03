@@ -48,7 +48,7 @@ module.exports = function ($http, $window, $interval) {
                                             return;
 
                                         // true = local server, false = remote
-                                        const i = (server.publicAddressMatches == true) ? 0 : 2
+                                        const i = (server.publicAddressMatches == true) ? 0 : server.connections.length - 1
                                         server.uri = server.connections[i].uri
                                         server.protocol = server.connections[i].protocol
                                         server.address = server.connections[i].address
