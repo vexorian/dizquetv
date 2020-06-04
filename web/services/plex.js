@@ -1,5 +1,4 @@
 const Plex = require('../../src/plex');
-const fetch = require('node-fetch');
 
 module.exports = function ($http, $window, $interval) {
     return {
@@ -34,14 +33,19 @@ module.exports = function ($http, $window, $interval) {
                             }
                             if (r2.data.authToken !== null) {
                                 $interval.cancel(interval)
-                                try {
-                                    headers['X-Plex-Token'] = r2.data.authToken
-                                    let res_servers = []
-                                    const getServers = await fetch(`https://plex.tv/api/v2/resources?includeHttps=1`, { 
-                                        method: 'GET', headers: headers
-                                    });
-                                    const servers = await getServers.json();
 
+                                headers['X-Plex-Token'] = r2.data.authToken
+
+                                $http({
+                                    method: 'GET',
+                                    url: 'https://plex.tv/api/v2/resources?includeHttps=1',
+                                    headers: headers
+                                })
+                                .then((r3) => {
+                                    let res_servers = []
+
+                                    const servers = r3.data; 
+                                    
                                     servers.forEach((server) => {
                                         // not pms, skip
                                         if (server.provides != `server`)
@@ -53,15 +57,16 @@ module.exports = function ($http, $window, $interval) {
                                         server.protocol = server.connections[i].protocol
                                         server.address = server.connections[i].address
                                         server.port = server.connections[i].port
-
+    
                                         res_servers.push(server);
                                     });
 
                                     res.servers = res_servers
                                     resolve(res)
-                                } catch (err) {
-                                    reject(err)
-                                }
+                                })
+                                .catch((err) => {
+                                    reject(err);
+                                });
                             }
                         }, (err) => {
                             $interval.cancel(interval)
