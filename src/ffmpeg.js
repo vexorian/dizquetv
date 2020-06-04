@@ -83,7 +83,7 @@ class FFMPEG extends events.EventEmitter {
     }
     kill() {
         if (typeof this.ffmpeg != "undefined") {
-            this.ffmpeg.kill('SIGQUIT')
+            this.ffmpeg.kill()
         }
     }
 }
