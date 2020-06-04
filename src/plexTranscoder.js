@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const fetch = require('node-fetch');
+const axios = require('axios');
 
 class PlexTranscoder {
     constructor(settings, lineupItem) {
@@ -146,12 +146,15 @@ lang=en`
     }
 
     async getDecision() {
-        const response = await fetch(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, { 
-            method: 'GET', headers: {
-                Accept: 'application/json'
-            }
+        await axios.get(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, {
+            headers: { Accept: 'application/json' }
+        })
+        .then((res) => {
+            this.decisionJson = res.data;
+        })
+        .catch((err) => {
+            console.log(err);
         });
-        this.decisionJson = await response.json();
     }
 
     getStatusUrl() {
@@ -196,10 +199,7 @@ X-Plex-Token=${this.server.accessToken}`;
     }
 
     updatePlex() {
-        let postUrl = this.getStatusUrl();
-        fetch(postUrl, { 
-            method: 'POST'
-        });
+        axios.post(this.getStatusUrl());
         this.currTimeMs += this.updateInterval;
         if (this.currTimeMs > this.duration) {
             this.currTimeMs = this.duration;
