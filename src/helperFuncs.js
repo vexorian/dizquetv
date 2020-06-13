@@ -19,8 +19,10 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
             timeElapsed -= program.duration
         }
     }
+
     if (currentProgramIndex === -1)
         throw new Error("No program found; find algorithm fucked up")
+
     return { program: channel.programs[currentProgramIndex], timeElapsed: timeElapsed, programIndex: currentProgramIndex }
 }
 
@@ -104,5 +106,7 @@ function createLineup(obj) {
 }
 
 function isChannelIconEnabled(enableChannelOverlay, icon, overlayIcon, type) {
-    return enableChannelOverlay == true && icon !== '' && overlayIcon && type === 'program'
+    if (typeof type === `undefined`)
+        return enableChannelOverlay == true && icon !== '' && overlayIcon
+    return enableChannelOverlay == true && icon !== '' && overlayIcon
 }

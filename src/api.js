@@ -70,8 +70,7 @@ function api(db, xmltvInterval) {
             videoResolutionHeight: 'unchanged',
             videoBitrate: 10000,
             videoBufSize: 2000,
-            enableAutoPlay: true,
-            breakStreamOnCodecChange: true,
+            concatMuxDelay: '0',
             logFfmpeg: true
         })
         let ffmpeg = db['ffmpeg-settings'].find()[0]

@@ -1,8 +1,6 @@
-FROM node:12.16
-RUN apt-get -y update && \
-    apt-get -y upgrade && \
-    apt-get install -y ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:12.18-alpine3.12
+# Should be ffmpeg v4.2.3
+RUN apk add --no-cache ffmpeg && ffmpeg -version
 WORKDIR /home/node/app
 COPY package*.json ./
 RUN npm install
