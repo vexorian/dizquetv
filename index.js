@@ -1,4 +1,4 @@
-var pseudotvVersion = "0.5.1";
+var pseudotvVersion = "0.5.3-testing";
 
 const db = require('diskdb')
 const fs = require('fs')
