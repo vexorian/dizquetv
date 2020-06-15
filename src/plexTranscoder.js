@@ -54,7 +54,6 @@ class PlexTranscoder {
         let streamContainer = "mpegts" // Other option is mkv, mkv has the option of copying it's subs for later processing
         
         let videoQuality=`100` // Not sure how this applies, maybe this works if maxVideoBitrate is not set
-        let audioBoost=`100` // only applies when downmixing to stereo I believe, add option later?
         let profileName=`Generic` // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
         
         let resolutionArr = resolution.split("x")
@@ -69,9 +68,9 @@ add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&va
         this.settings.audioCodecs.split(",").forEach(function (codec) {
             clientProfile+=`+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&audioCodec=${codec})`
             if (codec == "mp3") {
-                clientProfile+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}type=upperBound&name=audio.channels&value=2)`
+                clientProfile+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=2)`
             } else {
-                clientProfile+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}type=upperBound&name=audio.channels&value=${this.settings.maxAudioChannels})`
+                clientProfile+=`+add-limitation(scope=videoAudioCodec&scopeName=${codec}&type=upperBound&name=audio.channels&value=${this.settings.maxAudioChannels})`
             }
           }.bind(this));
 
@@ -98,7 +97,7 @@ directPlay=0&\
 directStream=1&\
 directStreamAudio=1&\
 copyts=1&\
-audioBoost=${audioBoost}&\
+audioBoost=${this.settings.audioBoost}&\
 mediaBufferSize=${mediaBufferSize}&\
 session=${this.session}&\
 offset=${this.currTimeS}&\

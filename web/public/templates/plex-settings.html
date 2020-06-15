@@ -84,6 +84,12 @@
                 ng-options="o.id as o.description for o in maxAudioChannelsOptions" ria-describedby="maxAudioChannelsHelp"/>
             <small id="maxAudioChannelsHelp" class="form-text text-muted">Note: 7.1 audio and on some clients, 6.1, is known to cause playback issues.</small>
         </div>
+        <div class="form-group">
+            <label>Audio Boost</label>
+            <select ng-model="settings.audioBoost" 
+                ng-options="o.id as o.description for o in audioBoostOptions" ria-describedby="audioBoostHelp"/>
+            <small id="audioBoostHelp" class="form-text text-muted">Note: Only applies when downmixing to stereo.</small>
+        </div>
     </div>
 </div>
 <div class="row">

@@ -129,6 +129,7 @@ function initDB(db) {
             videoCodecs: 'h264,hevc,mpeg2video',
             audioCodecs: 'ac3,aac,mp3',
             maxAudioChannels: '6',
+            audioBoost: '100',
             enableSubtitles: false,
             subtitleSize: '100',
             updatePlayStatus: false,

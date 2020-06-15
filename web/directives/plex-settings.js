@@ -76,6 +76,13 @@ module.exports = function (plex, pseudotv, $timeout) {
                 {id:"http",description:"HTTP"},
                 {id:"hls",description:"HLS"}
             ];
+            scope.audioBoostOptions=[
+                {id:"100",description:"None"},
+                {id:"120",description:"Small"},
+                {id:"140",description:"Medium"},
+                {id:"160",description:"Large"},
+                {id:"180",description:"Huge"}
+            ];
         }
     };
 }
