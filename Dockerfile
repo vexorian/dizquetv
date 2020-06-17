@@ -4,8 +4,8 @@ RUN apk add --no-cache ffmpeg && ffmpeg -version
 WORKDIR /home/node/app
 COPY package*.json ./
 RUN npm install
-COPY . .
 RUN npm install -g browserify
-RUN npm run build
 EXPOSE 8000
 CMD [ "npm", "start"]
+COPY . .
+RUN npm run build
