@@ -146,6 +146,10 @@ module.exports = function ($http, $window, $interval) {
                     date: res.Metadata[i].originallyAvailableAt,
                     year: res.Metadata[i].year,
                 }
+                if (program.type === 'episode' || program.type === 'movie') {
+                    program.plexFile = `${res.Metadata[i].Media[0].Part[0].key}`
+                    program.file = `${res.Metadata[i].Media[0].Part[0].file}`
+                }
                 if (program.type === 'episode') {
                     //Make sure that video files that contain multiple episodes are only listed once:
                     var anyNewFile = false;

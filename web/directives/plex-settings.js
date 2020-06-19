@@ -53,6 +53,16 @@ module.exports = function (plex, pseudotv, $timeout) {
                     scope.settings = _settings
                 })
             }
+            scope.pathOptions=[
+                {id:"plex",description:"Plex"},
+                {id:"direct",description:"Direct"}
+            ];
+            scope.hideIfNotPlexPath = () => {
+                return scope.settings.streamPath != 'plex'
+            };
+            scope.hideIfNotDirectPath = () => {
+                return scope.settings.streamPath != 'direct'
+            };
             scope.maxAudioChannelsOptions=[
                 {id:"1",description:"1.0"},
                 {id:"2",description:"2.0"},

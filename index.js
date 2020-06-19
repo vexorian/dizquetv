@@ -120,6 +120,8 @@ function initDB(db) {
 
     if (plexSettings.length === 0) {
         db['plex-settings'].save({
+            streamPath: 'plex',
+            debugLogging: true,
             directStreamBitrate: '40000',
             transcodeBitrate: '3000',
             mediaBufferSize: 1000,
@@ -127,13 +129,16 @@ function initDB(db) {
             maxPlayableResolution: "1920x1080",
             maxTranscodeResolution: "1920x1080",
             videoCodecs: 'h264,hevc,mpeg2video',
-            audioCodecs: 'ac3,aac,mp3',
-            maxAudioChannels: '6',
+            audioCodecs: 'ac3',
+            maxAudioChannels: '2',
             audioBoost: '100',
             enableSubtitles: false,
             subtitleSize: '100',
             updatePlayStatus: false,
-            streamProtocol: 'http'
+            streamProtocol: 'http',
+            forceDirectPlay: false,
+            pathReplace: '',
+            pathReplaceWith: ''
         })
     }
 

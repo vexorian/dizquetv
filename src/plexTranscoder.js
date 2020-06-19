@@ -7,7 +7,13 @@ class PlexTranscoder {
 
         this.settings = settings
 
+        this.log("Plex transcoder initiated")
+        this.log("Debug logging enabled")
+
         this.key = lineupItem.key
+        this.plexFile = `${lineupItem.server.uri}${lineupItem.plexFile}?X-Plex-Token=${lineupItem.server.accessToken}`
+        this.file = lineupItem.file.replace(settings.pathReplace, settings.pathReplaceWith)
+        this.transcodeUrlBase = `${lineupItem.server.uri}/video/:/transcode/universal/start.m3u8?`
         this.ratingKey = lineupItem.ratingKey
         this.currTimeMs = lineupItem.start
         this.currTimeS = this.currTimeMs / 1000
@@ -23,35 +29,61 @@ class PlexTranscoder {
     }
 
     async getStream(deinterlace) {
-        let stream = {}
-        stream.streamUrl = await this.getStreamUrl(deinterlace);
-        stream.streamStats = this.getVideoStats();
-        return stream;
-    }
+        let stream = {directPlay: false}
 
-    async getStreamUrl(deinterlace) {
-        // Set transcoding parameters based off direct stream params
-        this.setTranscodingArgs(true, deinterlace)
+        this.log("Getting stream")
+        this.log(`  deinterlace:     ${deinterlace}`)
+        this.log(`  streamPath:      ${this.settings.streamPath}`)
+        this.log(`  forceDirectPlay: ${this.settings.forceDirectPlay}`)
 
-        await this.getDecision();
-        const videoIsDirectStream = this.isVideoDirectStream();
+        // direct play forced
+        if (this.settings.streamPath === 'direct' || this.settings.forceDirectPlay) {
+            this.log("Direct play forced or native paths enabled")
+            stream.directPlay = true
+            this.setTranscodingArgs(stream.directPlay, true, false)
+            // Update transcode decision for session
+            await this.getDecision(stream.directPlay);
+            stream.streamUrl = (this.settings.streamPath === 'direct') ? this.file : this.plexFile;
+        } else { // Set transcoding parameters based off direct stream params
+            this.log("Setting transcoding parameters")
+            this.setTranscodingArgs(stream.directPlay, true, deinterlace)
 
-        // Change transcoding arguments to be the user chosen transcode parameters
-        if (videoIsDirectStream == false) {
-            this.setTranscodingArgs(false, deinterlace)
-             // Update transcode decision for session
-             await this.getDecision();
+            await this.getDecision(stream.directPlay);
+
+            if (this.isDirectPlay()) {
+                this.log("Decision: File can direct play")
+                stream.directPlay = true
+                this.setTranscodingArgs(stream.directPlay, true, false)
+                // Update transcode decision for session
+                await this.getDecision(stream.directPlay);
+                stream.streamUrl = this.plexFile;
+            } else if (this.isVideoDirectStream() === false) {
+                this.log("Decision: File can direct play")
+                // Change transcoding arguments to be the user chosen transcode parameters
+                this.setTranscodingArgs(stream.directPlay, false, deinterlace)
+                // Update transcode decision for session
+                await this.getDecision(stream.directPlay);
+                stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
+            } else {
+                this.log("Decision: Direct stream. Audio is being transcoded")
+                stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
+            }
         }
 
-        return `${this.server.uri}/video/:/transcode/universal/start.m3u8?${this.transcodingArgs}`
+        stream.streamStats = this.getVideoStats();
+
+        this.log(stream)
+
+        return stream
     }
 
-    setTranscodingArgs(directStream, deinterlace) {   
-        let resolution = (directStream == true) ? this.settings.maxPlayableResolution : this.settings.maxTranscodeResolution
-        let bitrate = (directStream == true) ? this.settings.directStreamBitrate : this.settings.transcodeBitrate
-        let mediaBufferSize = (directStream == true) ? this.settings.mediaBufferSize : this.settings.transcodeMediaBufferSize
-        let subtitles = (this.settings.enableSubtitles == true) ? "burn" : "none" // subtitle options: burn, none, embedded, sidecar
+    setTranscodingArgs(directPlay, directStream, deinterlace) {   
+        let resolution = (directStream) ? this.settings.maxPlayableResolution : this.settings.maxTranscodeResolution
+        let bitrate = (directStream) ? this.settings.directStreamBitrate : this.settings.transcodeBitrate
+        let mediaBufferSize = (directStream) ? this.settings.mediaBufferSize : this.settings.transcodeMediaBufferSize
+        let subtitles = (this.settings.enableSubtitles) ? "burn" : "none" // subtitle options: burn, none, embedded, sidecar
         let streamContainer = "mpegts" // Other option is mkv, mkv has the option of copying it's subs for later processing
+        let isDirectPlay = (directPlay) ? '1' : '0'
         
         let videoQuality=`100` // Not sure how this applies, maybe this works if maxVideoBitrate is not set
         let profileName=`Generic` // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
@@ -93,7 +125,7 @@ path=${this.key}&\
 mediaIndex=0&\
 partIndex=0&\
 fastSeek=1&\
-directPlay=0&\
+directPlay=${isDirectPlay}&\
 directStream=1&\
 directStreamAudio=1&\
 copyts=1&\
@@ -111,52 +143,69 @@ lang=en`
 
     isVideoDirectStream() {
         try {
-            return this.decisionJson["MediaContainer"]["Metadata"][0]["Media"][0]["Part"][0]["Stream"][0]["decision"] == "copy";
+            return this.getVideoStats().videoDecision === "copy";
         } catch (e) {
             console.log("Error at decision:" + e);
             return false;
         }
     }
 
-    getResolutionHeight() {
-        return this.decisionJson["MediaContainer"]["Metadata"][0]["Media"][0]["Part"][0]["Stream"][0]["height"];
+    isDirectPlay() {
+        try {
+            return this.getVideoStats().videoDecision === "copy" && this.getVideoStats().audioDecision === "copy";
+        } catch (e) {
+            console.log("Error at decision:" + e);
+            return false;
+        }
     }
 
     getVideoStats() {
         let ret = {}
-        let streams = this.decisionJson["MediaContainer"]["Metadata"][0]["Media"][0]["Part"][0]["Stream"]
+        try {
+            let streams = this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].Stream
 
-        streams.forEach(function (stream) {
-            // Video
-            if (stream["streamType"] == "1") {
-                ret.videoCodec = stream["codec"];
-                ret.videoWidth = stream["width"];
-                ret.videoHeight = stream["height"];
-                ret.videoFramerate = Math.round(stream["frameRate"]);
-                // Rounding framerate avoids scenarios where
-                // 29.9999999 & 30 don't match. 
-            }
-            // Audio. Only look at stream being used
-            if (stream["streamType"] == "2" && stream["selected"] == "1") {
-                ret.audioChannels = stream["channels"];
-                ret.audioCodec = stream["codec"];
-            }
-        })
+            streams.forEach(function (stream) {
+                // Video
+                if (stream["streamType"] == "1") {
+                    ret.videoCodec = stream.codec;
+                    ret.videoWidth = stream.width;
+                    ret.videoHeight = stream.height;
+                    ret.videoFramerate = Math.round(stream["frameRate"]);
+                    // Rounding framerate avoids scenarios where
+                    // 29.9999999 & 30 don't match.
+                    ret.videoDecision = (typeof stream.decision === 'undefined') ? 'copy' : stream.decision;
+                }
+                // Audio. Only look at stream being used
+                if (stream["streamType"] == "2" && stream["selected"] == "1") {
+                    ret.audioChannels = stream["channels"];
+                    ret.audioCodec = stream["codec"];
+                    ret.audioDecision = (typeof stream.decision === 'undefined') ? 'copy' : stream.decision;
+                }
+            })
+        } catch (e) {
+            console.log("Error at decision:" + e);
+        }
+
+        this.log("Current video stats:")
+        this.log(ret)
 
         return ret
     }
 
-    async getDecision() {
+    async getDecision(directPlay) {
         await axios.get(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, {
             headers: { Accept: 'application/json' }
         })
         .then((res) => {
             this.decisionJson = res.data;
 
+            this.log("Recieved transcode decision:")
+            this.log(res.data)
+
             // Print error message if transcode not possible
             // TODO: handle failure better
             let transcodeDecisionCode = res.data.MediaContainer.transcodeDecisionCode
-            if (transcodeDecisionCode != "1001") {
+            if (!(directPlay || transcodeDecisionCode == "1001")) {
                 console.log(`IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`)
                 console.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
             }
@@ -208,12 +257,19 @@ X-Plex-Token=${this.server.accessToken}`;
     }
 
     updatePlex() {
+        this.log("Updating plex status")
         axios.post(this.getStatusUrl());
         this.currTimeMs += this.updateInterval;
         if (this.currTimeMs > this.duration) {
             this.currTimeMs = this.duration;
         }
         this.currTimeS = this.duration / 1000;
+    }
+
+    log(message) {
+        if (this.settings.debugLogging) {
+            console.log(message)
+        }
     }
 }
 

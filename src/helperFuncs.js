@@ -50,6 +50,8 @@ function createLineup(obj) {
                 lineup.push({
                     type: 'commercial',
                     key: commercials[i][y].key,
+                    plexFile: commercials[i][y].plexFile,
+                    file: commercials[i][y].file,
                     ratingKey: commercials[i][y].ratingKey,
                     start: timeElapsed, // start time will be the time elapsed, cause this is the first video
                     streamDuration: commercials[i][y].duration - timeElapsed, // stream duration set accordingly
@@ -60,6 +62,8 @@ function createLineup(obj) {
                 lineup.push({   // just add the video, starting at 0, playing the entire duration
                     type: 'commercial',
                     key: commercials[i][y].key,
+                    plexFile: commercials[i][y].plexFile,
+                    file: commercials[i][y].file,
                     ratingKey: commercials[i][y].ratingKey,
                     start: 0,
                     streamDuration: commercials[i][y].actualDuration,
@@ -76,6 +80,8 @@ function createLineup(obj) {
                 lineup.push({
                     type: 'program',
                     key: activeProgram.key,
+                    plexFile: activeProgram.plexFile,
+                    file: activeProgram.file,
                     ratingKey: activeProgram.ratingKey,
                     start: progTimeElapsed + timeElapsed, // add the duration of already played program chunks to the timeElapsed
                     streamDuration: (programStartTimes[i + 1] - programStartTimes[i]) - timeElapsed,
@@ -89,6 +95,8 @@ function createLineup(obj) {
                     lineup.push({
                         type: 'program',
                         key: activeProgram.key,
+                        plexFile: activeProgram.plexFile,
+                        file: activeProgram.file,
                         ratingKey: activeProgram.ratingKey,
                         start: programStartTimes[i],
                         streamDuration: (programStartTimes[i + 1] - programStartTimes[i]),

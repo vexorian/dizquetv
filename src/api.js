@@ -89,6 +89,8 @@ function api(db, xmltvInterval) {
     })
     router.post('/api/plex-settings', (req, res) => { // RESET
         db['plex-settings'].update({ _id: req.body._id }, {
+            streamPath: 'plex',
+            debugLogging: true,
             directStreamBitrate: '40000',
             transcodeBitrate: '3000',
             mediaBufferSize: 1000,
@@ -96,13 +98,16 @@ function api(db, xmltvInterval) {
             maxPlayableResolution: "1920x1080",
             maxTranscodeResolution: "1920x1080",
             videoCodecs: 'h264,hevc,mpeg2video',
-            audioCodecs: 'ac3,aac,mp3',
-            maxAudioChannels: '6',
+            audioCodecs: 'ac3',
+            maxAudioChannels: '2',
             audioBoost: '100',
             enableSubtitles: false,
             subtitleSize: '100',
             updatePlayStatus: false,
-            streamProtocol: 'http'
+            streamProtocol: 'http',
+            forceDirectPlay: false,
+            pathReplace: '',
+            pathReplaceWith: ''
         })
         let plex = db['plex-settings'].find()[0]
         res.send(plex)
