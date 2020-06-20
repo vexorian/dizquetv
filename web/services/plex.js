@@ -123,6 +123,7 @@ module.exports = function ($http, $window, $interval) {
             var client = new Plex(server)
             const res = await client.Get(key)
             var nested = []
+            var seenFiles = {};
             for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++) {
                 // Skip any videos (movie or episode) without a duration set...
                 if (typeof res.Metadata[i].duration === 'undefined' && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
@@ -146,6 +147,20 @@ module.exports = function ($http, $window, $interval) {
                     year: res.Metadata[i].year,
                 }
                 if (program.type === 'episode') {
+                    //Make sure that video files that contain multiple episodes are only listed once:
+                    var anyNewFile = false;
+                    for (var j = 0; j < res.Metadata[i].Media.length; j++) {
+                        for (var k = 0; k < res.Metadata[i].Media[j].Part.length; k++) {
+                            var fileName = res.Metadata[i].Media[j].Part[k].file;
+                            if (seenFiles[fileName] !== true) {
+                                seenFiles[fileName] = true;
+                                anyNewFile = true;
+                            }
+                        }
+                    }
+                    if (! anyNewFile) {
+                        continue;
+                    }
                     program.showTitle = res.Metadata[i].grandparentTitle
                     program.episode = res.Metadata[i].index
                     program.season = res.Metadata[i].parentIndex
