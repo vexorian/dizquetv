@@ -35,6 +35,9 @@ class FFMPEG extends events.EventEmitter {
 
         ffmpegArgs.push(`-i`, streamUrl)
 
+        // Map correct audio index. '?' so doesn't fail if no stream available.
+        let audioIndex = (typeof streamStats === 'undefined') ? '0:a?' : `0:${streamStats.audioIndex}?`;
+
         // Overlay icon
         if (enableIcon && type === 'program') {
             if (process.env.DEBUG) console.log('Channel Icon Overlay Enabled')
@@ -61,12 +64,13 @@ class FFMPEG extends events.EventEmitter {
                             `-minrate:v`, `${this.opts.videoBitrate}k`,
                             `-maxrate:v`, `${this.opts.videoBitrate}k`,
                             `-bufsize:v`, `${this.opts.videoBufSize}k`,
-                            `-map`, `0:a`,
+                            `-map`, `${audioIndex}`,
                             `-c:a`, `copy`,
                             `-muxdelay`, `0`,
                             `-muxpreload`, `0`);
         } else if (enableIcon && streamStats.videoCodec != this.opts.videoEncoder) { // Encode commercial if video codec does not match
-            ffmpegArgs.push(`-map`, `0`,
+            ffmpegArgs.push(`-map`, `0:v`,
+                            `-map`, `${audioIndex}`,
                             `-c:v`, this.opts.videoEncoder,
                             `-flags`, `cgop+ilme`,
                             `-sc_threshold`, `1000000000`,
@@ -78,7 +82,8 @@ class FFMPEG extends events.EventEmitter {
                             `-muxdelay`, `0`,
                             `-muxpreload`, `0`);
         } else
-            ffmpegArgs.push(`-map`, `0`, 
+            ffmpegArgs.push(`-map`, `0:v`,
+                            `-map`, `${audioIndex}`,
                             `-c`, `copy`,
                             `-muxdelay`,  this.opts.concatMuxDelay, 
                             `-muxpreload`, this.opts.concatMuxDelay);

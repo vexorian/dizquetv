@@ -72,6 +72,10 @@ class PlexTranscoder {
 
         stream.streamStats = this.getVideoStats();
 
+        // use correct audio stream if direct play
+        let audioIndex = await this.getAudioIndex();
+        stream.streamStats.audioIndex = (stream.directPlay) ? audioIndex : 'a'
+
         this.log(stream)
 
         return stream
@@ -190,6 +194,36 @@ lang=en`
         this.log(ret)
 
         return ret
+    }
+
+    async getAudioIndex() {
+        let index = 'a'
+
+        await axios.get(`${this.server.uri}${this.key}?X-Plex-Token=${this.server.accessToken}`, {
+            headers: { Accept: 'application/json' }
+        })
+        .then((res) => {
+            this.log(res.data)
+            try {
+                let streams = res.data.MediaContainer.Metadata[0].Media[0].Part[0].Stream
+
+                streams.forEach(function (stream) {
+                    // Audio. Only look at stream being used
+                    if (stream["streamType"] == "2" && stream["selected"] == "1") {
+                        index = stream.index
+                    }
+                })
+            } catch (e) {
+                console.log("Error at get media info:" + e);
+            }
+        })
+        .catch((err) => {
+            console.log(err);
+        });
+
+        this.log(`Found audio index: ${index}`)
+
+        return index
     }
 
     async getDecision(directPlay) {
