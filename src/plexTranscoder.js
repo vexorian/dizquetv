@@ -110,7 +110,12 @@ lang=en`
     }
 
     isVideoDirectStream() {
-        return this.decisionJson["MediaContainer"]["Metadata"][0]["Media"][0]["Part"][0]["Stream"][0]["decision"] == "copy";
+        try {
+            return this.decisionJson["MediaContainer"]["Metadata"][0]["Media"][0]["Part"][0]["Stream"][0]["decision"] == "copy";
+        } catch (e) {
+            console.log("Error at decision:" + e);
+            return false;
+        }
     }
 
     getResolutionHeight() {
