@@ -74,7 +74,8 @@ function video(db) {
 
         ffmpeg.on('error', (err) => {
             console.error("FFMPEG ERROR", err);
-            res.status(500).send("FFMPEG ERROR");
+            //status was already sent
+            res.end();
             return;
         })
 
