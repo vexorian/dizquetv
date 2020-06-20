@@ -94,7 +94,7 @@ function video(db) {
         })
 
         let channelNum = parseInt(req.query.channel, 10)
-        ffmpeg.spawn(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}`,  `undefined`, -1, false, `undefined`, true);
+        ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}`);
     })
     // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
     router.get('/stream', (req, res) => {
@@ -120,6 +120,10 @@ function video(db) {
             return
         }
 
+        res.writeHead(200, {
+            'Content-Type': 'video/mp2t'
+        })
+
         // Get video lineup (array of video urls with calculated start times and durations.)
         let prog = helperFuncs.getCurrentProgramAndTimeElapsed(Date.now(), channel)
         let lineup = helperFuncs.createLineup(prog)
@@ -129,50 +133,40 @@ function video(db) {
 
         // Only episode in this lineup, or item is a commercial, let stream end naturally
         if (lineup.length === 0 || lineupItem.type === 'commercial' || lineup.length === 1 && lineup[0].type === 'commercial')
-            streamDuration = -1
-
-        let plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
+            streamDuration = undefined
 
         let deinterlace = enableChannelIcon = helperFuncs.isChannelIconEnabled(ffmpegSettings.enableChannelOverlay, channel.icon, channel.overlayIcon)
 
+        let plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
+
+        let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+
+        ffmpeg.on('data', (data) => { res.write(data) })
+
+        ffmpeg.on('error', (err) => {
+            console.error("FFMPEG ERROR", err);
+            res.status(500).send("FFMPEG ERROR");
+            return;
+        })
+
+        ffmpeg.on('close', () => {
+            res.send();
+        })
+
+        ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...
+            plexTranscoder.stopUpdatingPlex();
+            res.end()
+        })
+        
+        res.on('close', () => { // on HTTP close, kill ffmpeg
+            ffmpeg.kill();
+        })
+
         plexTranscoder.getStream(deinterlace).then(stream => {
-            let streamUrl = stream.streamUrl
-            let streamStats = stream.streamStats
-            // Not time limited & no transcoding required. Pass plex transcode url directly
-            if (!enableChannelIcon && streamDuration === -1) {
-                res.redirect(streamUrl);
-            } else { // ffmpeg needed limit time or insert channel icon
-                res.writeHead(200, {
-                    'Content-Type': 'video/mp2t'
-                })
-
-                let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
-
-                ffmpeg.on('data', (data) => { res.write(data) })
-
-                ffmpeg.on('error', (err) => {
-                    console.error("FFMPEG ERROR", err);
-                    res.status(500).send("FFMPEG ERROR");
-                    return;
-                })
-
-                ffmpeg.on('close', () => {
-                    res.send();
-                })
-
-                ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...
-                    plexTranscoder.stopUpdatingPlex();
-                    res.end()
-                })
-                
-                res.on('close', () => { // on HTTP close, kill ffmpeg
-                    ffmpeg.kill();
-                })
-
-                ffmpeg.spawn(streamUrl, streamStats, streamDuration, enableChannelIcon, lineupItem.type, false); // Spawn the ffmpeg process, fire this bitch up
-                plexTranscoder.startUpdatingPlex();
-            }   
-        }); 
+            let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
+            ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, enableChannelIcon, lineupItem.type); // Spawn the ffmpeg process, fire this bitch up
+            plexTranscoder.startUpdatingPlex(); 
+        });     
     })
     router.get('/playlist', (req, res) => {
         res.type('text')

@@ -9,13 +9,24 @@ class FFMPEG extends events.EventEmitter {
         this.channel = channel
         this.ffmpegPath = opts.ffmpegPath
     }
-    async spawn(streamUrl, streamStats, duration, enableIcon, type, isConcatPlaylist) {
+    async spawnConcat(streamUrl) {
+        this.spawn(streamUrl, undefined, undefined, undefined, false, false, undefined, true)
+    }
+    async spawnStream(streamUrl, streamStats, startTime, duration, enableIcon, type) {
+        this.spawn(streamUrl, streamStats, startTime, duration, true, enableIcon, type, false)
+    }
+    async spawn(streamUrl, streamStats, startTime, duration, limitRead, enableIcon, type, isConcatPlaylist) {
         let ffmpegArgs = [`-threads`, this.opts.threads,
-                          `-re`,
                           `-fflags`, `+genpts+discardcorrupt+igndts`];
         
-        if (duration > 0)
+        if (limitRead === true)
+            ffmpegArgs.push(`-re`)
+        
+        if (typeof duration !== 'undefined')
             ffmpegArgs.push(`-t`, duration)
+
+        if (typeof startTime !== 'undefined')
+            ffmpegArgs.push(`-ss`, startTime)
         
         if (isConcatPlaylist == true)
             ffmpegArgs.push(`-f`, `concat`, 

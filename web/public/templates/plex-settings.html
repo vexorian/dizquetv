@@ -55,6 +55,29 @@
 </h6>
 <hr>
 <div class="row" >
+    <div class="col-sm-3">
+        <div class="form-group">
+            <input id="debugLogging" type="checkbox" ng-model="settings.debugLogging"/>
+            <label for="debugLogging">Debug logging</label>
+        </div>
+        <div class="form-group">
+            <label>Paths</label>
+            <select ng-model="settings.streamPath" 
+                ng-options="o.id as o.description for o in pathOptions" />
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="form-group">
+            <input id="updatePlayStatus" type="checkbox" ng-model="settings.updatePlayStatus" ria-describedby="updatePlayStatusHelp"/>
+            <label for="updatePlayStatus">Send play status to Plex</label>
+            <small id="updatePlayStatusHelp" class="form-text text-muted">Note: This affects the "on deck" for your plex account.</small>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <p class="text-center text-danger">If stream changes video codec, audio codec, or audio channels upon episode change, you will experience playback issues.</p>
+    </div>
+</div>
+<div class="row" ng-hide="hideIfNotPlexPath()">
     <div class="col-sm-6">
         <h6 style="font-weight: bold">Video Options</h6>
         <div class="form-group">
@@ -76,7 +99,8 @@
         <h6 style="font-weight: bold">Audio Options</h6>
         <div class="form-group">
             <label>Supported Audio Formats</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.audioCodecs" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.audioCodecs" ria-describedby="audioCodecsHelp" />
+            <small id="audioCodecsHelp" class="form-text text-muted">Comma separated list. Some possible values are 'ac3,aac,mp3'.</small>
         </div>
         <div class="form-group">
             <label>Maximum Audio Channels</label>
@@ -92,7 +116,7 @@
         </div>
     </div>
 </div>
-<div class="row">
+<div class="row" ng-hide="hideIfNotPlexPath()">
     <div class="col-sm-6">
         <h6 style="font-weight: bold">Miscellaneous Options</h6>
         <div class="form-group">
@@ -112,14 +136,13 @@
             <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeMediaBufferSize" />
         </div>
         <div class="form-group">
-            <input id="updatePlayStatus" type="checkbox" ng-model="settings.updatePlayStatus" ria-describedby="updatePlayStatusHelp"/>
-            <label for="updatePlayStatus">Send play status to Plex when possible</label>
-            <small id="updatePlayStatusHelp" class="form-text text-muted">Note: This affects the "on deck" for your plex account.</small>
-        </div>
-        <div class="form-group">
             <label>Stream Protocol</label>
             <select ng-model="settings.streamProtocol" 
                 ng-options="o.id as o.description for o in streamProtocols" />
+        </div>
+        <div class="form-group">
+            <input id="updatePlayStatus" type="checkbox" ng-model="settings.forceDirectPlay" />
+            <label for="updatePlayStatus">Force Direct Play</label>
         </div>
     </div>
     <div class="col-sm-6">
@@ -134,5 +157,16 @@
         </div>
     </div>
 </div>
-
+<div class="row" ng-hide="hideIfNotDirectPath()">
+    <div class="col-sm-6">
+        <h6 style="font-weight: bold">Path Replacements</h6>
+        <div class="form-group">
+            <label>Original Plex path to replace:</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.pathReplace" />
+        </div>
+        <div class="form-group">
+            <label>Replace Plex path with:</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.pathReplaceWith" />
+        </div>
+    </div>
 </div>
