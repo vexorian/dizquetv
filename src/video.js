@@ -138,18 +138,29 @@ function video(db) {
         let deinterlace = enableChannelIcon = helperFuncs.isChannelIconEnabled(ffmpegSettings.enableChannelOverlay, channel.icon, channel.overlayIcon)
 
         let plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
-
         let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
 
         ffmpeg.on('data', (data) => { res.write(data) })
 
         ffmpeg.on('error', (err) => {
-            console.error("FFMPEG ERROR", err);
-            res.status(500).send("FFMPEG ERROR");
-            return;
+            plexTranscoder.stopUpdatingPlex();
+            if (typeof(this.backup) !== 'undefined') {
+                let ffmpeg2 = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+                ffmpeg2.spawnError('Source error', `ffmpeg returned code ${err.code}`, this.backup.stream.streamStats, this.backup.enableChannelIcon, this.backup.type); // Spawn the ffmpeg process, fire this bitch up
+                ffmpeg2.on('data', (data) => { res.write(data) } );
+                ffmpeg2.on('error', (err) => { res.end() } );
+                ffmpeg2.on('close', () => { res.send() } );
+                ffmpeg2.on('end', () => { res.end() } );
+                res.on('close', () => {
+                    ffmpeg2.kill();
+                });
+            } else {
+                res.end()
+            }
         })
 
         ffmpeg.on('close', () => {
+            plexTranscoder.stopUpdatingPlex();
             res.send();
         })
 
@@ -159,14 +170,29 @@ function video(db) {
         })
         
         res.on('close', () => { // on HTTP close, kill ffmpeg
+            plexTranscoder.stopUpdatingPlex();
             ffmpeg.kill();
         })
 
         plexTranscoder.getStream(deinterlace).then(stream => {
+
             let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
+
+            let streamStats = stream.streamStats
+            console.log("timeElapsed=" + prog.timeElapsed );
+            streamStats.duration = streamStats.duration - prog.timeElapsed;
+
+            this.backup = {
+                stream: stream,
+                streamStart: streamStart,
+                streamDuration: streamDuration,
+                enableChannelIcon: enableChannelIcon,
+                type: lineupItem.type
+            };
+
             ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, enableChannelIcon, lineupItem.type); // Spawn the ffmpeg process, fire this bitch up
-            plexTranscoder.startUpdatingPlex(); 
-        });     
+            plexTranscoder.startUpdatingPlex();
+        });
     })
     router.get('/playlist', (req, res) => {
         res.type('text')

@@ -168,6 +168,7 @@ lang=en`
         try {
             let streams = this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].Stream
 
+            ret.duration = parseFloat( this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].duration );
             streams.forEach(function (stream) {
                 // Video
                 if (stream["streamType"] == "1") {
