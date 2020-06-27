@@ -31,14 +31,8 @@
             </div>
         </div>
     </div>
-    <hr/>
     <div class="row">
         <div class="col-sm-6">
-            <div class="form-group">
-                <input id="enableChannelOverlay" type="checkbox" ng-model="settings.enableChannelOverlay" ria-describedby="enableChannelOverlayHelp"/>
-                <label for="enableChannelOverlay">Enable Channel Overlay (Requires Transcoding)</label>
-                <small id="enableChannelOverlayHelp" class="form-text text-muted">Note: This transcoding is done by PseudoTV, not Plex.</small>
-            </div>
             <div class="form-group">
                 <label>Video Buffer</label>
                 <select ng-model="settings.concatMuxDelay" ria-describedby="concatMuxDelayHelp"
@@ -46,32 +40,134 @@
                 <small id="concatMuxDelayHelp" class="form-text text-muted">Note: If you experience playback issues upon stream start, try increasing this.</small>
             </div>
         </div>
-        <div class="col-sm-6">
-            <div ng-hide="hideIfNotEnableChannelOverlay()">
+    </div>
+    <hr/>
+    <h6>Transcoding Features</h6>
+    <div class="row">
+        <div class="col-sm-9">
+            <input id=enableFFMPEGTranscoding" type="checkbox" ng-model="settings.enableFFMPEGTranscoding"  />
+            <label for="enableFFMPEGTranscoding">Enable FFMPEG Transcoding</label>
+            <small class="form-text text-muted">Transcoding is required for some features like channel overlay and measures to prevent issues when switching episodes. The trade-off is quality loss and additional computing resource requirements.
+            </small>
+        </div>
+    </div>
+    <br />
+
+    <div class="form-group" ng-hide="isTranscodingNotNeeded()" >
+
+        <div class="row">
+            <div class="col-sm-9">
+                <label>Preferred Resolution</label>
+                <select ng-model="settings.targetResolution" ria-describedby="concatMuxDelayHelp" ng-options="o.id as o.description for o in resolutionOptions" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <label>Video Encoder</label>
+                <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder" ria-describedby="videoEncoderHelp"/>
+                <small id="videoEncoderHelp" class="form-text text-muted">Some possible values are:</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">Intel Quick Sync: h264_qsv, mpeg2_qsv</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">NVIDIA: GPU: h264_nvenc</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">MPEG2: mpeg2video (default)</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">H264: libx264</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">MacOS: h264_videotoolbox</small>
+            </div>
+            <div class="col-sm-1" />
+            <div class="col-sm-4">
+                <label>Audio Encoder</label>
+                <input type="text" class="form-control form-control-sm" ng-model="settings.audioEncoder" ria-describedby="audioEncoderHelp"/>
+                <small id="audioEncoderHelp" class="form-text text-muted">Some possible values are:</small>
+                <small id="audioEncoderHelp" class="form-text text-muted">aac</small>
+                <small id="audioEncoderHelp" class="form-text text-muted">ac3 (default), ac3_fixed</small>
+                <small id="audioEncoderHelp" class="form-text text-muted">flac</small>
+                <small id="audioEncoderHelp" class="form-text text-muted">libmp3lame</small>
+            </div>
+        </div>
+        <br />
+        <div class="form-group">
+            <label>Video Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.videoBitrate"/>
+            <br />
+            <label>Video Buffer Size (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufSize"/>
+        </div>
+
+        <div class="form-group">
+            <label>Audio Volume (%)</label>
+            <input type="number" ria-describedby="volumeHelp" class="form-control form-control-sm" ng-model="settings.audioVolumePercent"/>
+            <small id="volumeHelp" class="form-text text-muted">Values higher than 100 will boost the audio.</small>
+        </div>
+
+
+        <div class="form-group">
+            <div>
+                <label>Error Screen:</label>
+                <select ng-model="settings.errorScreen" ria-describedby="errorHelp"
+                    ng-options="o.value as o.description for o in errorScreens" />
+                <label>Audio:</label>
+                <select ng-model="settings.errorAudio" ria-describedby="errorHelp"
+                    ng-options="o.value as o.description for o in errorAudios" />
+            </div>
+
+            <small id="errorHelp" class="form-text text-muted">If there are issues playing a video, pseudoTV will try to use an error screen as a placeholder while retrying loading the video every 60 seconds.</small>
+        </div>
+
+
+        <div class="row">
+            <div class="col-sm-9">
                 <div class="form-group">
-                    <label>Video Encoder</label>
-                    <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder" ria-describedby="videoEncoderHelp"/>
-                    <small id="videoEncoderHelp" class="form-text text-muted">Some possible values are:</small>
-                    <small id="videoEncoderHelp" class="form-text text-muted">Intel Quick Sync: h264_qsv, mpeg2_qsv</small>
-                    <small id="videoEncoderHelp" class="form-text text-muted">NVIDIA: GPU: h264_nvenc</small>
-                    <small id="videoEncoderHelp" class="form-text text-muted">MPEG2: mpeg2video (default)</small>
-                    <small id="videoEncoderHelp" class="form-text text-muted">H264: libx264</small>
-                    <small id="videoEncoderHelp" class="form-text text-muted">MacOS: h264_videotoolbox</small>
-                </div>
-                <div class="form-group">
-                    <label>Video Bitrate (k)</label>
-                    <input type="number" class="form-control form-control-sm" ng-model="settings.videoBitrate"/>
-                </div>
-                <div class="form-group">
-                    <label>Max Video Resolution</label>
-                    <select ng-model="settings.videoResolutionHeight" 
-                        ng-options="o.id as o.description for o in resolutionOptions" />
-                </div>
-                <div class="form-group">
-                    <label>Video Buffer Size (k)</label>
-                    <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufSize"/>
+                    <input id="enableNormalizeResolution" type="checkbox" ng-model="settings.normalizeResolution" ng-disabled="isTranscodingNotNeeded()" />
+                    <label for="enableNormalizeResolution">Normalize Resolution</label>
+                    <small class="form-text text-muted">Some clients experience issues when the video stream changes resolution. This option will make pseudoTV convert all videos to the preferred resolution selected above.
+                    </small>
                 </div>
             </div>
         </div>
+
+        <br />
+        <div class="row">
+            <div class="col-sm-9">
+                <div class="form-group row">
+                    <div class="col-sm-4">
+                        <input id="enableNormalizeVideoCodec" type="checkbox" ng-model="settings.normalizeVideoCodec" ng-disabled="isTranscodingNotNeeded()" />
+                        <label for="enableNormalizeVideoCodec">Normalize Video Codec</label>
+                    </div>
+                    <div class="col-sm-4">
+                        <input id="enableNormalizeAudioCodec" type="checkbox" ng-model="settings.normalizeAudioCodec" ng-disabled="isTranscodingNotNeeded()" />
+                        <label for="enableNormalizeAudioCodec">Normalize Audio Codec</label>
+                    </div>
+                </div>
+                <small class="form-text text-muted">Some clients experience issues when the stream's codecs change.  Enable these so that any videos with different codecs than the ones specified above are forcefully transcoded.
+                </small>
+            </div>
+        </div>
+
+        <br />
+        <div class="row">
+            <div class="col-sm-9">
+                <div class="form-group">
+                    <input id="enableAlignAudio" type="checkbox" ng-model="settings.alignAudio" ng-disabled="isTranscodingNotNeeded()" />
+                    <label for="enableAlignAudio">Align Audio and Video lengths</label>
+                    <small class="form-text text-muted">In rare situations, video and audio streams in a video may have different lengths. This can cause desync issues in some clients. This transcodes audio in all videos to ensure the lengths stay the same.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <br />
+        <div class="row">
+            <div class="col-sm-9">
+                <div class="form-group">
+                    <input id="disableOverlay" type="checkbox" ng-model="settings.disableChannelOverlay" ng-disabled="isTranscodingNotNeeded()" />
+                    <label for="disableOverlay">Disable Channel Overlay Globally</label>
+                    <small class="form-text text-muted">Toggling this option will disable channel overlays regardless of channel settings.
+                    </small>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+
+
 </div>

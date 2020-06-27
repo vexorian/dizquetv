@@ -31,7 +31,7 @@ function video(db) {
             return
         })
         ffmpeg.on('close', () => {
-            res.send()
+            res.end()
         })
 
         res.on('close', () => { // on HTTP close, kill ffmpeg
@@ -80,7 +80,7 @@ function video(db) {
         })
 
         ffmpeg.on('close', () => {
-            res.send();
+            res.end();
         })
         
         res.on('close', () => { // on HTTP close, kill ffmpeg
@@ -129,25 +129,38 @@ function video(db) {
         let lineup = helperFuncs.createLineup(prog)
         let lineupItem = lineup.shift()
 
+
         let streamDuration = lineupItem.streamDuration / 1000;
 
         // Only episode in this lineup, or item is a commercial, let stream end naturally
         if (lineup.length === 0 || lineupItem.type === 'commercial' || lineup.length === 1 && lineup[0].type === 'commercial')
             streamDuration = undefined
 
-        let deinterlace = enableChannelIcon = helperFuncs.isChannelIconEnabled(ffmpegSettings.enableChannelOverlay, channel.icon, channel.overlayIcon)
+        let enableChannelIcon = helperFuncs.isChannelIconEnabled( ffmpegSettings, channel, lineupItem.type);
+        let deinterlace = ffmpegSettings.enableFFMPEGTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
 
         let plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
         let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
 
+        var ffmpeg1Ended = false;
         ffmpeg.on('data', (data) => { res.write(data) })
 
         ffmpeg.on('error', (err) => {
+            if (ffmpeg1Ended) {
+                return;
+            }
+            ffmpeg1Ended = true;
             plexTranscoder.stopUpdatingPlex();
             if (typeof(this.backup) !== 'undefined') {
                 let ffmpeg2 = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
                 ffmpeg2.spawnError('Source error', `ffmpeg returned code ${err.code}`, this.backup.stream.streamStats, this.backup.enableChannelIcon, this.backup.type); // Spawn the ffmpeg process, fire this bitch up
-                ffmpeg2.on('data', (data) => { res.write(data) } );
+                ffmpeg2.on('data', (data) => {
+                    try {
+                        res.write(data)
+                    } catch (err) {
+                        console.log("err="+err);
+                    }
+                } );
                 ffmpeg2.on('error', (err) => { res.end() } );
                 ffmpeg2.on('close', () => { res.send() } );
                 ffmpeg2.on('end', () => { res.end() } );
@@ -160,11 +173,17 @@ function video(db) {
         })
 
         ffmpeg.on('close', () => {
+            if (ffmpeg1Ended) {
+                return;
+            }
             plexTranscoder.stopUpdatingPlex();
-            res.send();
+            res.end();
         })
 
         ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...
+            if (ffmpeg1Ended) {
+                return;
+            }
             plexTranscoder.stopUpdatingPlex();
             res.end()
         })
@@ -178,14 +197,13 @@ function video(db) {
 
             let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
 
-            let streamStats = stream.streamStats
+            let streamStats = stream.streamStats;
+            streamStats.duration = lineupItem.streamDuration;
             console.log("timeElapsed=" + prog.timeElapsed );
-            streamStats.duration = streamStats.duration - prog.timeElapsed;
 
             this.backup = {
                 stream: stream,
                 streamStart: streamStart,
-                streamDuration: streamDuration,
                 enableChannelIcon: enableChannelIcon,
                 type: lineupItem.type
             };
@@ -214,7 +232,7 @@ function video(db) {
         // If someone passes this number then they probably watch too much television
         let maxStreamsToPlayInARow = 100;
 
-        var data = "#ffconcat version 1.0\n"
+        var data = "ffconcat version 1.0\n"
 
         for (var i = 0; i < maxStreamsToPlayInARow; i++)
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}'\n`
