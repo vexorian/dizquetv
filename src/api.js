@@ -1,6 +1,7 @@
 
 const express = require('express')
 const fs = require('fs')
+const defaultSettings = require('./defaultSettings')
 
 module.exports = { router: api }
 function api(db, xmltvInterval) {
@@ -62,18 +63,10 @@ function api(db, xmltvInterval) {
         res.send(ffmpeg)
     })
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
-        db['ffmpeg-settings'].update({ _id: req.body._id }, {
-            ffmpegPath: req.body.ffmpegPath,
-            enableChannelOverlay: false,
-            threads: 4,
-            videoEncoder: 'mpeg2video',
-            videoResolutionHeight: 'unchanged',
-            videoBitrate: 10000,
-            videoBufSize: 2000,
-            concatMuxDelay: '0',
-            logFfmpeg: true
-        })
-        let ffmpeg = db['ffmpeg-settings'].find()[0]
+        let ffmpeg = defaultSettings.ffmpeg();
+        ffmpeg.ffmpegPath = req.body.ffmpegPath;
+        db['ffmpeg-settings'].update({ _id: req.body._id },  ffmpeg)
+        ffmpeg = db['ffmpeg-settings'].find()[0]
         res.send(ffmpeg)
     })
 

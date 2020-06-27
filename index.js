@@ -7,6 +7,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 
 const api = require('./src/api')
+const defaultSettings = require('./src/defaultSettings')
 const video = require('./src/video')
 const HDHR = require('./src/hdhr')
 
@@ -103,19 +104,13 @@ function initDB(db) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/pseudotv.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/pseudotv.png', data)
     }
+    if (!fs.existsSync(process.env.DATABASE + '/images/generic-error-screen.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/generic-error-screen.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/generic-error-screen.png', data)
+    }
 
-    if (ffmpegSettings.length === 0) {
-        db['ffmpeg-settings'].save({
-            ffmpegPath: '/usr/bin/ffmpeg',
-            enableChannelOverlay: false,
-            threads: 4,
-            videoEncoder: 'mpeg2video',
-            videoResolutionHeight: 'unchanged',
-            videoBitrate: 10000,
-            videoBufSize: 2000,
-            concatMuxDelay: '0',
-            logFfmpeg: true
-        })
+    if ( (ffmpegSettings.length === 0) || typeof(ffmpegSettings.configVersion) === 'undefined' ) {
+        db['ffmpeg-settings'].save( defaultSettings.ffmpeg() )
     }
 
     if (plexSettings.length === 0) {

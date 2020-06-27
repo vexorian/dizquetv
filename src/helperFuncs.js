@@ -113,8 +113,15 @@ function createLineup(obj) {
     return lineup
 }
 
-function isChannelIconEnabled(enableChannelOverlay, icon, overlayIcon, type) {
-    if (typeof type === `undefined`)
-        return enableChannelOverlay == true && icon !== '' && overlayIcon
-    return enableChannelOverlay == true && icon !== '' && overlayIcon
+function isChannelIconEnabled(  ffmpegSettings, channel, type) {
+    if (! ffmpegSettings.enableFFMPEGTranscoding || ffmpegSettings.disableChannelOverlay ) {
+        return false;
+    }
+    if ( (typeof type !== `undefined`) && (type == 'commercial') ) {
+        return false;
+    }
+    if (channel.icon === '' || !channel.overlayIcon) {
+        return false;
+    }
+    return true;
 }
