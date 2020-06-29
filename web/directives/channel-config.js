@@ -9,6 +9,7 @@ module.exports = function ($timeout, $location) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
+            scope.millisecondsOffset = 0;
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
@@ -31,9 +32,36 @@ module.exports = function ($timeout, $location) {
                     scope.channel.number = 1
                     scope.channel.name = "Channel 1"
                 }
+                scope.showRotatedNote = false;
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
+                let t = Date.now();
+                let originalStart = scope.channel.startTime.getTime();
+                let n = scope.channel.programs.length;
+                let totalDuration = scope.channel.duration;
+                let m = (t - originalStart) % totalDuration;
+                let x = 0;
+                let runningProgram = -1;
+                let offset = 0;
+                for (let i = 0; i < n; i++) {
+                    let d = scope.channel.programs[i].duration;
+                    if (x + d > m) {
+                        runningProgram = i
+                        offset = m - x;
+                        break;
+                    } else {
+                        x += d;
+                    }
+                }
+                scope.millisecondsOffset  = (t - offset) % 1000;
+                scope.channel.startTime = new Date(t - offset - scope.millisecondsOffset);
+                // move runningProgram to index 0
+                scope.channel.programs = scope.channel.programs.slice(runningProgram, this.length)
+                    .concat(scope.channel.programs.slice(0, runningProgram) );
+                updateChannelDuration();
+                setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
             }
+
             scope.finshedProgramEdit = (program) => {
                 scope.channel.programs[scope.selectedProgram] = program
                 scope._selectedProgram = null
@@ -151,6 +179,15 @@ module.exports = function ($timeout, $location) {
                 shuffle(scope.channel.programs)
                 updateChannelDuration()
             }
+            scope.cyclicShuffle = () => {
+                cyclicShuffle(scope.channel.programs);
+                updateChannelDuration();
+            }
+            scope.wipeSchedule = () => {
+                wipeSchedule(scope.channel.programs);
+                updateChannelDuration();
+            }
+
             function getRandomInt(min, max) {
                 min = Math.ceil(min)
                 max = Math.floor(max)
@@ -167,8 +204,75 @@ module.exports = function ($timeout, $location) {
                 }
                 return array
             }
+            function wipeSchedule(array) {
+                array.splice(0, array.length)
+                return array;
+            }
+            function cyclicShuffle(array) {
+                let shows = {};
+                let next = {};
+                let counts = {};
+                // some precalculation, useful to stop the shuffle from being quadratic...
+                for (let i = 0; i < array.length; i++) {
+                    var vid = array[i];
+                    if (vid.type != 'movie' && vid.season != 0) {
+                        let countKey = {
+                            title: vid.showTitle,
+                            s: vid.season,
+                            e: vid.episode,
+                        }
+                        let key = JSON.stringify(countKey);
+                        let c = ( (typeof(counts[key]) === 'undefined') ? 0 : counts[key] );
+                        counts[key] = c + 1;
+                        let showEntry = {
+                            c: c,
+                            it: array[i],
+                        }
+                        if ( typeof(shows[vid.showTitle]) === 'undefined') {
+                            shows[vid.showTitle] = [];
+                        }
+                        shows[vid.showTitle].push(showEntry);
+                    }
+                }
+                //this is O(|N| log|M|) where |N| is the total number of TV
+                // episodes and |M| is the maximum number of episodes
+                // in a single show. I am pretty sure this is a lower bound
+                // on the time complexity that's possible here.
+                Object.keys(shows).forEach(function(key,index) {
+                    shows[key].sort( (a,b) => {
+                        if (a.c == b.c) {
+                            if (a.it.season == b.it.season) {
+                                if (a.it.episode == b.it.episode) {
+                                    return 0;
+                                } else {
+                                    return (a.it.episode < b.it.episode)?-1: 1;
+                                }
+                            } else {
+                                return (a.it.season < b.it.season)?-1: 1;
+                            }
+                        } else {
+                            return (a.c < b.c)? -1: 1;
+                        }
+                    });
+                    next[key] = Math.floor( Math.random() * shows[key].length );
+                });
+                shuffle(array);
+                for (let i = 0; i < array.length; i++) {
+                    if (array[i].type !== 'movie' && array[i].season != 0) {
+                        let title = array[i].showTitle;
+                        var sequence = shows[title];
+                        var j = next[title];
+                        array[i] = sequence[j].it;
+                        
+                        next[title] = (j + 1) % sequence.length;
+                    }
+                }
+                return array
+            }
+
             scope.updateChannelDuration = updateChannelDuration
             function updateChannelDuration() {
+                scope.showRotatedNote = false;
                 scope.channel.duration = 0
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     scope.channel.programs[i].start = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
@@ -204,8 +308,10 @@ module.exports = function ($timeout, $location) {
                         scope.error.startTime = "Start time must not be set in the future."
                     else if (channel.programs.length === 0)
                         scope.error.programs = "No programs have been selected. Select at least one program."
-                    else
+                    else {
+                        channel.startTime.setMilliseconds( scope.millisecondsOffset);
                         scope.onDone(JSON.parse(angular.toJson(channel)))
+                    }
                     $timeout(() => { scope.error = {} }, 3500)
                 }
             }
