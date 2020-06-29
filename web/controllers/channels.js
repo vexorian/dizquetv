@@ -8,9 +8,11 @@ module.exports = function ($scope, pseudotv) {
         $scope.channels = channels
     })
     $scope.removeChannel = (channel) => {
-        pseudotv.removeChannel(channel).then((channels) => {
-            $scope.channels = channels
-        })
+        if (confirm("Are you sure to delete channel: " + channel.name + "?")) {
+            pseudotv.removeChannel(channel).then((channels) => {
+                $scope.channels = channels
+            })
+        }
     }
     $scope.onChannelConfigDone = (channel) => {
         if (typeof channel !== 'undefined') {
