@@ -10,6 +10,16 @@ class FFMPEG extends events.EventEmitter {
     constructor(opts, channel) {
         super()
         this.opts = opts
+        if (! this.opts.enableFFMPEGTranscoding) {
+            //this ensures transcoding is completely disabled even if 
+            // some settings are true
+            this.opts.normalizeAudio = false;
+            this.opts.normalizeAudioCodec = false;
+            this.opts.normalizeVideoCodec = false;
+            this.opts.errorScreen = 'kill';
+            this.opts.normalizeResolution = false;
+            this.opts.audioVolumePercent = 100;
+        }
         this.channel = channel
         this.ffmpegPath = opts.ffmpegPath
 
@@ -18,7 +28,8 @@ class FFMPEG extends events.EventEmitter {
         this.wantedH = parsed.h;
 
         this.sentData = false;
-        this.alignAudio = this.opts.alignAudio;
+        this.apad = this.opts.normalizeAudio;
+        this.audioChannelsSampleRate = this.opts.normalizeAudio;
         this.ensureResolution = this.opts.normalizeResolution;
         this.volumePercent =  this.opts.audioVolumePercent;
     }
@@ -31,7 +42,7 @@ class FFMPEG extends events.EventEmitter {
     async spawnError(title, subtitle, streamStats, enableIcon, type) {
         if (! this.opts.enableFFMPEGTranscoding || this.opts.errorScreen == 'kill') {
             console.log("error: " + title + " ; " + subtitle);
-            this.emit('error', { code: -1, cmd: `error stream disabled` })
+            this.emit('error', { code: -1, cmd: `error stream disabled. ${title} ${subtitles}`} )
             return;
         }
         // since this is from an error situation, streamStats may have issues.
@@ -97,7 +108,8 @@ class FFMPEG extends events.EventEmitter {
             if ( typeof(streamUrl.errorTitle) !== 'undefined') {
                 doOverlay = false; //never show icon in the error screen
                 // for error stream, we have to generate the input as well
-                this.alignAudio = false; //all of these generate audio correctly-aligned to video so there is no need for apad
+                this.apad = false; //all of these generate audio correctly-aligned to video so there is no need for apad
+                this.audioChannelsSampleRate = true; //we'll need these
 
                 if (this.ensureResolution) {
                     //all of the error strings already choose the resolution to
@@ -149,7 +161,7 @@ class FFMPEG extends events.EventEmitter {
                 if (this.opts.errorAudio == 'whitenoise') {
                     audioComplex = `;aevalsrc=-2+0.1*random(0):${durstr}[audioy]`;
                 } else if (this.opts.errorAudio == 'sine') {
-                    audioComplex = `;sine=f=440:${durstr}[audiox];[audiox]volume=-65dB[audioy]`;
+                    audioComplex = `;sine=f=440:${durstr}[audiox];[audiox]volume=-35dB[audioy]`;
                 } else { //silent
                     audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
                 }
@@ -192,26 +204,29 @@ class FFMPEG extends events.EventEmitter {
                 currentAudio = '[boosted]';
             }
             // Align audio is just the apad filter applied to audio stream
-            if (this.alignAudio) {
+            if (this.apad) {
                 audioComplex += `;${currentAudio}apad=whole_dur=${streamStats.duration}ms[padded]`;
                 currentAudio = '[padded]';
+            } else if (this.audioChannelsSampleRate) {
+                //TODO: Do not set this to true if audio channels and sample rate are already good
+                transcodeAudio = true;
             }
 
             // If no filters have been applied, then the stream will still be
             // [video] , in that case, we do not actually add the video stuff to
             // filter_complex and this allows us to avoid transcoding.
-            var changeVideoCodec = (this.opts.normalizeVideoCodec &&  isDifferentVideoCodec( streamStats.videoCodec, this.opts.videoEncoder) );
-            var changeAudioCodec = (this.opts.normalizeAudioCodec &&  isDifferentAudioCodec( streamStats.audioCodec, this.opts.audioEncoder) );
+            var transcodeVideo = (this.opts.normalizeVideoCodec &&  isDifferentVideoCodec( streamStats.videoCodec, this.opts.videoEncoder) );
+            var transcodeAudio = (this.opts.normalizeAudioCodec &&  isDifferentAudioCodec( streamStats.audioCodec, this.opts.audioEncoder) );
             var filterComplex = '';
             if (currentVideo != '[video]') {
-                changeVideoCodec = true; //this is useful so that it adds some lines below
+                transcodeVideo = true; //this is useful so that it adds some lines below
                 filterComplex += videoComplex;
             } else {
                 currentVideo = `0:${videoIndex}`;
             }
             // same with audio:
             if (currentAudio != '[audio]') {
-                changeAudioCodec = true;
+                transcodeAudio = true;
                 filterComplex += audioComplex;
             } else {
                 currentAudio = `0:${audioIndex}`;
@@ -228,11 +243,11 @@ class FFMPEG extends events.EventEmitter {
             ffmpegArgs.push(
                             '-map', currentVideo,
                             '-map', currentAudio,
-                            `-c:v`, (changeVideoCodec ? this.opts.videoEncoder : 'copy'),
+                            `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
                             `-flags`, `cgop+ilme`,
                             `-sc_threshold`, `1000000000`
             );
-            if ( changeVideoCodec ) {
+            if ( transcodeVideo ) {
                 // add the video encoder flags
                 ffmpegArgs.push(
                             `-b:v`, `${this.opts.videoBitrate}k`,
@@ -241,8 +256,24 @@ class FFMPEG extends events.EventEmitter {
                             `-bufsize:v`, `${this.opts.videoBufSize}k`
                 );
             }
+            if ( transcodeAudio ) {
+                // add the audio encoder flags
+                ffmpegArgs.push(
+                            `-b:a`, `${this.opts.audioBitrate}k`,
+                            `-minrate:a`, `${this.opts.audioBitrate}k`,
+                            `-maxrate:a`, `${this.opts.audioBitrate}k`,
+                            `-bufsize:a`, `${this.opts.videoBufSize}k`
+                );
+                if (this.audioChannelsSampleRate) {
+                    ffmpegArgs.push(
+                        `-ac`, `${this.opts.audioChannels}`,
+                        `-ar`, `${this.opts.audioSampleRate}k`
+                    );
+                }
+            }
             ffmpegArgs.push(
-                            `-c:a`,  (changeAudioCodec ? this.opts.audioEncoder : 'copy'),
+                            `-c:a`,  (transcodeAudio ? this.opts.audioEncoder : 'copy'),
+                            '-movflags', '+faststart',
                             `-muxdelay`, `0`,
                             `-muxpreload`, `0`
             );

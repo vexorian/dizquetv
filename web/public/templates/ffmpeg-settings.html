@@ -93,9 +93,21 @@
         </div>
 
         <div class="form-group">
+            <label>Audio Bitrate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.audioBitrate"/>
+            <br />
+            <label>Audio Buffer Size (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.audioBufSize"/>
+            <br />
             <label>Audio Volume (%)</label>
             <input type="number" ria-describedby="volumeHelp" class="form-control form-control-sm" ng-model="settings.audioVolumePercent"/>
             <small id="volumeHelp" class="form-text text-muted">Values higher than 100 will boost the audio.</small>
+            <br />
+            <label>Audio Channels</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.audioChannels"/>
+            <br />
+            <label>Audio Sample Rate (k)</label>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.audioSampleRate"/>
         </div>
 
 
@@ -146,9 +158,9 @@
         <div class="row">
             <div class="col-sm-9">
                 <div class="form-group">
-                    <input id="enableAlignAudio" type="checkbox" ng-model="settings.alignAudio" ng-disabled="isTranscodingNotNeeded()" />
-                    <label for="enableAlignAudio">Align Audio and Video lengths</label>
-                    <small class="form-text text-muted">In rare situations, video and audio streams in a video may have different lengths. This can cause desync issues in some clients. This transcodes audio in all videos to ensure the lengths stay the same.
+                    <input id="enableAlignAudio" type="checkbox" ng-model="settings.normalizeAudio" ng-disabled="isTranscodingNotNeeded()" />
+                    <label for="enableAlignAudio">Normalize Audio</label>
+                    <small class="form-text text-muted">This will force the preferred number of audio channels and sample rate, in addition it will align the lengths of the audio and video channels. This will prevent audio-related episode transition issues in many clients. Audio will always be transcoded.
                     </small>
                 </div>
             </div>

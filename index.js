@@ -109,8 +109,15 @@ function initDB(db) {
         fs.writeFileSync(process.env.DATABASE + '/images/generic-error-screen.png', data)
     }
 
-    if ( (ffmpegSettings.length === 0) || typeof(ffmpegSettings.configVersion) === 'undefined' ) {
-        db['ffmpeg-settings'].save( defaultSettings.ffmpeg() )
+    var ffmpegRepaired = defaultSettings.repairFFmpeg(ffmpegSettings);
+    if (ffmpegRepaired.hasBeenRepaired) {
+        var fixed = ffmpegRepaired.fixedConfig;
+        var i = fixed._id;
+        if ( i == null || typeof(i) == 'undefined') {
+            db['ffmpeg-settings'].save(fixed);
+        } else {
+            db['ffmpeg-settings'].update( { _id: i } , fixed );
+        }
     }
 
     if (plexSettings.length === 0) {
