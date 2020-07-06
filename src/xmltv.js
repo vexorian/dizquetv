@@ -135,13 +135,5 @@ function _writeProgramme(xw, program) {
     xw.endElement()
 }
 function _createXMLTVDate(d) {
-    function pad(n) { return n < 10 ? '0' + n : n }
-    var timezone = d.toString().split('GMT')
-    timezone = timezone[timezone.length - 1].split(' ')[0]
-    return d.getFullYear() + ""
-        + pad(d.getMonth() + 1) + ""
-        + pad(d.getDate()) + ""
-        + pad(d.getHours()) + ""
-        + pad(d.getMinutes()) + ""
-        + pad(d.getSeconds()) + " " + timezone
+    return d.toISOString().substring(0,19).replace(/[-T:]/g,"") + " +0000";
 }

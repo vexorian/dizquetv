@@ -54,7 +54,9 @@ let xmltvInterval = {
                         plex.RefreshGuide(dvrs).then(() => { }, (err) => { console.error(err, i) })
                     if (plexServers[i].arChannels && channels.length !== 0)
                         plex.RefreshChannels(channels, dvrs).then(() => { }, (err) => { console.error(err, i) })
-                })
+                }).catch( (err) => {
+                    console.error("There was an error when fetching Plex DVRs. This means pseudoTV couldn't trigger Plex to update its TV guide." + err);
+                });
             }
         }, (err) => {
             console.error("Failed to write the xmltv.xml file. Something went wrong. Check your output directory via the web UI and verify file permissions?", err)
