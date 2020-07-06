@@ -199,7 +199,6 @@ function video(db) {
 
             let streamStats = stream.streamStats;
             streamStats.duration = lineupItem.streamDuration;
-            console.log("timeElapsed=" + prog.timeElapsed );
 
             this.backup = {
                 stream: stream,

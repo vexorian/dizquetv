@@ -20,7 +20,7 @@
                 })
             }
             scope.isTranscodingNotNeeded = () => {
-                return ! (scope.settings.enableFFMPEGTranscoding)
+                return (typeof(scope.settings) ==='undefined') || ! (scope.settings.enableFFMPEGTranscoding);
             };
             scope.hideIfNotAutoPlay = () => {
                 return scope.settings.enableAutoPlay != true
