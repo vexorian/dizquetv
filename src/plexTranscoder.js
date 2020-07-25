@@ -34,42 +34,43 @@ class PlexTranscoder {
         this.log("Getting stream")
         this.log(`  deinterlace:     ${deinterlace}`)
         this.log(`  streamPath:      ${this.settings.streamPath}`)
-        this.log(`  forceDirectPlay: ${this.settings.forceDirectPlay}`)
 
-        // direct play forced
+
+
         if (this.settings.streamPath === 'direct' || this.settings.forceDirectPlay) {
+            stream = {directPlay: true}
+        } else {
+            try {
+                this.log("Setting transcoding parameters")
+                this.setTranscodingArgs(stream.directPlay, true, deinterlace)
+                await this.getDecision(stream.directPlay);
+                if (this.isDirectPlay()) {
+                    stream.directPlay = true;
+                    stream.streamUrl = this.plexFile;
+                }
+            } catch (err) {
+                this.log("Error when getting decision. 1. Check Plex connection. 2. This might also be a sign that plex direct play and transcode settings are too strict and it can't find any allowed action for the selected video.")
+                stream.directPlay = true;
+            }
+        }
+        if (stream.directPlay) {
             this.log("Direct play forced or native paths enabled")
             stream.directPlay = true
             this.setTranscodingArgs(stream.directPlay, true, false)
             // Update transcode decision for session
             await this.getDecision(stream.directPlay);
             stream.streamUrl = (this.settings.streamPath === 'direct') ? this.file : this.plexFile;
-        } else { // Set transcoding parameters based off direct stream params
-            this.log("Setting transcoding parameters")
-            this.setTranscodingArgs(stream.directPlay, true, deinterlace)
-
-            await this.getDecision(stream.directPlay);
-
-            if (this.isDirectPlay()) {
-                this.log("Decision: File can direct play")
-                stream.directPlay = true
-                this.setTranscodingArgs(stream.directPlay, true, false)
-                // Update transcode decision for session
-                await this.getDecision(stream.directPlay);
-                stream.streamUrl = this.plexFile;
-            } else if (this.isVideoDirectStream() === false) {
+        } else if (this.isVideoDirectStream() === false) {
                 this.log("Decision: File can direct play")
                 // Change transcoding arguments to be the user chosen transcode parameters
                 this.setTranscodingArgs(stream.directPlay, false, deinterlace)
                 // Update transcode decision for session
                 await this.getDecision(stream.directPlay);
                 stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
-            } else {
-                this.log("Decision: Direct stream. Audio is being transcoded")
-                stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
-            }
+        } else {
+            this.log("Decision: Direct stream. Audio is being transcoded")
+            stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
         }
-
         stream.streamStats = this.getVideoStats();
 
         // use correct audio stream if direct play
@@ -94,7 +95,16 @@ class PlexTranscoder {
         
         let resolutionArr = resolution.split("x")
 
-        let clientProfile=`add-transcode-target(type=videoProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&videoCodec=${this.settings.videoCodecs}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
+        let vc = this.settings.videoCodecs;
+        //This codec is not currently supported by plex so requesting it to transcode will always
+        // cause an error. If Plex ever supports av1, remove this. I guess.
+        if (vc != '') {
+            vc += ",av1";
+        } else {
+            vc = "av1";
+        }
+
+        let clientProfile=`add-transcode-target(type=videoProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&videoCodec=${vc}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
 add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&CopyMatroskaAttachments=true)+\
 add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&BreakNonKeyframes=true)+\
 add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.width&value=${resolutionArr[0]})+\
@@ -245,9 +255,6 @@ lang=en`
                 console.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
             }
         })
-        .catch((err) => {
-            console.log(err);
-        });
     }
 
     getStatusUrl() {

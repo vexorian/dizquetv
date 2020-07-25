@@ -12,7 +12,8 @@ const video = require('./src/video')
 const HDHR = require('./src/hdhr')
 
 const xmltv = require('./src/xmltv')
-const Plex = require('./src/plex')
+const Plex = require('./src/plex');
+const channelCache = require('./src/channel-cache');
 
 console.log("PseudoTV Version: " + pseudotvVersion)
 
@@ -41,6 +42,11 @@ let xmltvInterval = {
     lastRefresh: null,
     updateXML: () => {
         let channels = db['channels'].find()
+        channels.forEach( (channel) => {
+            // if we are going to go through the trouble of loading the whole channel db, we might
+            // as well take that opportunity to reduce stream loading times...
+            channelCache.saveChannelConfig( channel.number, channel );
+        });
         channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         let xmltvSettings = db['xmltv-settings'].find()[0]
         xmltv.WriteXMLTV(channels, xmltvSettings).then(async () => {    // Update XML
@@ -109,6 +115,10 @@ function initDB(db) {
     if (!fs.existsSync(process.env.DATABASE + '/images/generic-error-screen.png')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/generic-error-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/generic-error-screen.png', data)
+    }
+    if (!fs.existsSync(process.env.DATABASE + '/images/generic-offline-screen.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/generic-offline-screen.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/generic-offline-screen.png', data)
     }
 
     var ffmpegRepaired = defaultSettings.repairFFmpeg(ffmpegSettings);

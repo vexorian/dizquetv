@@ -84,7 +84,7 @@
                             <button class="btn btn-sm btn-secondary" style="margin-left: 10px"
                                 ng-click="showShuffleOptions = !showShuffleOptions"
                                 ng-show="channel.programs.length !== 0">
-                                Shuffle / Sort&nbsp;&nbsp;<span
+                                Tools&nbsp;&nbsp;<span
                                     class="fa {{ showShuffleOptions ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>
                             </button>
                             <span class="pull-right">
@@ -95,7 +95,52 @@
                             </span>
                         </h6>
                         <div ng-init="blockCount = 1; showShuffleOptions = false" ng-show="showShuffleOptions">
-                            <p class="text-center text-info small">"Block Shuffle" and "Sort TV Shows" will push any movies to the end of the channel.</p>
+                            <p class="text-center text-info small">
+                                Tools to modify the schedule.
+                                <a href ng-click="showHelp= !showHelp">
+                                    {{ showHelp ? "Hide Help" : "Help" }}
+                                </a>
+                            </p>
+                            <div ng-show='showHelp' style='margin-left: 10px' class="small">
+                                <h6>Block Shuffle</h6>
+                                <p>Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom.</p>
+
+                                <h6>Random Shuffle</h6>
+                                <p>Completely randomizes the order of programs.</p>
+
+                                <h6>Cyclic Shuffle</h6>
+                                <p>Like Random Shuffle, but tries to preserve the sequence of episodes for each TV shows. If a TV show has multiple instances of its episodes, they are also cycled appropriately.</p>
+
+                                <h6>Sort TV Shows</h6>
+                                <p>Sorts the list by TV Show and the episodes in each TV show by their season/episode number.
+                                    Movies are moved to the bottom of the schedule.
+                                </p>
+
+                                <h6>Sort Release Dates</h6>
+                                <p>Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.</p>
+                                <h6>Remove Duplicates</h6>
+                                <p>Removes repeated videos.</p>
+
+                                <h6>Equalize Shows</h6>
+                                <p>Attempts to make the amount of time dedicated to each TV show as equal as possible without breaking sequences. Episodes might be replicated multiple times. Movies and specials are ignored.</p>
+
+
+                                <h6>Add Flex</h6>
+                                <p>Adds a &quot;Flex&quot; Time Slot. Flex Time periods don't appear in the TV guide and can be configured to play a fallback screen and/or random &quot;filler&quot; content (e.g &quot;commercials&quot;, trailers, prerolls, countdowns, music videos, channel bumpers, etc.)</p>
+
+                                <h6>Remove Flex</h6>
+                                <p>Removes any Flex periods from the schedule.</p>
+
+                                <h6>Pad Times</h6>
+                                <p>Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones.</p>
+
+                                <h6>Restrict Hours</h6>
+                                <p>The channel's regular programming between the specified hours. Flex time will fill up the remaining hours.</p>
+
+                                <h6>Add Breaks</h6>
+                                <p>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes.</p>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6" style="padding: 5px;">
                                     <div class="input-group">
@@ -123,15 +168,79 @@
                                     <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()">Sort TV Shows</button>
                                 </div>
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortByDate()">Sort Release Dates</button>
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
+                                </div>
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeOffline()">Remove Flex</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="equalizeShows()">Equalize Shows</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addOffline()">Add Flex</button>
+                                </div>
+
+                                <div class="col-md-6" style="padding: 5px;">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <select ng-model="nightStart"
+                                            ng-options="o.id as o.description for o in nightStartHours" />
+                                            <select ng-model="nightEnd"
+                                            ng-options="o.id as o.description for o in nightEndHours" />
+                                        </div>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(nightStart, nightEnd)" ng-disabled="nightStart==-1 || nightEnd==-1">Restrict Hours</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6" style="padding: 5px;">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <select ng-model="paddingMod"
+                                            ng-options="o.id as o.description for o in paddingOptions" />
+
+                                        </div>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingMod)">Pad Times</button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6" style="padding: 5px;">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <select ng-model="breakAfter"
+                                            ng-options="o.id as o.description for o in breakAfterOptions" />
+                                            <select ng-model="minBreakSize"
+                                            ng-options="o.id as o.description for o in minBreakSizeOptions" />
+                                            <select ng-model="maxBreakSize"
+                                            ng-options="o.id as o.description for o in maxBreakSizeOptions" />
+                                        </div>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breakAfter==-1 || minBreakSize==-1 || maxBreakSize==-1 || (minBreakSize > maxBreakSize)">Add Breaks</button>
+                                    </div>
+                                </div>
+                            </div>
+
                             
+
+
                         </div>
                         <div ng-if="channel.programs.length === 0">
                             <div class="small">Add programs to this channel by selecting media from your Plex library</div>
                             <br/>
-                            <h5 class="text-center text-danger">No programs are currently scheduled</h5>
+                            <h5 class="text-center text-danger">No programs are currently scheduled
+                                <button class="btn btn-sm btn-secondary" style="margin-left: 10px" type="button" ng-click="addOffline()">Schedule Flex Time
+                                </button>
+                            </h6>
+
                         </div>
                         <div class="list-group list-group-root" dnd-list="channel.programs">
                             <li class="list-group-item flex-container" ng-repeat="x in channel.programs" ng-click="selectProgram($index)" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1); updateChannelDuration()" dnd-effect-allowed="move">
@@ -139,11 +248,14 @@
                                     <div class="text-success">{{x.start.toLocaleString()}}</div>
                                     <div class="text-danger">{{x.stop.toLocaleString()}}</div>
                                 </div>
-                                <div style="margin-right: 15px; text-align: center">
-                                    <span class="badge badge-dark">{{x.commercials.length}}</span>
+                                <div style="margin-right: 15px; text-align: center" >
+                                    <span class="badge badge-dark">{{x.isOffline? channel.fillerContent.length: x.commercials.length}}</span>
                                 </div>
-                                <div style="margin-right: 5px;">
+                                <div style="margin-right: 5px;"  ng-hidden="x.isOffline">
                                     {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
+                                </div>
+                                <div style="margin-right: 5px; font-weight:ligther"  ng-show="x.isOffline">
+                                    <i>Flex</i>
                                 </div>
                                 <span class="flex-pull-right btn fa fa-trash" ng-click="removeItem($index);  $event.stopPropagation()"></span>
                             </li>
@@ -164,5 +276,7 @@
         </div>
     </div>
     <program-config program="_selectedProgram" on-done="finshedProgramEdit"></program-config>
+    <offline-config offline-title="Modify Flex Time" program="_selectedOffline" on-done="finishedOfflineEdit"></offline-config>
+    <offline-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></offline-config>
     <plex-library height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
 </div>

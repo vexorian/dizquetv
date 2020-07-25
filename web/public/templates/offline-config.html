@@ -1,0 +1,134 @@
+<div ng-show="program">
+    <div class="modal" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, .5);">
+        <div class="modal-dialog modal-dialog-scrollable modal-xl" role="document">
+            <div class="modal-content">
+                <div>
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{title}}</h5>
+                    </div>
+                </div>
+    
+                <div class="modal-body container">
+                    <label>Duration (Seconds): <span class="text-danger pull-right">{{error.duration}}</span></label>
+                    <input type="number" class="form-control form-control-sm" ng-model="program.durationSeconds" ng-pattern="/^([1-9][0-9]*)$/"/>
+
+                    <h6 style="margin-top: 10px;">Flex Settings:</h6>
+
+                    <div class='row'>
+                        <div class="col-md-12">
+                            <label for="offlineMode" class="small">Fallback Mode:</label>
+                            <div class="input-group mb-1">
+                                <select class="form-control form-control-sm" id="offlineMode" ng-model="program.channelOfflineMode">
+                                    <option value="pic">Picture</option>
+                                    <option value="clip">Clip from Library</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div ng-show="program.channelOfflineMode == 'clip'" >
+                        <p class="text-center text-info">Pick a video clip that will be used for fallback when there's no appropriate
+                            filler available for the time duration. It's recommended to use countdown or looping videos for this. <span class="text-danger">{{error.fallback}}</span></p>
+                        
+                    </div>
+
+
+                    <div class='row' ng-show="program.channelOfflineMode == 'pic'" >
+                        <div class="col-md-3">
+                            <img ng-src="{{program.channelPicture}}" alt="Fallback preview" style="max-height: 120px;"/>
+                        </div>
+                        <div class="col-md-9">
+                            <div>
+                            <label for="offlinePicture" class="small">
+                                Picture: <span class="text-danger pull-right">{{error.picture}}</span></label>
+                            <input name="offlinePicture" id="offlinePicture" class="form-control form-control-sm" type="url" ng-model="program.channelPicture" />
+                            </div>
+        
+                            <div>
+                            <label for="offlineSound" class="small">Sound Track:<span class="text-danger pull-right">{{error.sound}}</span></label>
+                            <input name="offlineSound" id="offlineSound" class="form-control form-control-sm" type="url" ng-model="program.channelSound"  placeholder="URL to a sound track that will loop during the offline screen, leave empty for silence." />
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class='row' ng-show="program.channelOfflineMode == 'pic'" >
+                        <div class='col-md-12'><p class="text-center text-info">This picture is used in case there are no filler clips available with a shorter length than the Flex time duration. Requires ffmpeg transcoding.</p></div>
+                    </div>
+
+
+
+                    <div ng-show="program.channelOfflineMode == 'clip'">
+                        <div class="list-group list-group-root" dnd-list="program.fallback">
+                            <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.fallback" dnd-draggable="x" dnd-moved="program.fallback.splice($index, 1)" dnd-effect-allowed="move">
+                                <div class="small text-success" style="margin-right: 15px; font-family:monospace">
+                                    {{durationString(x.actualDuration)}}
+                                </div>
+                                <div style="margin-right: 5px;">
+                                    <strong>Fallback:</strong> {{x.title}}
+                                </div>
+                                <div class="flex-pull-right">
+                                    <span class="btn fa fa-trash" ng-click="program.fallback.splice($index,1)"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div ng-show="program.fallback.length === 0">
+                            <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="showFallbackPlexLibrary = true">Pick fallback</button>
+                        </div>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h6 style="margin-top: 10px;">Filler</h6>
+                        <p class="text-center text-info">Filler clips are played randomly during the Flex time as long as the clip is shorter than the remaining time. If no valid clips are found, fallback is played.</p>
+                        <br />
+                        <div>
+                        <label>Minimum time before replaying a filler (Minutes): </label>
+                        <input type="number" class="form-control form-control-sm"  ng-model="program.repeatCooldown" ng-pattern="/^([1-9][0-9]*)$/"/>
+
+                        <span class="text-danger pull-right">{{error.blockRepeats}}</span>
+                        </div>
+                        <div>
+                            <input id="overlayDiableIcon" type="checkbox" ng-model="program.disableOverlay">&nbsp;
+                            <label class="small" for="overlayDisableIcon" style="margin-bottom: 4px;">&nbsp;Disable overlay icon when playing filler&nbsp;&nbsp;</label>
+                        </div>
+                        <hr />
+                        <div>
+                            <span class="small" ng-show="program.filler.length > 0">
+                                Filler Clips: {{program.filler.length}}<span class="btn fa fa-trash" ng-click="program.filler=[]"></span>
+                            </span>
+                            <button class="btn btn-sm btn-primary pull-right" ng-click="showPlexLibrary = true">
+                                <span class="fa fa-plus"></span>
+                            </button>
+                        </div>
+                        
+                        
+                        <div ng-show="program.filler.length === 0">
+                            <p class="text-center text-info">Click the <span class="fa fa-plus"></span> to import filler content from your Plex server(s).</p>
+                        </div>
+                        <div class="list-group list-group-root" dnd-list="program.filler">
+                            <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.filler" dnd-draggable="x" dnd-moved="program.filler.splice($index, 1)" dnd-effect-allowed="move">
+                                <div class="small text-success" style="margin-right: 15px; font-family:monospace">
+                                    {{durationString(x.actualDuration)}}
+                                </div>
+                                <div style="margin-right: 5px;">
+                                    {{x.title}}
+                                </div>
+                                <div class="flex-pull-right">
+                                    <span class="btn fa fa-trash" ng-click="program.filler.splice($index,1)"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-link" ng-click="program = null">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-primary" ng-click="finished(program);">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <plex-library height="300" visible="showPlexLibrary" on-finish="importPrograms"></plex-library>
+    <plex-library height="300" limit=1 visible="showFallbackPlexLibrary" on-finish="importFallback"></plex-library>
+</div>

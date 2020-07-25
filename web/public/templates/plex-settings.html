@@ -35,10 +35,9 @@
                 <span class="fa fa-minus"></span>
             </button>
         </td>
-    </tr>
     <tr ng-if="servers.length !== 0">
         <td colspan="5">
-            <p class="text-center text-danger">Edit server values in plex-servers.json</p>
+            <p class="text-center text-info small">To further tweak server values you can edit plex-servers.json. Note that changing server address requires you to re-make your channels programming, or else they will still try to use the previous server.</p>
         </td>
     </tr>
 </table>
@@ -73,11 +72,16 @@
             <small id="updatePlayStatusHelp" class="form-text text-muted">Note: This affects the "on deck" for your plex account.</small>
         </div>
     </div>
-    <div class="col-sm-6">
-        <p class="text-center text-danger">If stream changes video codec, audio codec, or audio channels upon episode change, you will experience playback issues.</p>
-    </div>
 </div>
+
 <div class="row" ng-hide="hideIfNotPlexPath()">
+<div class="col-sm-12">
+    <p class="text-center text-info small">If stream changes video codec, audio codec, or audio channels upon episode change, you will experience playback issues unless ffmpeg transcoding and normalization are also enabled.</p>
+</div>
+</div>
+
+<div class="row" ng-hide="hideIfNotPlexPath()">
+
     <div class="col-sm-6">
         <h6 style="font-weight: bold">Video Options</h6>
         <div class="form-group">

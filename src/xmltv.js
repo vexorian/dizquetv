@@ -7,11 +7,12 @@ module.exports = { WriteXMLTV: WriteXMLTV }
 function WriteXMLTV(channels, xmlSettings) {
     return new Promise((resolve, reject) => {
         let date = new Date()
-        var ws = fs.createWriteStream(xmlSettings.file)
-        var xw = new XMLWriter(true, (str, enc) => ws.write(str, enc))
+        let ws = fs.createWriteStream(xmlSettings.file)
+        let xw = new XMLWriter(true, (str, enc) => ws.write(str, enc))
         ws.on('close', () => { resolve() })
         ws.on('error', (err) => { reject(err) })
         _writeDocStart(xw)
+      async function middle() {
         if (channels.length === 0) { // Write Dummy PseudoTV Channel if no channel exists
             _writeChannels(xw, [{ number: 1, name: "PseudoTV", icon: "https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png" }])
             let program = {
@@ -24,15 +25,19 @@ function WriteXMLTV(channels, xmlSettings) {
                 start: date,
                 stop: new Date(date.valueOf() + xmlSettings.cache * 60 * 60 * 1000)
             }
-            _writeProgramme(xw, program)
+            await _writeProgramme(xw, program)
         } else {
             _writeChannels(xw, channels)
-            for (var i = 0; i < channels.length; i++)
-                _writePrograms(xw, channels[i], date, xmlSettings.cache)
+            for (let i = 0; i < channels.length; i++) {
+                await _writePrograms(xw, channels[i], date, xmlSettings.cache)
+            }
         }
-        
+      }
+      middle().then( () => {
         _writeDocEnd(xw, ws)
-        ws.close()
+      }).catch( (err) => {
+          console.error("Error", err);
+      }).then( () => ws.close() );
     })
 }
 
@@ -47,7 +52,7 @@ function _writeDocEnd(xw, ws) {
 }
 
 function _writeChannels(xw, channels) {
-    for (var i = 0; i < channels.length; i++) {
+    for (let i = 0; i < channels.length; i++) {
         xw.startElement('channel')
         xw.writeAttribute('id', channels[i].number)
         xw.startElement('display-name')
@@ -63,7 +68,7 @@ function _writeChannels(xw, channels) {
     }
 }
 
-function _writePrograms(xw, channel, date, cache) {
+async function _writePrograms(xw, channel, date, cache) {
     let prog = helperFuncs.getCurrentProgramAndTimeElapsed(date, channel)
     let cutoff = new Date((date.valueOf() - prog.timeElapsed) + (cache * 60 * 60 * 1000))
     let temp = new Date(date.valueOf() - prog.timeElapsed)
@@ -71,6 +76,7 @@ function _writePrograms(xw, channel, date, cache) {
         return
     let i = prog.programIndex
     for (; temp < cutoff;) {
+        await _throttle(); //let's not block for this process
         let program = {
             program: channel.programs[i],
             channel: channel.number,
@@ -85,7 +91,11 @@ function _writePrograms(xw, channel, date, cache) {
     }
 }
 
-function _writeProgramme(xw, program) {
+async function _writeProgramme(xw, program) {
+    if (program.program.isOffline === true) {
+        //do not write anything for the offline period
+        return;
+    }
     // Programme
     xw.startElement('programme')
     xw.writeAttribute('start', _createXMLTVDate(program.start))
@@ -136,4 +146,9 @@ function _writeProgramme(xw, program) {
 }
 function _createXMLTVDate(d) {
     return d.toISOString().substring(0,19).replace(/[-T:]/g,"") + " +0000";
+}
+function _throttle() {
+    return new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
 }

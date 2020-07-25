@@ -4,6 +4,8 @@ const FFMPEG = require('./ffmpeg')
 const FFMPEG_TEXT = require('./ffmpegText')
 const PlexTranscoder = require('./plexTranscoder')
 const fs = require('fs')
+const ProgramPlayer = require('./program-player');
+const channelCache  = require('./channel-cache')
 
 module.exports = { router: video }
 
@@ -46,7 +48,8 @@ function video(db) {
             res.status(500).send("No Channel Specified")
             return
         }
-        let channel = db['channels'].find({ number: parseInt(req.query.channel, 10) })
+        let number = parseInt(req.query.channel, 10);
+        let channel =  channelCache.getChannelConfig(db, number);
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return
@@ -68,50 +71,85 @@ function video(db) {
 
         console.log(`\r\nStream starting. Channel: ${channel.number} (${channel.name})`)
 
+        let lastWrite = (new Date()).getTime();
         let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+        let stopped = false;
 
-        ffmpeg.on('data', (data) => { res.write(data) })
+        function stop() {
+            if (! stopped) {
+                stopped = true;
+                try {
+                    res.end();
+                } catch (err) {}
+                ffmpeg.kill();
+            }
+        }
+        let watcher = () => {
+            let t1 = (new Date()).getTime();
+            if (t1 - lastWrite >= 30000) {
+                console.log("Client timed out, stop stream.");
+                //way too long without writes, time out
+                stop();
+            }
+            if (! stopped) {
+                setTimeout(watcher, 5000);
+            }
+        };
+        setTimeout(watcher, 5000);
+
+
+
+        ffmpeg.on('data', (data) => {
+            if (! stopped) {
+                lastWrite = (new Date()).getTime();
+                res.write(data)
+            }
+        })
 
         ffmpeg.on('error', (err) => {
             console.error("FFMPEG ERROR", err);
             //status was already sent
-            res.end();
+            stop();
             return;
         })
 
-        ffmpeg.on('close', () => {
-            res.end();
-        })
+        ffmpeg.on('close', stop)
         
         res.on('close', () => { // on HTTP close, kill ffmpeg
             console.log(`\r\nStream ended. Channel: ${channel.number} (${channel.name})`);
-            ffmpeg.kill();
+            stop();
         })
 
         ffmpeg.on('end', () => {
-            console.log("Recieved end of stream when playing a continuous playlist. This should never happen!");
-            console.log("This either means ffmpeg could not open any valid streams, or you've watched countless hours of television without changing channels. If it is the latter I salute you.")
+            console.log("Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.")
+            stop();
         })
 
         let channelNum = parseInt(req.query.channel, 10)
         ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}`);
     })
     // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
-    router.get('/stream', (req, res) => {
+    router.get('/stream', async (req, res) => {
         // Check if channel queried is valid
         if (typeof req.query.channel === 'undefined') {
-            res.status(500).send("No Channel Specified")
+            res.status(400).send("No Channel Specified")
             return
         }
-        let channel = db['channels'].find({ number: parseInt(req.query.channel, 10) })
+
+        let number = parseInt(req.query.channel);
+        let channel =  channelCache.getChannelConfig(db, number);
+
         if (channel.length === 0) {
-            res.status(500).send("Channel doesn't exist")
+            res.status(404).send("Channel doesn't exist")
             return
+        }
+        let isFirst = false;
+        if ( (typeof req.query.first !== 'undefined') && (req.query.first=='1') ) {
+            isFirst = true;
         }
         channel = channel[0]
 
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
-        let plexSettings = db['plex-settings'].find()[0]
 
         // Check if ffmpeg path is valid
         if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
@@ -120,97 +158,128 @@ function video(db) {
             return
         }
 
-        res.writeHead(200, {
-            'Content-Type': 'video/mp2t'
-        })
+
+
 
         // Get video lineup (array of video urls with calculated start times and durations.)
-        let prog = helperFuncs.getCurrentProgramAndTimeElapsed(Date.now(), channel)
-        let lineup = helperFuncs.createLineup(prog)
-        let lineupItem = lineup.shift()
+      let t0 = (new Date()).getTime();
+      let lineupItem = channelCache.getCurrentLineupItem( channel.number, t0);
+      if (lineupItem == null) {
+        let prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel)
 
-
-        let streamDuration = lineupItem.streamDuration / 1000;
-
-        // Only episode in this lineup, or item is a commercial, let stream end naturally
-        if (lineup.length === 0 || lineupItem.type === 'commercial' || lineup.length === 1 && lineup[0].type === 'commercial')
-            streamDuration = undefined
-
-        let enableChannelIcon = helperFuncs.isChannelIconEnabled( ffmpegSettings, channel, lineupItem.type);
-        let deinterlace = ffmpegSettings.enableFFMPEGTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
-
-        let plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
-        let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
-
-        var ffmpeg1Ended = false;
-        ffmpeg.on('data', (data) => { res.write(data) })
-
-        ffmpeg.on('error', (err) => {
-            if (ffmpeg1Ended) {
-                return;
-            }
-            ffmpeg1Ended = true;
-            plexTranscoder.stopUpdatingPlex();
-            if (typeof(this.backup) !== 'undefined') {
-                let ffmpeg2 = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
-                ffmpeg2.spawnError('Source error', `ffmpeg returned code ${err.code}`, this.backup.stream.streamStats, this.backup.enableChannelIcon, this.backup.type); // Spawn the ffmpeg process, fire this bitch up
-                ffmpeg2.on('data', (data) => {
-                    try {
-                        res.write(data)
-                    } catch (err) {
-                        console.log("err="+err);
-                    }
-                } );
-                ffmpeg2.on('error', (err) => { res.end() } );
-                ffmpeg2.on('close', () => { res.send() } );
-                ffmpeg2.on('end', () => { res.end() } );
-                res.on('close', () => {
-                    ffmpeg2.kill();
-                });
-            } else {
-                res.end()
-            }
-        })
-
-        ffmpeg.on('close', () => {
-            if (ffmpeg1Ended) {
-                return;
-            }
-            plexTranscoder.stopUpdatingPlex();
-            res.end();
-        })
-
-        ffmpeg.on('end', () => { // On finish transcode - END of program or commercial...
-            if (ffmpeg1Ended) {
-                return;
-            }
-            plexTranscoder.stopUpdatingPlex();
-            res.end()
-        })
-        
-        res.on('close', () => { // on HTTP close, kill ffmpeg
-            plexTranscoder.stopUpdatingPlex();
-            ffmpeg.kill();
-        })
-
-        plexTranscoder.getStream(deinterlace).then(stream => {
-
-            let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
-
-            let streamStats = stream.streamStats;
-            streamStats.duration = lineupItem.streamDuration;
-
-            this.backup = {
-                stream: stream,
-                streamStart: streamStart,
-                enableChannelIcon: enableChannelIcon,
-                type: lineupItem.type
+        if (prog.program.isOffline && channel.programs.length == 1) {
+            //there's only one program and it's offline. So really, the channel is
+            //permanently offline, it doesn't matter what duration was set
+            //and it's best to give it a long duration to ensure there's always
+            //filler to play (if any)
+            let t = 365*24*60*60*1000;
+            prog.program = {
+                actualDuration: t,
+                duration: t,
+                isOffline : true,
             };
+        } else if (prog.program.isOffline && prog.program.duration - prog.timeElapsed <= 10000) {
+            //it's pointless to show the offline screen for such a short time, might as well
+            //skip to the next program
+            prog.programIndex = (prog.programIndex + 1) % channel.programs.length;
+            prog.program = channel.programs[prog.programIndex ];
+            prog.timeElapsed = 0;
+        }
+        if ( (prog == null) || (typeof(prog) === 'undefined') || (prog.program == null) || (typeof(prog.program) == "undefined") ) {
+            throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted."
+        }
+        let lineup = helperFuncs.createLineup(prog, channel, isFirst)
+        lineupItem = lineup.shift()
+      }
+     
 
-            ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, enableChannelIcon, lineupItem.type); // Spawn the ffmpeg process, fire this bitch up
-            plexTranscoder.startUpdatingPlex();
+        console.log("=========================================================");
+        console.log("! Start playback");
+        console.log(`! Channel: ${channel.name} (${channel.number})`);
+        if (typeof(lineupItem) === 'undefined') {
+            lineupItem.title = 'Unknown';
+        }
+        console.log(`! Title: ${lineupItem.title}`);
+        if ( typeof(lineupItem.streamDuration) === 'undefined') {
+            console.log(`! From : ${lineupItem.start}`);
+        } else {
+            console.log(`! From : ${lineupItem.start} to: ${lineupItem.start + lineupItem.streamDuration}`);
+        }
+        console.log("=========================================================");
+
+        channelCache.recordPlayback(channel.number, t0, lineupItem);
+
+        let playerContext = {
+            lineupItem : lineupItem,
+            ffmpegSettings : ffmpegSettings,
+            channel: channel,
+            db: db,
+        }
+        
+        let player = new ProgramPlayer(playerContext);
+        let stopped = false;
+        let stop = () => {
+            if (!stopped) {
+                stopped = true;
+                player.cleanUp();
+                player = null;
+                res.end();
+            }
+        };
+        var playerObj = null;
+        try {
+            playerObj = await player.play();
+        } catch (err) {
+            console.log("Error when attempting to play video: " +err.stack);
+            try {
+                res.status(500).send("Unable to start playing video.").end();
+            } catch (err2) {
+                console.log(err2.stack);
+            }
+            stop();
+            return;
+        }
+        let lastWrite = (new Date()).getTime();
+        let watcher = () => {
+            let t1 = (new Date()).getTime();
+            if (t1 - lastWrite >= 30000) {
+                console.log("Demux ffmpeg timed out, stop stream.");
+                //way too long without writes, time out
+                stop();
+            }
+            if (! stopped) {
+                setTimeout(watcher, 5000);
+            }
+        };
+        setTimeout(watcher, 5000);
+
+        let stream = playerObj.stream;
+        res.writeHead(200, {
+            'Content-Type': 'video/mp2t'
         });
-    })
+
+        res.write(playerObj.data);
+
+        stream.on("data", (data) => {
+            try {
+                if (! stopped) {
+                    lastWrite = (new Date()).getTime();
+                    res.write(data);
+                }
+            } catch (err) {
+                console.log("I/O Error: " + err.stack);
+                stop();
+            }
+        });
+        stream.on("end", () => {
+            stop();
+        });
+        res.on("close", () => {
+            console.log("Client Closed");
+            stop();
+        });
+    });
+
     router.get('/playlist', (req, res) => {
         res.type('text')
 
@@ -221,7 +290,7 @@ function video(db) {
         }
 
         let channelNum = parseInt(req.query.channel, 10)
-        let channel = db['channels'].find({ number: channelNum })
+        let channel =  channelCache.getChannelConfig(db, channelNum );
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return
@@ -233,8 +302,10 @@ function video(db) {
 
         var data = "ffconcat version 1.0\n"
 
-        for (var i = 0; i < maxStreamsToPlayInARow; i++)
+        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1'\n`
+        for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}'\n`
+        }
 
         res.send(data)
     })

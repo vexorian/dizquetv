@@ -20,18 +20,14 @@ EPG (Guide Information) data is stored to `.pseudotv/xmltv.xml`
 - Ability to auto update Plex DVR guide data and channel mappings
 - Auto update the xmltv.xml file at a set interval (in hours). You can also set the amount EPG cache (in hours).
 - Continuous playback support
+- Ability to add breaks or padding between episodes and use Commercials, Trailers, Bumpers or other filler.
 - Commercial support. 5 commercial slots for a program (BEFORE, 1/4, 1/2, 3/4, AFTER). Place as many commercials as desired per slot to chain commercials.
 - Media track selection (video, audio, subtitle). (subtitles disabled by default)
-- Subtitle support (some subtitle formats may cause a delay when starting an ffmpeg session) Supported subs below.
-    - Internal Subs
-        - ASS (slow)
-        - SRT (slow)
-        - PGS (fast)
-    - External Subs
-        - ASS (moderate)
-        - SRT (moderate)
+- Subtitle support.
 - Ability to overlay channel icon over stream
 - Auto deinterlace any Plex media not marked `"scanType": "progressive"`
+- Can be configured to completely force Direct play.
+- Can normalize video formats to prevent stream breaking.
 
 ## Useful Tips/Info
 
@@ -52,8 +48,11 @@ EPG (Guide Information) data is stored to `.pseudotv/xmltv.xml`
 
 - Plex Pass is required to unlock Plex Live TV/DVR feature
 - Only one EPG source can be used with Plex server. This may cause an issue if you are adding the pseudotv tuner to a Plex server with Live TV/DVR already enabled/configured.
-- PseudoTV does not watch your Plex server for media updates/changes. You must manually remove and readd your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. all media will fail..
 
+  * There are projects like xteve that allow you to unify multiple EPG sources into a single list which Plex can use.
+
+- PseudoTV does not watch your Plex server for media updates/changes. You must manually remove and readd your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. all media will fail..
+- Many IPTV players (including Plex) will break after switching episodes if video / audio format is too different between. PseudoTV can  be configured to use ffmpeg transcoding to prevent htis, but that costs resources.
 
 ## Installation
 

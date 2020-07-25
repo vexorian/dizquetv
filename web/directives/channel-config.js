@@ -9,18 +9,26 @@ module.exports = function ($timeout, $location) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
+            scope.showHelp = false;
             scope.millisecondsOffset = 0;
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
+                scope.channel.fillerContent = []
+                scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
+                scope.channel.fallback = [];
                 scope.isNewChannel = true
                 scope.channel.icon = `${$location.protocol()}://${location.host}/images/pseudotv.png`
+                scope.channel.disableFillerOverlay = true;
                 scope.channel.iconWidth = 120
                 scope.channel.iconDuration = 60
                 scope.channel.iconPosition = "2"
                 scope.channel.startTime = new Date()
                 scope.channel.startTime.setMilliseconds(0)
                 scope.channel.startTime.setSeconds(0)
+                scope.channel.offlinePicture = `${$location.protocol()}://${location.host}/images/generic-offline-screen.png`
+                scope.channel.offlineSoundtrack = ''
+                scope.channel.offlineMode = "pic";
                 if (scope.channel.startTime.getMinutes() < 30)
                     scope.channel.startTime.setMinutes(0)
                 else
@@ -53,6 +61,26 @@ module.exports = function ($timeout, $location) {
                         x += d;
                     }
                 }
+                if (typeof(scope.channel.fillerRepeatCooldown) === 'undefined') {
+                    scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
+                }
+                if (typeof(scope.channel.offlinePicture)==='undefined') {
+                    scope.channel.offlinePicture = `${$location.protocol()}://${location.host}/images/generic-offline-screen.png`
+                    scope.channel.offlineSoundtrack = '';
+                }
+                if (typeof(scope.channel.fillerContent)==='undefined') {
+                    scope.channel.fillerContent = [];
+                }
+                if (typeof(scope.channel.fallback)==='undefined') {
+                    scope.channel.fallback = [];
+                    scope.channel.offlineMode = "pic";
+                }
+                if (typeof(scope.channel.offlineMode)==='undefined') {
+                    scope.channel.offlineMode = 'pic';
+                }
+                if (typeof(scope.channel.disableFillerOverlay) === 'undefined') {
+                    scope.channel.disableFillerOverlay = true;
+                }
                 scope.millisecondsOffset  = (t - offset) % 1000;
                 scope.channel.startTime = new Date(t - offset - scope.millisecondsOffset);
                 // move runningProgram to index 0
@@ -67,10 +95,44 @@ module.exports = function ($timeout, $location) {
                 scope._selectedProgram = null
                 updateChannelDuration()
             }
+            scope.updateChannelFromOfflineResult = (program) => {
+                scope.channel.offlineMode = program.channelOfflineMode;
+                scope.channel.offlinePicture = program.channelPicture;
+                scope.channel.offlineSoundtrack = program.channelSound;
+                scope.channel.fillerRepeatCooldown = program.repeatCooldown * 60000;
+                scope.channel.fillerContent = JSON.parse( angular.toJson(program.filler) );
+                scope.channel.fallback = JSON.parse( angular.toJson(program.fallback) );
+                scope.channel.disableFillerOverlay = program.disableOverlay;
+            }
+            scope.finishedOfflineEdit = (program) => {
+                let editedProgram = scope.channel.programs[scope.selectedProgram];
+                let duration = program.durationSeconds * 1000;
+                scope.updateChannelFromOfflineResult(program);
+                editedProgram.duration = duration;
+                editedProgram.actualDuration = duration;
+                editedProgram.isOffline = true;
+                scope._selectedOffline = null
+                updateChannelDuration()
+            }
+            scope.finishedAddingOffline = (result) => {
+                let duration = result.durationSeconds * 1000;
+                let program = {
+                    duration: duration,
+                    actualDuration: duration,
+                    isOffline: true
+                }
+                scope.updateChannelFromOfflineResult(result);
+                scope.channel.programs.push( program );
+                scope._selectedOffline = null
+                scope._addingOffline = null;
+                updateChannelDuration()
+            }
+
             scope.$watch('channel.startTime', () => {
                 updateChannelDuration()
             })
             scope.sortShows = () => {
+                scope.removeOffline();
                 let shows = {}
                 let movies = []
                 let newProgs = []
@@ -106,6 +168,47 @@ module.exports = function ($timeout, $location) {
                 scope.channel.programs = newProgs.concat(movies)
                 updateChannelDuration()
             }
+            scope.sortByDate = () => {
+                scope.removeOffline();
+                scope.channel.programs.sort( (a,b) => {
+                    let aHas = ( typeof(a.date) !== 'undefined' );
+                    let bHas = ( typeof(b.date) !== 'undefined' );
+                    if (!aHas && !bHas) {
+                        return 0;
+                    } else if (! aHas) {
+                        return 1;
+                    } else if (! bHas) {
+                        return -1;
+                    }
+                    if (a.date < b.date ) {
+                        return -1;
+                    } else if (a.date > b.date) {
+                        return 1;
+                    } else {
+                        let aHasSeason = ( typeof(a.season) !== 'undefined' );
+                        let bHasSeason = ( typeof(b.season) !== 'undefined' );
+                        if (! aHasSeason && ! bHasSeason) {
+                            return 0;
+                        } else if (! aHasSeason) {
+                            return 1;
+                        } else if (! bHasSeason) {
+                            return -1;
+                        }
+                        if (a.season < b.season) {
+                            return -1;
+                        } else if (a.season > b.season) {
+                            return 1;
+                        } else if (a.episode < b.episode) {
+                            return -1;
+                        } else if (a.episode > b.episode) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    }
+                });
+                updateChannelDuration()
+            }
             scope.removeDuplicates = () => {
                 let tmpProgs = {}
                 let progs = scope.channel.programs
@@ -122,6 +225,131 @@ module.exports = function ($timeout, $location) {
                     newProgs.push(tmpProgs[keys[i]])
                 }
                 scope.channel.programs = newProgs
+            }
+            scope.removeOffline = () => {
+                let tmpProgs = []
+                let progs = scope.channel.programs
+                for (let i = 0, l = progs.length; i < l; i++) {
+                    if (progs[i].isOffline !== true) {
+                        tmpProgs.push(progs[i]);
+                    }
+                }
+                scope.channel.programs = tmpProgs
+                updateChannelDuration()
+            }
+            scope.nightChannel = (a, b) => {
+                let o =(new Date()).getTimezoneOffset() * 60 * 1000;
+                let m = 24*60*60*1000;
+                a = (m + a * 60 * 60 * 1000 + o) % m;
+                b = (m + b * 60 * 60 * 1000 + o) % m;
+                if (b < a) {
+                    b += m;
+                }
+                b -= a;
+                let progs = [];
+                let t = scope.channel.startTime.getTime();
+                function pos(x) {
+                    if (x % m < a) {
+                        return m + x % m - a;
+                    } else {
+                        return x % m - a;
+                    }
+                }
+                t -= pos(t);
+                scope.channel.startTime = new Date(t);
+                for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
+                    let p = pos(t);
+                    if ( (p != 0) && (p + scope.channel.programs[i].duration > b) ) {
+                        //time to pad
+                        let d = m - p;
+                        progs.push(
+                            {
+                                duration: d,
+                                actualDuration: d,
+                                isOffline: true,
+                            }
+                        )
+                        t += d;
+                        p = 0;
+                    }
+                    progs.push( scope.channel.programs[i] );
+                    t += scope.channel.programs[i].duration;
+                }
+                if (pos(t) != 0) {
+                    let d = m - pos(t);
+                    progs.push(
+                        {
+                            duration: d,
+                            actualDuration: d,
+                            isOffline: true,
+                        }
+                    )
+                }
+                scope.channel.programs = progs;
+                updateChannelDuration();
+            }
+            scope.addBreaks = (afterMinutes, minDurationSeconds, maxDurationSeconds) => {
+                let after = afterMinutes * 60 * 1000 + 5000; //allow some seconds of excess
+                let minDur = minDurationSeconds;
+                let maxDur = maxDurationSeconds;
+                let progs = [];
+                let tired = 0;
+                for (let i = 0, l = scope.channel.programs.length; i <= l; i++) {
+                    let prog = scope.channel.programs[i % l];
+                    if (prog.isOffline) {
+                        tired = 0;
+                    } else {
+                        if (tired + prog.actualDuration >= after) {
+                            tired = 0;
+                            let dur = 1000 * (minDur + Math.floor( (maxDur - minDur) * Math.random() ) );
+                            progs.push( {
+                                isOffline : true,
+                                duration: dur,
+                                actualDuration: dur,
+                            });
+                        }
+                        tired += prog.actualDuration;
+                    }
+                    if (i < l) {
+                        progs.push(prog);
+                    }
+                }
+                scope.channel.programs = progs;
+                updateChannelDuration();
+            }
+            scope.padTimes = (paddingMod) => {
+                let mod = paddingMod * 60 * 1000;
+                if (mod == 0) {
+                    mod = 60*60*1000;
+                }
+                scope.removeOffline();
+                let progs = [];
+                let t = scope.channel.startTime.getTime();
+                t = t - t  % mod;
+                scope.millisecondsOffset = 0;
+                scope.channel.startTime = new Date(t);
+                function addPad(force) {
+                    let m = t % mod;
+                    let r = (mod - t % mod) % mod;
+                    if ( (force && (m != 0)) || ((m >= 15*1000) && (r >= 15*1000)) ) {
+                        // (If the difference is less than 30 seconds, it's
+                        // not worth padding it
+                        progs.push( {
+                            duration : r,
+                            actualDuration : r,
+                            isOffline : true,
+                        });
+                        t += r;
+                    }
+                }
+                for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
+                    let prog = scope.channel.programs[i];
+                    progs.push(prog);
+                    t += prog.actualDuration;
+                    addPad(i == l - 1);
+                }
+                scope.channel.programs = progs;
+                updateChannelDuration();
             }
             scope.blockShuffle = (blockCount, randomize) => {
                 if (typeof blockCount === 'undefined' || blockCount == null)
@@ -183,9 +411,30 @@ module.exports = function ($timeout, $location) {
                 cyclicShuffle(scope.channel.programs);
                 updateChannelDuration();
             }
+            scope.equalizeShows = () => {
+                scope.removeDuplicates();
+                scope.channel.programs = equalizeShows(scope.channel.programs);
+                updateChannelDuration();
+            }
+
             scope.wipeSchedule = () => {
                 wipeSchedule(scope.channel.programs);
                 updateChannelDuration();
+            }
+            scope.makeOfflineFromChannel = (duration) => {
+                return {
+                    channelOfflineMode: scope.channel.offlineMode,
+                    channelPicture: scope.channel.offlinePicture,
+                    channelSound: scope.channel.offlineSoundtrack,
+                    repeatCooldown : Math.floor(scope.channel.fillerRepeatCooldown / 60000),
+                    filler:  JSON.parse( angular.toJson(scope.channel.fillerContent) ),
+                    fallback: JSON.parse( angular.toJson(scope.channel.fallback) ),
+                    durationSeconds: duration,
+                    disableOverlay : scope.channel.disableFillerOverlay,
+                }
+            }
+            scope.addOffline = () => {
+                scope._addingOffline = scope.makeOfflineFromChannel(10*60);
             }
 
             function getRandomInt(min, max) {
@@ -208,6 +457,56 @@ module.exports = function ($timeout, $location) {
                 array.splice(0, array.length)
                 return array;
             }
+            function equalizeShows(array) {
+                let shows = {};
+                let progs = [];
+                let nonShows = [];
+                for (let i = 0; i < array.length; i++) {
+                    vid = array[i];
+                    if (vid.type === 'episode' && vid.season != 0) {
+                        if ( typeof(shows[vid.showTitle]) === 'undefined') {
+                            shows[vid.showTitle] = {
+                                total: 0,
+                                episodes: []
+                            }
+                        }
+                        shows[vid.showTitle].total += vid.actualDuration;
+                        shows[vid.showTitle].episodes.push(vid);
+                    } else {
+                        nonShows.push(vid);
+                    }
+                }
+                let maxDuration = 0;
+                Object.keys(shows).forEach(function(key,index) {
+                    maxDuration = Math.max( maxDuration, shows[key].total );
+                });
+                let F = 2;
+                let good = true;
+                Object.keys(shows).forEach(function(key,index) {
+                    let amount =  Math.floor( (maxDuration*F) / shows[key].total);
+                    good = (good && (amount % F == 0) );
+                });
+                if (good) {
+                    F = 1;
+                }
+                for(let i = 0; i < F; i++) {
+                    for (let j = 0; j < nonShows.length; j++) {
+                        progs.push( JSON.parse( angular.toJson(nonShows[j]) ) );
+                    }
+                }
+                Object.keys(shows).forEach(function(key,index) {
+                    let amount =  Math.floor( (maxDuration*F) / shows[key].total);
+                    let episodes = shows[key].episodes;
+                    if (amount % F != 0) {
+                    }
+                    for (let i = 0; i < amount; i++) {
+                        for (let j = 0; j < episodes.length; j++) {
+                            progs.push( JSON.parse( angular.toJson(episodes[j]) ) );
+                        }
+                    }
+                });
+                return progs;
+            }
             function cyclicShuffle(array) {
                 let shows = {};
                 let next = {};
@@ -215,7 +514,7 @@ module.exports = function ($timeout, $location) {
                 // some precalculation, useful to stop the shuffle from being quadratic...
                 for (let i = 0; i < array.length; i++) {
                     var vid = array[i];
-                    if (vid.type != 'movie' && vid.season != 0) {
+                    if (vid.type === 'episode' && vid.season != 0) {
                         let countKey = {
                             title: vid.showTitle,
                             s: vid.season,
@@ -323,13 +622,73 @@ module.exports = function ($timeout, $location) {
                 updateChannelDuration()
             }
             scope.selectProgram = (index) => {
-                scope.selectedProgram = index
-                scope._selectedProgram = JSON.parse(angular.toJson(scope.channel.programs[index]))
+                scope.selectedProgram = index;
+                let program = scope.channel.programs[index];
+
+                if(program.isOffline) {
+                    scope._selectedOffline = scope.makeOfflineFromChannel( Math.round( (program.duration + 500) / 1000 ) );
+                } else {
+                    scope._selectedProgram = JSON.parse(angular.toJson(program));
+                }
             }
             scope.removeItem = (x) => {
                 scope.channel.programs.splice(x, 1)
                 updateChannelDuration()
             }
+            scope.paddingOptions = [
+                { id: 30, description: ":00, :30" },
+                { id: 15, description: ":00, :15, :30, :45" },
+                { id: 60, description: ":00" },
+                { id: 20, description: ":00, :20, :40" },
+                { id: 10, description: ":00, :10, :20, ..., :50" },
+                { id:  5, description: ":00, :05, :10, ..., :55" },
+            ]
+            scope.breakAfterOptions = [
+                { id: -1, description: "After" },
+                { id: 5, description: "5 minutes" },
+                { id: 10, description: "10 minutes" },
+                { id: 15, description: "15 minutes" },
+                { id: 20, description: "20 minutes" },
+                { id: 25, description: "25 minutes" },
+                { id: 30, description: "30 minutes" },
+                { id: 60, description: "1 hour" },
+                { id: 90, description: "90 minutes" },
+                { id: 120, description: "2 hours" },
+            ]
+            scope.breakAfter = -1;
+            scope.minBreakSize = -1;
+            scope.maxBreakSize = -1;
+            let breakSizeOptions = [
+                { id: 30, description: "30 seconds" },
+                { id: 45, description: "45 seconds" },
+                { id: 60, description: "60 seconds" },
+                { id: 90, description: "90 seconds" },
+                { id: 120, description: "2 minutes" },
+                { id: 180, description: "3 minutes" },
+                { id: 300, description: "5 minutes" },
+                { id: 450, description: "7.5 minutes" },
+                { id: 600, description: "10 minutes" },
+                { id: 1200, description: "20 minutes" },
+            ]
+            scope.minBreakSizeOptions = [
+                { id: -1, description: "Min Duration" },
+            ]
+            scope.minBreakSizeOptions = scope.minBreakSizeOptions.concat(breakSizeOptions);
+            scope.maxBreakSizeOptions = [
+                { id: -1, description: "Max Duration" },
+            ]
+            scope.maxBreakSizeOptions = scope.maxBreakSizeOptions.concat(breakSizeOptions);
+
+            scope.nightStartHours = [ { id: -1, description: "Start" } ];
+            scope.nightEndHours   = [ { id: -1, description: "End" } ];
+            scope.nightStart = -1;
+            scope.nightEnd = -1;
+            for (let i=0; i < 24; i++) {
+                let v = { id: i, description: ( (i<10) ? "0" : "") + i + ":00" };
+                scope.nightStartHours.push(v);
+                scope.nightEndHours.push(v);
+            }
+            scope.paddingMod = 30;
         }
     }
 }

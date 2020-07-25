@@ -2,6 +2,7 @@
 const express = require('express')
 const fs = require('fs')
 const defaultSettings = require('./defaultSettings')
+const channelCache = require('./channel-cache')
 
 module.exports = { router: api }
 function api(db, xmltvInterval) {
@@ -30,7 +31,9 @@ function api(db, xmltvInterval) {
         res.send(channels)
     })
     router.post('/api/channels', (req, res) => {
+        cleanUpChannels(req.body);
         db['channels'].save(req.body)
+        channelCache.clear();
         let channels = db['channels'].find()
         channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         res.send(channels)
@@ -38,7 +41,9 @@ function api(db, xmltvInterval) {
 
     })
     router.put('/api/channels', (req, res) => {
+        cleanUpChannel(req.body);
         db['channels'].update({ _id: req.body._id }, req.body)
+        channelCache.clear();
         let channels = db['channels'].find()
         channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         res.send(channels)
@@ -46,6 +51,7 @@ function api(db, xmltvInterval) {
     })
     router.delete('/api/channels', (req, res) => {
         db['channels'].remove({ _id: req.body._id }, false)
+        channelCache.clear();
         let channels = db['channels'].find()
         channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         res.send(channels)
@@ -90,7 +96,7 @@ function api(db, xmltvInterval) {
             transcodeMediaBufferSize: 20000,
             maxPlayableResolution: "1920x1080",
             maxTranscodeResolution: "1920x1080",
-            videoCodecs: 'h264,hevc,mpeg2video',
+            videoCodecs: 'h264,hevc,mpeg2video,av1',
             audioCodecs: 'ac3',
             maxAudioChannels: '2',
             audioBoost: '100',
@@ -181,6 +187,26 @@ function api(db, xmltvInterval) {
     function updateXmltv() {
         xmltvInterval.updateXML()
         xmltvInterval.restartInterval()
+    }
+
+    function cleanUpProgram(program) {
+        if ( typeof(program.server) !== 'undefined') {
+            program.server = {
+                uri: program.server.uri,
+                accessToken: program.server.accessToken,
+            }
+        }
+        delete program.streams;
+    }
+
+    function cleanUpChannel(channel) {
+        channel.programs.forEach( cleanUpProgram );
+        channel.fillerContent.forEach( cleanUpProgram );
+        channel.fallback.forEach( cleanUpProgram );
+    }
+
+    function cleanUpChannels(channels) {
+        channels.forEach(cleanUpChannel);
     }
 
     return router

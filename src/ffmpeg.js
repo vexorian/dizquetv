@@ -39,24 +39,38 @@ class FFMPEG extends events.EventEmitter {
     async spawnStream(streamUrl, streamStats, startTime, duration, enableIcon, type) {
         this.spawn(streamUrl, streamStats, startTime, duration, true, enableIcon, type, false);
     }
-    async spawnError(title, subtitle, streamStats, enableIcon, type) {
+    async spawnError(title, subtitle, duration) {
         if (! this.opts.enableFFMPEGTranscoding || this.opts.errorScreen == 'kill') {
             console.log("error: " + title + " ; " + subtitle);
             this.emit('error', { code: -1, cmd: `error stream disabled. ${title} ${subtitles}`} )
             return;
         }
-        // since this is from an error situation, streamStats may have issues.
-        if ( (streamStats == null) || (typeof(streamStats) === 'undefined') ) {
-            streamStats = {};
+        if (typeof(duration) === 'undefined') {
+            //set a place-holder duration
+            console.log("No duration found for error stream, using placeholder");
+            duration = MAXIMUM_ERROR_DURATION_MS ;
         }
-        streamStats.videoWidth = this.wantedW;
-        streamStats.videoHeight = this.wantedH;
-        if ( (typeof(streamStats.duration) === 'undefined') || isNaN(streamStats.duration) || (streamStats.duration > MAXIMUM_ERROR_DURATION_MS)  )  {
-            // it's possible that whatever issue there was when attempting to download the video from plex
-            // could be temporary, so it'd be better to retry after a minute
-            streamStats.duration = MAXIMUM_ERROR_DURATION_MS;
+        duration = Math.min(MAXIMUM_ERROR_DURATION_MS, duration);
+        let streamStats = {
+            videoWidth : this.wantedW,
+            videoHeight : this.wantedH,
+            duration : duration,
+        };
+        this.spawn({ errorTitle: title , subtitle: subtitle }, streamStats, undefined, `${streamStats.duration}ms`, true, false, 'error', false)
+    }
+    async spawnOffline(duration) {
+        if (! this.opts.enableFFMPEGTranscoding) {
+            console.log("The channel has an offline period scheduled for this time slot. FFMPEG transcoding is disabled, so it is not possible to render an offline screen. Ending the stream instead");
+            this.emit('end', { code: -1, cmd: `error stream disabled. ${title} ${subtitles}`} )
+            return;
         }
-        this.spawn({ errorTitle: title , subtitle: subtitle }, streamStats, undefined, `${streamStats.duration}ms`, true, enableIcon, type, false)
+
+        let streamStats = {
+            videoWidth : this.wantedW,
+            videoHeight : this.wantedH,
+            duration : duration,
+        };
+        this.spawn( {errorTitle: 'offline'}, streamStats, undefined, `${duration}ms`, true, false, 'offline', false);
     }
     async spawn(streamUrl, streamStats, startTime, duration, limitRead, enableIcon, type, isConcatPlaylist) {
         let ffmpegArgs = [
@@ -83,7 +97,7 @@ class FFMPEG extends events.EventEmitter {
             // When we have an individual stream, there is a pipeline of possible
             // filters to apply.
             //
-            var doOverlay = (enableIcon && type === 'program');
+            var doOverlay = enableIcon;
             var iW =  streamStats.videoWidth;
             var iH =  streamStats.videoHeight;
 
@@ -120,7 +134,13 @@ class FFMPEG extends events.EventEmitter {
                 }
 
                 ffmpegArgs.push("-r" , "24");
-                if (this.opts.errorScreen == 'static') {
+                if (  streamUrl.errorTitle == 'offline' ) {
+                    ffmpegArgs.push(
+                        '-loop', '1',
+                        '-i', `${this.channel.offlinePicture}`,
+                    );
+                    videoComplex = `;[0:0]loop=loop=-1:size=1:start=0[looped];[looped]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                } else if (this.opts.errorScreen == 'static') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `nullsrc=s=64x36`);
@@ -129,7 +149,6 @@ class FFMPEG extends events.EventEmitter {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `testsrc=size=${iW}x${iH}`,
-                        '-pix_fmt' , 'yuv420p'
                     );
                     videoComplex = `;realtime[videox]`;
                 } else if (this.opts.errorScreen == 'text') {
@@ -153,18 +172,28 @@ class FFMPEG extends events.EventEmitter {
                     ffmpegArgs.push(
                         '-loop', '1',
                         '-i', `${ERROR_PICTURE_PATH}`,
-                        '-pix_fmt' , 'yuv420p'
                     );
                     videoComplex = `;[0:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 }
                 let durstr = `duration=${streamStats.duration}ms`;
-                if (this.opts.errorAudio == 'whitenoise') {
+                //silent
+                audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
+                if ( streamUrl.errorTitle == 'offline' ) {
+                    if (
+                        (typeof(this.channel.offlineSoundtrack) !== 'undefined') 
+                        && (this.channel.offlineSoundtrack != '' )
+                    ) {
+                        ffmpegArgs.push('-i', `${this.channel.offlineSoundtrack}`);
+                        // I don't really understand why, but you need to use this
+                        // 'size' in order to make the soundtrack actually loop
+                        audioComplex = `;[1:a]aloop=loop=-1:size=2147483647[audioy]`;
+                    }
+                } else if (this.opts.errorAudio == 'whitenoise') {
                     audioComplex = `;aevalsrc=-2+0.1*random(0):${durstr}[audioy]`;
                 } else if (this.opts.errorAudio == 'sine') {
                     audioComplex = `;sine=f=440:${durstr}[audiox];[audiox]volume=-35dB[audioy]`;
-                } else { //silent
-                    audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
                 }
+                ffmpegArgs.push('-pix_fmt' , 'yuv420p' );
                 audioComplex += ';[audioy]arealtime[audiox]';
                 currentVideo = "[videox]";
                 currentAudio = "[audiox]";
@@ -273,6 +302,7 @@ class FFMPEG extends events.EventEmitter {
             }
             ffmpegArgs.push(
                             `-c:a`,  (transcodeAudio ? this.opts.audioEncoder : 'copy'),
+                            '-map_metadata', '-1',
                             '-movflags', '+faststart',
                             `-muxdelay`, `0`,
                             `-muxpreload`, `0`
@@ -280,7 +310,7 @@ class FFMPEG extends events.EventEmitter {
         } else {
             //Concat stream is simpler and should always copy the codec
             ffmpegArgs.push(
-                            `-probesize`, `25000000`,
+                            `-probesize`, `100000000`,
                             `-i`, streamUrl,
                             `-map`, `0:v`,
                             `-map`, `0:${audioIndex}`,

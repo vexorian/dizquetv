@@ -6,18 +6,30 @@ module.exports = function (plex, pseudotv, $timeout) {
         scope: {
             onFinish: "=onFinish",
             height: "=height",
-            visible: "=visible"
+            visible: "=visible",
+            limit: "@limit",
         },
         link: function (scope, element, attrs) {
+            if ( typeof(scope.limit) == 'undefined') {
+                scope.limit = 1000000000;
+            }
             scope.selection = []
             scope.selectServer = function (server) {
                 scope.plexServer = server
                 updateLibrary(server)
             }
             scope._onFinish = (s) => {
-                scope.onFinish(s)
-                scope.selection = []
-                scope.visible = false
+                if (s.length > scope.limit) {
+                    if (scope.limit == 1) {
+                        scope.error = "Please select only one clip.";
+                    } else {
+                        scope.error = `Please select at most ${scope.limit} clips.`;
+                    }
+                } else {
+                    scope.onFinish(s)
+                    scope.selection = []
+                    scope.visible = false
+                }
             }
             scope.selectItem = (item) => {
                 return new Promise((resolve, reject) => {

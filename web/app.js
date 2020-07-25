@@ -15,6 +15,7 @@ app.directive('xmltvSettings',  require('./directives/xmltv-settings'))
 app.directive('hdhrSettings',   require('./directives/hdhr-settings'))
 app.directive('plexLibrary',    require('./directives/plex-library'))
 app.directive('programConfig',  require('./directives/program-config'))
+app.directive('offlineConfig',  require('./directives/offline-config'))
 app.directive('channelConfig',  require('./directives/channel-config'))
 
 app.controller('settingsCtrl',  require('./controllers/settings'))
