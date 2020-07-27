@@ -34,7 +34,6 @@
       "dist/resources/**/*"
     ],
     "targets": [
-      "x86",
       "x64",
       "linux",
       "macos",

@@ -3,10 +3,15 @@ const express = require('express')
 const fs = require('fs')
 const defaultSettings = require('./defaultSettings')
 const channelCache = require('./channel-cache')
+const constants = require('./constants')
 
 module.exports = { router: api }
 function api(db, xmltvInterval) {
     let router = express.Router()
+
+    router.get('/api/version', (req, res) => {
+        res.send( { "pseudotv" : constants.VERSION_NAME } )
+    })
 
     // Plex Servers
     router.get('/api/plex-servers', (req, res) => {

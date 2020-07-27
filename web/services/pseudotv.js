@@ -1,5 +1,8 @@
 module.exports = function ($http) {
     return {
+        getVersion: () => {
+            return $http.get('/api/version').then((d) => { return d.data })
+        },
         getPlexServers: () => {
             return $http.get('/api/plex-servers').then((d) => { return d.data })
         },

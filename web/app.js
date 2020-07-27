@@ -20,6 +20,7 @@ app.directive('channelConfig',  require('./directives/channel-config'))
 
 app.controller('settingsCtrl',  require('./controllers/settings'))
 app.controller('channelsCtrl',  require('./controllers/channels'))
+app.controller('versionCtrl',  require('./controllers/version'))
 
 app.config(function ($routeProvider) {
     $routeProvider
@@ -30,6 +31,10 @@ app.config(function ($routeProvider) {
     .when("/channels", {
         templateUrl: "views/channels.html",
         controller: 'channelsCtrl'
+    })
+    .when("/version", {
+        templateUrl: "views/version.html",
+        controller: 'versionCtrl'
     })
     .otherwise({
         redirectTo: "channels"
