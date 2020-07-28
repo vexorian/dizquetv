@@ -43,7 +43,7 @@ RUN apk add --update \
 WORKDIR /home/node/app
 COPY package*.json ./
 RUN npm install
-RUN npm install -g browserify
+RUN npm install -g browserify nexe
 EXPOSE 8000
 CMD [ "npm", "start"]
 COPY . .
