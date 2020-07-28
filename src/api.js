@@ -36,7 +36,7 @@ function api(db, xmltvInterval) {
         res.send(channels)
     })
     router.post('/api/channels', (req, res) => {
-        cleanUpChannels(req.body);
+        cleanUpChannel(req.body);
         db['channels'].save(req.body)
         channelCache.clear();
         let channels = db['channels'].find()
@@ -210,9 +210,6 @@ function api(db, xmltvInterval) {
         channel.fallback.forEach( cleanUpProgram );
     }
 
-    function cleanUpChannels(channels) {
-        channels.forEach(cleanUpChannel);
-    }
 
     return router
 }
