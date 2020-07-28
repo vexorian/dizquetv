@@ -37,7 +37,7 @@ function WriteXMLTV(channels, xmlSettings) {
         _writeDocEnd(xw, ws)
       }).catch( (err) => {
           console.error("Error", err);
-      }).then( () => ws.close() );
+      }).then( () => ws.end() );
     })
 }
 
