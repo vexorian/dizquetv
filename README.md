@@ -1,8 +1,16 @@
-# pseudotv-plex
+# pseudotv 0.0.56-unofficial-vx
 
 Create live TV channel streams from media on your Plex servers.
 
-Project recently migrated from [gitlab](https://gitlab.com/DEFENDORe/pseudotv-plex) to github to improve development flow (docker builds and binary releases).
+Official project is at: [https://github.com/DEFENDORe/pseudotv](https://github.com/DEFENDORe/pseudotv)
+This is a set of modifications that I am releasing in order to get testing of new features I am proposing to pseudotv official.
+
+Check the releases page for downloads for Linux, MacOSX and Windows. For docker you will need to build the image from sourcecode. Sorry for that.
+
+Make sure to make a backup of your .pseudotv folder before installing this version. Depending on how old your existing version is, you might need to clean up the folder before installing this one and start from scratch.
+
+The remaining of this readme file is a copy of the one in the official repository.
+
 
 <img src="./resources/pseudotv.png" width="200">
 
