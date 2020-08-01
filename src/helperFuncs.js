@@ -219,15 +219,16 @@ function pickRandomWithMaxDuration(channel, list, maxDuration) {
                 //30 minutes is too little, don't repeat it at all
             }
             if (timeSince >= D) {
-                n += 1;
-                if ( Math.floor(n*Math.random()) == 0) {
+                let w =  Math.pow(clip.actualDuration, 1.0 / 8.0);
+                n += w;
+                if ( n*Math.random() < w) {
                     pick1 = clip;
                 }
             } else {
                 let adjust = Math.floor(timeSince / (60*1000));
                 if (adjust > 0) {
                     adjust = adjust * adjust;
-                    //weighed
+                    //weighted
                     m += adjust;
                     if ( Math.floor(m*Math.random()) < adjust) {
                         pick2 = clip;
