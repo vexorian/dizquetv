@@ -10,6 +10,8 @@ module.exports = function ($timeout, $location) {
         },
         link: function (scope, element, attrs) {
             scope.showHelp = false;
+            scope._frequencyModified = false;
+            scope._frequencyMessage = "";
             scope.millisecondsOffset = 0;
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
@@ -317,7 +319,7 @@ module.exports = function ($timeout, $location) {
                 scope.channel.programs = progs;
                 updateChannelDuration();
             }
-            scope.padTimes = (paddingMod) => {
+            scope.padTimes = (paddingMod, allow5) => {
                 let mod = paddingMod * 60 * 1000;
                 if (mod == 0) {
                     mod = 60*60*1000;
@@ -332,6 +334,9 @@ module.exports = function ($timeout, $location) {
                     let m = t % mod;
                     let r = (mod - t % mod) % mod;
                     if ( (force && (m != 0)) || ((m >= 15*1000) && (r >= 15*1000)) ) {
+                        if (allow5 && (m <= 5*60*1000) ) {
+                            r = 5*60*1000 - m;
+                        }
                         // (If the difference is less than 30 seconds, it's
                         // not worth padding it
                         progs.push( {
@@ -413,9 +418,60 @@ module.exports = function ($timeout, $location) {
             }
             scope.equalizeShows = () => {
                 scope.removeDuplicates();
-                scope.channel.programs = equalizeShows(scope.channel.programs);
+                scope.channel.programs = equalizeShows(scope.channel.programs, {} );
                 updateChannelDuration();
             }
+            scope.startFrequencyTweak = () => {
+                let programs = {};
+                for (let i = 0; i < scope.channel.programs.length; i++) {
+                    if (! scope.channel.programs[i].isOffline) {
+                        let c = getShowCode(scope.channel.programs[i]);
+                        if ( typeof(programs[c]) === 'undefined') {
+                            programs[c] = 0;
+                        }
+                        programs[c] += scope.channel.programs[i].actualDuration;
+                    }
+                }
+                let mx = 0;
+                Object.keys(programs).forEach(function(key,index) {
+                    mx = Math.max(mx, programs[key]);
+                });
+                let arr = [];
+                Object.keys(programs).forEach( (key,index) => {
+                    let w = Math.ceil( (24.00*programs[key]) / mx );
+                    let obj = {
+                        name : key,
+                        weight: w,
+                        specialCategory: false,
+                        displayName: key,
+                    }
+                    if (key.startsWith("_internal.")) {
+                        obj.specialCategory = true;
+                        obj.displayName = key.slice("_internal.".length);
+                    }
+                    arr.push(obj);
+                });
+                if (arr.length <= 1) {
+                    scope._frequencyMessage  = "Add more TV shows to the programming before using this option.";
+                } else {
+                    scope._frequencyMessage  = "";
+                }
+                scope._frequencyModified = false;
+                scope._programFrequencies = arr;
+                
+            }
+            scope.tweakFrequencies = (freqs) => {
+                var f = {};
+                for (let i = 0; i < freqs.length; i++) {
+                    f[freqs[i].name] = freqs[i].weight;
+                }
+                scope.removeDuplicates();
+                scope.channel.programs = equalizeShows(scope.channel.programs, f );
+                updateChannelDuration();
+                scope.startFrequencyTweak();
+                scope._frequencyMessage  = "TV Show weights have been applied.";
+            }
+
 
             scope.wipeSchedule = () => {
                 wipeSchedule(scope.channel.programs);
@@ -435,6 +491,17 @@ module.exports = function ($timeout, $location) {
             }
             scope.addOffline = () => {
                 scope._addingOffline = scope.makeOfflineFromChannel(10*60);
+            }
+
+            function getShowCode(program) {
+                //used for equalize and frequency tweak
+                let showName = "_internal.Unknown";
+                if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
+                    showName = program.showTitle;
+                } else {
+                    showName = "_internal.Movies";
+                }
+                return showName;
             }
 
             function getRandomInt(min, max) {
@@ -457,27 +524,31 @@ module.exports = function ($timeout, $location) {
                 array.splice(0, array.length)
                 return array;
             }
-            function equalizeShows(array) {
+            function equalizeShows(array, freqObject) {
                 let shows = {};
                 let progs = [];
-                let nonShows = [];
                 for (let i = 0; i < array.length; i++) {
-                    vid = array[i];
-                    if (vid.type === 'episode' && vid.season != 0) {
-                        if ( typeof(shows[vid.showTitle]) === 'undefined') {
-                            shows[vid.showTitle] = {
-                                total: 0,
-                                episodes: []
-                            }
-                        }
-                        shows[vid.showTitle].total += vid.actualDuration;
-                        shows[vid.showTitle].episodes.push(vid);
-                    } else {
-                        nonShows.push(vid);
+                    if (array[i].isOffline) {
+                        continue;
                     }
+                    vid = array[i];
+                    let code = getShowCode(array[i]);
+                    if ( typeof(shows[code]) === 'undefined') {
+                        shows[code] = {
+                            total: 0,
+                            episodes: []
+                        }
+                    }
+                    shows[code].total += vid.actualDuration;
+                    shows[code].episodes.push(vid);
                 }
                 let maxDuration = 0;
                 Object.keys(shows).forEach(function(key,index) {
+                    let w = 3;
+                    if ( typeof(freqObject[key]) !== 'undefined') {
+                        w = freqObject[key];
+                    }
+                    shows[key].total = Math.ceil(shows[key].total / w );
                     maxDuration = Math.max( maxDuration, shows[key].total );
                 });
                 let F = 2;
@@ -488,11 +559,6 @@ module.exports = function ($timeout, $location) {
                 });
                 if (good) {
                     F = 1;
-                }
-                for(let i = 0; i < F; i++) {
-                    for (let j = 0; j < nonShows.length; j++) {
-                        progs.push( JSON.parse( angular.toJson(nonShows[j]) ) );
-                    }
                 }
                 Object.keys(shows).forEach(function(key,index) {
                     let amount =  Math.floor( (maxDuration*F) / shows[key].total);
@@ -636,12 +702,15 @@ module.exports = function ($timeout, $location) {
                 updateChannelDuration()
             }
             scope.paddingOptions = [
-                { id: 30, description: ":00, :30" },
-                { id: 15, description: ":00, :15, :30, :45" },
-                { id: 60, description: ":00" },
-                { id: 20, description: ":00, :20, :40" },
-                { id: 10, description: ":00, :10, :20, ..., :50" },
-                { id:  5, description: ":00, :05, :10, ..., :55" },
+                { id: 30, description: ":00, :30", allow5: false },
+                { id: 15, description: ":00, :15, :30, :45", allow5: false },
+                { id: 60, description: ":00", allow5: false },
+                { id: 20, description: ":00, :20, :40", allow5: false },
+                { id: 10, description: ":00, :10, :20, ..., :50", allow5: false },
+                { id:  5, description: ":00, :05, :10, ..., :55", allow5: false },
+                { id: 60, description: ":00, :05", allow5: true },
+                { id: 30, description: ":00, :05, :30, :35", allow5: true },
+
             ]
             scope.breakAfterOptions = [
                 { id: -1, description: "After" },

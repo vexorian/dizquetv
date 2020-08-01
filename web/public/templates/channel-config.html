@@ -98,7 +98,7 @@
                             <p class="text-center text-info small">
                                 Tools to modify the schedule.
                                 <a href ng-click="showHelp= !showHelp">
-                                    {{ showHelp ? "Hide Help" : "Help" }}
+                                    {{ showHelp ? "Hide Help" : "Show Help" }}
                                 </a>
                             </p>
                             <div ng-show='showHelp' style='margin-left: 10px' class="small">
@@ -121,12 +121,14 @@
                                 <h6>Remove Duplicates</h6>
                                 <p>Removes repeated videos.</p>
 
-                                <h6>Equalize Shows</h6>
-                                <p>Attempts to make the amount of time dedicated to each TV show as equal as possible without breaking sequences. Episodes might be replicated multiple times. Movies and specials are ignored.</p>
+                                <h6>Balance Shows</h6>
+                                <p>Attempts to make the total amount of time each TV show appears in the programming as balanced as possible. This works by adding multiple copies of TV shows that have too little total time and by possibly removing duplicated episodes from TV shows that have too much total time. Note that in many situations it would be impossible to achieve perfect balance because channel duration is not infinite. Movies/Clips are treated as a single TV show. Note that this will most likely result in a larger channel and that having large channels makes some UI operations slower.</p>
 
+                                <h6>Tweak Weights</h6>
+                                <p>Similar to Balance TV Shows, but this allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows. It has similar caveats as &quot;Balance Shows&quot;.</p>
 
                                 <h6>Add Flex</h6>
-                                <p>Adds a &quot;Flex&quot; Time Slot. Flex Time periods don't appear in the TV guide and can be configured to play a fallback screen and/or random &quot;filler&quot; content (e.g &quot;commercials&quot;, trailers, prerolls, countdowns, music videos, channel bumpers, etc.)</p>
+                                <p>Adds a &quot;Flex&quot; Time Slot. Can be configured to play a fallback screen and/or random &quot;filler&quot; content (e.g &quot;commercials&quot;, trailers, prerolls, countdowns, music videos, channel bumpers, etc.). Short Flex periods are hidden from the TV guide and are displayed as extensions to the previous program. Long Flex periods appear as the channel name in the TV guide.</p>
 
                                 <h6>Remove Flex</h6>
                                 <p>Removes any Flex periods from the schedule.</p>
@@ -181,8 +183,12 @@
                             </div>
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="equalizeShows()">Equalize Shows</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="equalizeShows()">Balance Shows</button>
                                 </div>
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="startFrequencyTweak()">Tweak Weights...</button>
+                                </div>
+
                             </div>
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
@@ -206,11 +212,11 @@
                                 <div class="col-md-6" style="padding: 5px;">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <select ng-model="paddingMod"
-                                            ng-options="o.id as o.description for o in paddingOptions" />
+                                            <select ng-model="paddingOption"
+                                            ng-options="o as o.description for o in paddingOptions" />
 
                                         </div>
-                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingMod)">Pad Times</button>
+                                        <button ng-disabled="typeof(paddingOption)===&quot;undefined&quot;" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)">Pad Times</button>
                                     </div>
                                 </div>
 
@@ -277,6 +283,7 @@
     </div>
     <program-config program="_selectedProgram" on-done="finshedProgramEdit"></program-config>
     <offline-config offline-title="Modify Flex Time" program="_selectedOffline" on-done="finishedOfflineEdit"></offline-config>
+    <frequency-tweak programs="_programFrequencies" message="_frequencyMessage" modified="_frequencyModified" on-done="tweakFrequencies"></frequency-tweak>
     <offline-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></offline-config>
     <plex-library height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
 </div>
