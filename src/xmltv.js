@@ -1,6 +1,7 @@
 const XMLWriter = require('xml-writer')
 const fs = require('fs')
 const helperFuncs = require('./helperFuncs')
+const constants = require('./constants')
 
 module.exports = { WriteXMLTV: WriteXMLTV }
 
@@ -25,7 +26,7 @@ function WriteXMLTV(channels, xmlSettings) {
                 start: date,
                 stop: new Date(date.valueOf() + xmlSettings.cache * 60 * 60 * 1000)
             }
-            await _writeProgramme(xw, program)
+            await _writeProgramme(null, xw, program, null)
         } else {
             _writeChannels(xw, channels)
             for (let i = 0; i < channels.length; i++) {
@@ -70,7 +71,7 @@ function _writeChannels(xw, channels) {
 
 async function _writePrograms(xw, channel, date, cache) {
     let prog = helperFuncs.getCurrentProgramAndTimeElapsed(date, channel)
-    let cutoff = new Date((date.valueOf() - prog.timeElapsed) + (cache * 60 * 60 * 1000))
+    let cutoff = new Date( date.valueOf() + (cache * 60 * 60 * 1000) )
     let temp = new Date(date.valueOf() - prog.timeElapsed)
     if (channel.programs.length === 0)
         return
@@ -83,19 +84,25 @@ async function _writePrograms(xw, channel, date, cache) {
             start: new Date(temp.valueOf()),
             stop: new Date(temp.valueOf() + channel.programs[i].duration)
         }
-        _writeProgramme(xw, program)
-        temp.setMilliseconds(temp.getMilliseconds() + channel.programs[i].duration)
-        i++
-        if (i >= channel.programs.length)
-            i = 0
+        let ni = (i + 1) % channel.programs.length;
+        if (
+            ( (typeof(program.program.isOffline) === 'undefined') || !(program.program.isOffline) )
+            &&
+            (channel.programs[ni].isOffline)
+            &&
+            (channel.programs[ni].duration < constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS )
+        ) {
+            program.stop = new Date(temp.valueOf() + channel.programs[i].duration + channel.programs[ni].duration)
+            i = (i + 2) % channel.programs.length;
+        } else {
+            i = ni;
+        }
+        _writeProgramme(channel, xw, program, cutoff)
+        temp = program.stop;
     }
 }
 
-async function _writeProgramme(xw, program) {
-    if (program.program.isOffline === true) {
-        //do not write anything for the offline period
-        return;
-    }
+async function _writeProgramme(channel, xw, program, cutoff) {
     // Programme
     xw.startElement('programme')
     xw.writeAttribute('start', _createXMLTVDate(program.start))
@@ -105,7 +112,10 @@ async function _writeProgramme(xw, program) {
     xw.startElement('title')
     xw.writeAttribute('lang', 'en')
 
-    if (program.program.type === 'episode') {
+    if (program.program.isOffline) {
+        xw.text(channel.name)
+        xw.endElement()
+    } else if (program.program.type === 'episode') {
         xw.text(program.program.showTitle)
         xw.endElement()
         xw.writeRaw('\n        <previously-shown/>')
@@ -132,7 +142,11 @@ async function _writeProgramme(xw, program) {
     // Desc
     xw.startElement('desc')
     xw.writeAttribute('lang', 'en')
-    xw.text(program.program.summary)
+    if (typeof(program.program.summary) !== 'undefined') {
+        xw.text(program.program.summary)
+    } else {
+        xw.text(channel.name)
+    }
     xw.endElement()
     // Rating
     if (typeof program.program.rating !== 'undefined') {
@@ -145,7 +159,13 @@ async function _writeProgramme(xw, program) {
     xw.endElement()
 }
 function _createXMLTVDate(d) {
-    return d.toISOString().substring(0,19).replace(/[-T:]/g,"") + " +0000";
+    //console.log("d=" + d.getTime() );
+    try {
+        return d.toISOString().substring(0,19).replace(/[-T:]/g,"") + " +0000";
+    } catch(e) {
+        console.log("d=" + d.getTime(), e);
+        return (new Date()).toISOString().substring(0,19).replace(/[-T:]/g,"") + " +0000";
+    }
 }
 function _throttle() {
     return new Promise((resolve) => {
