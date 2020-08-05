@@ -13,6 +13,7 @@ module.exports = function ($timeout, $location) {
             scope._frequencyModified = false;
             scope._frequencyMessage = "";
             scope.millisecondsOffset = 0;
+            scope.minProgramIndex = 0;
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
@@ -97,6 +98,17 @@ module.exports = function ($timeout, $location) {
                 scope._selectedProgram = null
                 updateChannelDuration()
             }
+            scope.dropFunction = (dropIndex, index, program) => {
+                if (scope.channel.programs[index].start == program.start) {
+                    return false;
+                }
+
+                setTimeout( () => {
+                    scope.channel.programs.splice(dropIndex + index, 0, program);
+                    updateChannelDuration()
+                }, 1);
+                return true;
+            }
             scope.updateChannelFromOfflineResult = (program) => {
                 scope.channel.offlineMode = program.channelOfflineMode;
                 scope.channel.offlinePicture = program.channelPicture;
@@ -169,6 +181,9 @@ module.exports = function ($timeout, $location) {
                 }
                 scope.channel.programs = newProgs.concat(movies)
                 updateChannelDuration()
+            }
+            scope.dateForGuide = (date) => {
+                return date.toLocaleString();
             }
             scope.sortByDate = () => {
                 scope.removeOffline();
@@ -474,7 +489,7 @@ module.exports = function ($timeout, $location) {
 
 
             scope.wipeSchedule = () => {
-                wipeSchedule(scope.channel.programs);
+                scope.channel.programs = [];
                 updateChannelDuration();
             }
             scope.makeOfflineFromChannel = (duration) => {
@@ -519,10 +534,6 @@ module.exports = function ($timeout, $location) {
                     array[randomIndex] = temporaryValue
                 }
                 return array
-            }
-            function wipeSchedule(array) {
-                array.splice(0, array.length)
-                return array;
             }
             function equalizeShows(array, freqObject) {
                 let shows = {};
@@ -702,6 +713,7 @@ module.exports = function ($timeout, $location) {
                 updateChannelDuration()
             }
             scope.paddingOptions = [
+                { id: -1, description: "Allowed start times", allow5: false },
                 { id: 30, description: ":00, :30", allow5: false },
                 { id: 15, description: ":00, :15, :30, :45", allow5: false },
                 { id: 60, description: ":00", allow5: false },
@@ -712,6 +724,7 @@ module.exports = function ($timeout, $location) {
                 { id: 30, description: ":00, :05, :30, :35", allow5: true },
 
             ]
+            scope.paddingOption  = scope.paddingOptions[0];
             scope.breakAfterOptions = [
                 { id: -1, description: "After" },
                 { id: 5, description: "5 minutes" },
