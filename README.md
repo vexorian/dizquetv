@@ -1,4 +1,4 @@
-# pseudotv 0.0.56-unofficial-vx
+# pseudotv 0.0.57-unofficial-vx
 
 Create live TV channel streams from media on your Plex servers.
 
