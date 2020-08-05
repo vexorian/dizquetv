@@ -216,7 +216,7 @@
                                             ng-options="o as o.description for o in paddingOptions" />
 
                                         </div>
-                                        <button ng-disabled="typeof(paddingOption)===&quot;undefined&quot;" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)">Pad Times</button>
+                                        <button ng-disabled="paddingOption.id==-1" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)">Pad Times</button>
                                     </div>
                                 </div>
 
@@ -248,11 +248,27 @@
                             </h6>
 
                         </div>
-                        <div class="list-group list-group-root" dnd-list="channel.programs">
-                            <li class="list-group-item flex-container" ng-repeat="x in channel.programs" ng-click="selectProgram($index)" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1); updateChannelDuration()" dnd-effect-allowed="move">
+                        <div class="list-group list-group-root">
+                            <div ng-show="channel.programs.length &gt; 100">
+                                <div>Showing programs {{minProgramIndex+1}} to {{minProgramIndex+100}}</div>
+                            </div>
+                            <input ng-show="channel.programs.length &gt; 100"  type="range" ng-model="minProgramIndex" min="0" max="{{ channel.programs.length - 100 }}" />
+                            <div ng-if="minProgramIndex &gt; 0" class="list-group-item flex-container" >
                                 <div class="small" style="width: 180px; margin-right: 5px;">
-                                    <div class="text-success">{{x.start.toLocaleString()}}</div>
-                                    <div class="text-danger">{{x.stop.toLocaleString()}}</div>
+                                    <div class="text-success">{{ dateForGuide(channel.startTime) }}</div>
+                                    <div class="text-danger">{{ dateForGuide(channel.programs[minProgramIndex-1].stop)}}</div>
+                                </div>
+
+                                <div style="margin-right: 5px; font-weight:ligther; text-align:center">
+                                    &#8942;
+                                </div>
+                            </div>
+                            <div ng-if="minProgramIndex &lt;= $index &amp;&amp; $index &lt; minProgramIndex+100" ng-repeat="x in channel.programs" ng-click="selectProgram($index)" dnd-list="" dnd-drop="dropFunction(index , $index, item)"
+                            >
+                              <div class="list-group-item flex-container" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1);" dnd-effect-allowed="move" >
+                                <div class="small" style="width: 180px; margin-right: 5px;">
+                                    <div class="text-success">{{ dateForGuide(x.start) }}</div>
+                                    <div class="text-danger">{{ dateForGuide(x.stop) }}</div>
                                 </div>
                                 <div style="margin-right: 15px; text-align: center" >
                                     <span class="badge badge-dark">{{x.isOffline? channel.fillerContent.length: x.commercials.length}}</span>
@@ -264,7 +280,28 @@
                                     <i>Flex</i>
                                 </div>
                                 <span class="flex-pull-right btn fa fa-trash" ng-click="removeItem($index);  $event.stopPropagation()"></span>
-                            </li>
+                              </div>
+                            </div>
+                            <div ng-if="minProgramIndex &lt; channel.programs.length - 100" class="list-group-item flex-container" >
+                                <div class="small" style="width: 180px; margin-right: 5px;">
+                                    <div class="text-success">{{ dateForGuide(channel.programs[minProgramIndex + 100 - 1].stop)}}</div>
+                                    <div class="text-danger">{{ dateForGuide(channel.programs[channel.programs.length-1].stop) }}</div>
+                                </div>
+
+                                <div style="margin-right: 5px; font-weight:ligther; text-align:center">
+                                    &#8942;
+                                </div>
+                            </div>
+                            <div class="list-group-item flex-container" >
+                                <div class="small" style="width: 180px; margin-right: 5px;">
+                                    <div class="text-success">{{ dateForGuide(channel.programs[channel.programs.length-1].stop)}}</div>
+                                </div>
+
+                                <div style="margin-right: 5px; font-weight:ligther; text-align:center">
+                                    <i>(Restart programming from beginning)</i>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
