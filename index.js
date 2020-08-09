@@ -6,7 +6,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 
 const api = require('./src/api')
-const defaultSettings = require('./src/defaultSettings')
+const dbMigration = require('./src/database-migration');
 const video = require('./src/video')
 const HDHR = require('./src/hdhr')
 
@@ -33,7 +33,7 @@ if (!fs.existsSync(process.env.DATABASE))
 if(!fs.existsSync(path.join(process.env.DATABASE, 'images')))
     fs.mkdirSync(path.join(process.env.DATABASE, 'images'))
 
-db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings'])
+db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version'])
 
 initDB(db)
 
@@ -102,8 +102,7 @@ app.listen(process.env.PORT, () => {
 })
 
 function initDB(db) {
-    let ffmpegSettings = db['ffmpeg-settings'].find()
-    let plexSettings = db['plex-settings'].find()
+    dbMigration.initDB(db);
     if (!fs.existsSync(process.env.DATABASE + '/font.ttf')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/font.ttf')))
         fs.writeFileSync(process.env.DATABASE + '/font.ttf', data)
@@ -121,54 +120,5 @@ function initDB(db) {
         fs.writeFileSync(process.env.DATABASE + '/images/generic-offline-screen.png', data)
     }
 
-    var ffmpegRepaired = defaultSettings.repairFFmpeg(ffmpegSettings);
-    if (ffmpegRepaired.hasBeenRepaired) {
-        var fixed = ffmpegRepaired.fixedConfig;
-        var i = fixed._id;
-        if ( i == null || typeof(i) == 'undefined') {
-            db['ffmpeg-settings'].save(fixed);
-        } else {
-            db['ffmpeg-settings'].update( { _id: i } , fixed );
-        }
-    }
 
-    if (plexSettings.length === 0) {
-        db['plex-settings'].save({
-            streamPath: 'plex',
-            debugLogging: true,
-            directStreamBitrate: '40000',
-            transcodeBitrate: '3000',
-            mediaBufferSize: 1000,
-            transcodeMediaBufferSize: 20000,
-            maxPlayableResolution: "1920x1080",
-            maxTranscodeResolution: "1920x1080",
-            videoCodecs: 'h264,hevc,mpeg2video',
-            audioCodecs: 'ac3',
-            maxAudioChannels: '2',
-            audioBoost: '100',
-            enableSubtitles: false,
-            subtitleSize: '100',
-            updatePlayStatus: false,
-            streamProtocol: 'http',
-            forceDirectPlay: false,
-            pathReplace: '',
-            pathReplaceWith: ''
-        })
-    }
-
-    let xmltvSettings = db['xmltv-settings'].find()
-    if (xmltvSettings.length === 0) {
-        db['xmltv-settings'].save({
-            cache: 12,
-            refresh: 4,
-            file: `${process.env.DATABASE}/xmltv.xml`
-        })
-    }
-    let hdhrSettings = db['hdhr-settings'].find()
-    if (hdhrSettings.length === 0) {
-        db['hdhr-settings'].save({
-            tunerCount: 1,
-            autoDiscovery: true
-        })
-    }
 }

@@ -17,8 +17,9 @@
 }
 .flex-pull-right { 
   margin-left: auto;
-  padding-right: 20px
+  padding-right: 0.2em
 }
+
 .list-group-item-video {
   background-color: rgb(70, 70, 70);
   border-top: 1px solid #daa104;
@@ -61,4 +62,34 @@
   display: inline-block;
   text-align: center;
   cursor: pointer;
+}
+.program-start {
+  margin-right: 2.5em;
+  display: inline-block;
+  vertical-align: top;
+  /*color: rgb(96,96,96);*/
+  color: #0c5c68;
+  font-size: 80%;
+  font-weight: 400;
+  font-family: monospace;
+}
+.program-row {
+  align-items: start;
+}
+.programming-counter {
+  white-space: nowrap;
+  margin-right: 1em;
+  font-size: 80%;
+}
+.programming-counter > span {
+  font-weight: 300;
+}
+.programming-counter > b {
+  font-weight: 400;
+}
+.btn-programming-tools {
+  padding: .25rem .5rem;
+  font-size: .875rem;
+  line-height: 1.0;
+  margin-right: 0.5rem;
 }

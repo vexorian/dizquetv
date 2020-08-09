@@ -76,24 +76,37 @@
 
                     <hr />
                     <div>
-                        <h6>Programs
-                            <span class="small">Total: {{channel.programs.length}}</span>
-                            <span class="btn fa fa-trash" ng-click="wipeSchedule()"></span>
-                            <span class="badge badge-dark" style="margin-left: 15px;"
-                                ng-show="channel.programs.length !== 0">Commercials</span>
-                            <button class="btn btn-sm btn-secondary" style="margin-left: 10px"
-                                ng-click="showShuffleOptions = !showShuffleOptions"
-                                ng-show="channel.programs.length !== 0">
-                                Tools&nbsp;&nbsp;<span
-                                    class="fa {{ showShuffleOptions ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>
-                            </button>
-                            <span class="pull-right">
-                                <span class="text-danger small">{{error.programs}}</span>
-                                <button class="btn btn-sm btn-primary" ng-click="displayPlexLibrary = true">
-                                    <span class="fa fa-plus"></span>
-                                </button>
-                            </span>
-                        </h6>
+                        <h6>Programming</h6>
+
+                            <div class="flex-container">
+
+                                <div class='programming-counter'>
+                                    <span class="small"><b>Programs:</b> {{channel.programs.length}}</span>
+                                </div>
+                                <div class='programming-counter' ng-show='hasFlex'>
+                                    <span class="small"><b>Filler:</b> {{channel.fillerContent.length}}</span>
+                                </div>
+                                <div class='programming-counter' ng-show='hasFlex'>
+                                    <span class="small"><b>Fallback:</b> {{describeFallback()}}</span>
+                                </div>
+                                <div class='flex-pull-right' />
+                                <div>
+                                    <button class="btn btn-sm btn-secondary btn-programming-tools"
+                                    ng-click="showShuffleOptions = !showShuffleOptions"
+                                    ng-show="channel.programs.length !== 0">
+                                    <span
+                                    class="fa {{ showShuffleOptions ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>&nbsp;&nbsp;Tools
+                                    </button>
+                                </div>
+
+                                <div style='margin-left:0'>
+                                    <span class="text-danger small">{{error.programs}}</span>
+                                    <button class="btn btn-sm btn-primary" ng-click="displayPlexLibrary = true">
+                                        <span class="fa fa-plus"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        
                         <div ng-init="blockCount = 1; showShuffleOptions = false" ng-show="showShuffleOptions">
                             <p class="text-center text-info small">
                                 Tools to modify the schedule.
@@ -118,8 +131,6 @@
 
                                 <h6>Sort Release Dates</h6>
                                 <p>Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.</p>
-                                <h6>Remove Duplicates</h6>
-                                <p>Removes repeated videos.</p>
 
                                 <h6>Balance Shows</h6>
                                 <p>Attempts to make the total amount of time each TV show appears in the programming as balanced as possible. This works by adding multiple copies of TV shows that have too little total time and by possibly removing duplicated episodes from TV shows that have too much total time. Note that in many situations it would be impossible to achieve perfect balance because channel duration is not infinite. Movies/Clips are treated as a single TV show. Note that this will most likely result in a larger channel and that having large channels makes some UI operations slower.</p>
@@ -130,9 +141,6 @@
                                 <h6>Add Flex</h6>
                                 <p>Adds a &quot;Flex&quot; Time Slot. Can be configured to play a fallback screen and/or random &quot;filler&quot; content (e.g &quot;commercials&quot;, trailers, prerolls, countdowns, music videos, channel bumpers, etc.). Short Flex periods are hidden from the TV guide and are displayed as extensions to the previous program. Long Flex periods appear as the channel name in the TV guide.</p>
 
-                                <h6>Remove Flex</h6>
-                                <p>Removes any Flex periods from the schedule.</p>
-
                                 <h6>Pad Times</h6>
                                 <p>Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones.</p>
 
@@ -141,6 +149,17 @@
 
                                 <h6>Add Breaks</h6>
                                 <p>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes.</p>
+
+                                <h6>Remove Duplicates</h6>
+                                <p>Removes repeated videos.</p>
+
+                                <h6>Remove Flex</h6>
+                                <p>Removes any Flex periods from the schedule.</p>
+
+                                <h6>Remove All</h6>
+                                <p>Wipes out the schedule so that you can start over.</p>
+
+
                             </div>
 
                             <div class="row">
@@ -171,14 +190,6 @@
                                 </div>
                                 <div class="input-group col-md-6" style="padding: 5px;">
                                     <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortByDate()">Sort Release Dates</button>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
-                                </div>
-                                <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="removeOffline()">Remove Flex</button>
                                 </div>
                             </div>
                             <div class="row">
@@ -235,9 +246,17 @@
                                 </div>
                             </div>
 
-                            
-
-
+                            <div class="row">
+                                <div class="input-group col-md-3" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
+                                </div>
+                                <div class="input-group col-md-3" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeOffline()">Remove Flex</button>
+                                </div>
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSchedule()">Remove All</button>
+                                </div>
+                            </div>
                         </div>
                         <div ng-if="channel.programs.length === 0">
                             <div class="small">Add programs to this channel by selecting media from your Plex library</div>
@@ -254,9 +273,8 @@
                             </div>
                             <input ng-show="channel.programs.length &gt; 100"  type="range" ng-model="minProgramIndex" min="0" max="{{ channel.programs.length - 100 }}" />
                             <div ng-if="minProgramIndex &gt; 0" class="list-group-item flex-container" >
-                                <div class="small" style="width: 180px; margin-right: 5px;">
-                                    <div class="text-success">{{ dateForGuide(channel.startTime) }}</div>
-                                    <div class="text-danger">{{ dateForGuide(channel.programs[minProgramIndex-1].stop)}}</div>
+                                <div class="program-start">
+                                    {{ dateForGuide(channel.startTime) }}
                                 </div>
 
                                 <div style="margin-right: 5px; font-weight:ligther; text-align:center">
@@ -265,14 +283,14 @@
                             </div>
                             <div ng-if="minProgramIndex &lt;= $index &amp;&amp; $index &lt; minProgramIndex+100" ng-repeat="x in channel.programs" ng-click="selectProgram($index)" dnd-list="" dnd-drop="dropFunction(index , $index, item)"
                             >
-                              <div class="list-group-item flex-container" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1);" dnd-effect-allowed="move" >
-                                <div class="small" style="width: 180px; margin-right: 5px;">
-                                    <div class="text-success">{{ dateForGuide(x.start) }}</div>
-                                    <div class="text-danger">{{ dateForGuide(x.stop) }}</div>
+                              <div class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1);" dnd-effect-allowed="move"
+                              >
+                                
+                                <div class="program-start">
+                                    {{ dateForGuide(x.start) }}
                                 </div>
-                                <div style="margin-right: 15px; text-align: center" >
-                                    <span class="badge badge-dark">{{x.isOffline? channel.fillerContent.length: x.commercials.length}}</span>
-                                </div>
+                                <div ng-style="programSquareStyle(x)" />
+
                                 <div style="margin-right: 5px;"  ng-hidden="x.isOffline">
                                     {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
                                 </div>
@@ -283,18 +301,17 @@
                               </div>
                             </div>
                             <div ng-if="minProgramIndex &lt; channel.programs.length - 100" class="list-group-item flex-container" >
-                                <div class="small" style="width: 180px; margin-right: 5px;">
-                                    <div class="text-success">{{ dateForGuide(channel.programs[minProgramIndex + 100 - 1].stop)}}</div>
-                                    <div class="text-danger">{{ dateForGuide(channel.programs[channel.programs.length-1].stop) }}</div>
+                                <div class="program-start">
+                                    {{ dateForGuide(channel.programs[minProgramIndex + 100 - 1].stop)}}
                                 </div>
 
                                 <div style="margin-right: 5px; font-weight:ligther; text-align:center">
                                     &#8942;
                                 </div>
                             </div>
-                            <div class="list-group-item flex-container" >
-                                <div class="small" style="width: 180px; margin-right: 5px;">
-                                    <div class="text-success">{{ dateForGuide(channel.programs[channel.programs.length-1].stop)}}</div>
+                            <div class="list-group-item flex-container" ng-if="channel.programs.length &gt; 0" >
+                                <div class="program-start">
+                                    {{ dateForGuide(channel.programs[channel.programs.length-1].stop)}}
                                 </div>
 
                                 <div style="margin-right: 5px; font-weight:ligther; text-align:center">

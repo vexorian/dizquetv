@@ -2,9 +2,14 @@ const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 
 class PlexTranscoder {
-    constructor(settings, lineupItem) {
+    constructor(settings, channel, lineupItem) {
         this.session = uuidv4()
 
+        this.device = "channel-" + channel.number;
+        this.deviceName = this.device;
+        this.clientIdentifier = this.session.replace(/-/g,"").slice(0,16) + "-org-pseudotv-" + process.platform;
+        this.product = "PseudoTV";
+        
         this.settings = settings
 
         this.log("Plex transcoder initiated")
@@ -12,7 +17,9 @@ class PlexTranscoder {
 
         this.key = lineupItem.key
         this.plexFile = `${lineupItem.server.uri}${lineupItem.plexFile}?X-Plex-Token=${lineupItem.server.accessToken}`
-        this.file = lineupItem.file.replace(settings.pathReplace, settings.pathReplaceWith)
+        if (typeof(lineupItem.file)!=='undefined') {
+            this.file = lineupItem.file.replace(settings.pathReplace, settings.pathReplaceWith)
+        }
         this.transcodeUrlBase = `${lineupItem.server.uri}/video/:/transcode/universal/start.m3u8?`
         this.ratingKey = lineupItem.ratingKey
         this.currTimeMs = lineupItem.start
@@ -60,8 +67,11 @@ class PlexTranscoder {
             // Update transcode decision for session
             await this.getDecision(stream.directPlay);
             stream.streamUrl = (this.settings.streamPath === 'direct') ? this.file : this.plexFile;
+            if (typeof(stream.streamUrl) == 'undefined') {
+                throw Error("Direct path playback is not possible for this program because it was registered at a time when the direct path settings were not set. To fix this, you must either revert the direct path setting or rebuild this channel.");
+            }
         } else if (this.isVideoDirectStream() === false) {
-                this.log("Decision: File can direct play")
+                this.log("Decision: Should transcode")
                 // Change transcoding arguments to be the user chosen transcode parameters
                 this.setTranscodingArgs(stream.directPlay, false, deinterlace)
                 // Update transcode decision for session
@@ -127,8 +137,12 @@ add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&va
 
         let clientProfile_enc=encodeURIComponent(clientProfile)
         this.transcodingArgs=`X-Plex-Platform=${profileName}&\
+X-Plex-Product=${this.product}&\
 X-Plex-Client-Platform=${profileName}&\
 X-Plex-Client-Profile-Name=${profileName}&\
+X-Plex-Device-Name=${this.deviceName}&\
+X-Plex-Device=${this.device}&\
+X-Plex-Client-Identifier=${this.clientIdentifier}&\
 X-Plex-Platform=${profileName}&\
 X-Plex-Token=${this.server.accessToken}&\
 X-Plex-Client-Profile-Extra=${clientProfile_enc}&\
@@ -270,12 +284,13 @@ state=${this.playState}&\
 key=${this.key}&\
 time=${this.currTimeMs}&\
 duration=${this.duration}&\
+X-Plex-Product=${this.product}&\
 X-Plex-Platform=${profileName}&\
 X-Plex-Client-Platform=${profileName}&\
 X-Plex-Client-Profile-Name=${profileName}&\
-X-Plex-Device-Name=PseudoTV-Plex&\
-X-Plex-Device=PseudoTV-Plex&\
-X-Plex-Client-Identifier=${this.session}&\
+X-Plex-Device-Name=${this.deviceName}&\
+X-Plex-Device=${this.device}&\
+X-Plex-Client-Identifier=${this.clientIdentifier}&\
 X-Plex-Platform=${profileName}&\
 X-Plex-Token=${this.server.accessToken}`;
 

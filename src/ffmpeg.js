@@ -2,14 +2,14 @@ const spawn = require('child_process').spawn
 const events = require('events')
 
 //they can customize this by modifying the picture in .pseudotv folder
-const ERROR_PICTURE_PATH = 'http://localhost:8000/images/generic-error-screen.png'
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 
 class FFMPEG extends events.EventEmitter {
     constructor(opts, channel) {
         super()
-        this.opts = opts
+        this.opts = opts;
+        this.errorPicturePath = `http://localhost:${process.env.PORT}/images/generic-error-screen.png`;
         if (! this.opts.enableFFMPEGTranscoding) {
             //this ensures transcoding is completely disabled even if 
             // some settings are true
@@ -34,15 +34,15 @@ class FFMPEG extends events.EventEmitter {
         this.volumePercent =  this.opts.audioVolumePercent;
     }
     async spawnConcat(streamUrl) {
-        this.spawn(streamUrl, undefined, undefined, undefined, false, false, undefined, true)
+        this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
     }
     async spawnStream(streamUrl, streamStats, startTime, duration, enableIcon, type) {
         this.spawn(streamUrl, streamStats, startTime, duration, true, enableIcon, type, false);
     }
     async spawnError(title, subtitle, duration) {
         if (! this.opts.enableFFMPEGTranscoding || this.opts.errorScreen == 'kill') {
-            console.log("error: " + title + " ; " + subtitle);
-            this.emit('error', { code: -1, cmd: `error stream disabled. ${title} ${subtitles}`} )
+            console.error("error: " + title + " ; " + subtitle);
+            this.emit('error', { code: -1, cmd: `error stream disabled. ${title} ${subtitle}`} )
             return;
         }
         if (typeof(duration) === 'undefined') {
@@ -61,7 +61,7 @@ class FFMPEG extends events.EventEmitter {
     async spawnOffline(duration) {
         if (! this.opts.enableFFMPEGTranscoding) {
             console.log("The channel has an offline period scheduled for this time slot. FFMPEG transcoding is disabled, so it is not possible to render an offline screen. Ending the stream instead");
-            this.emit('end', { code: -1, cmd: `error stream disabled. ${title} ${subtitles}`} )
+            this.emit('end', { code: -1, cmd: `offline stream disabled.`} )
             return;
         }
 
@@ -171,7 +171,7 @@ class FFMPEG extends events.EventEmitter {
                 } else {//'pic'
                     ffmpegArgs.push(
                         '-loop', '1',
-                        '-i', `${ERROR_PICTURE_PATH}`,
+                        '-i', `${this.errorPicturePath}`,
                     );
                     videoComplex = `;[0:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 }
@@ -226,7 +226,6 @@ class FFMPEG extends events.EventEmitter {
                 videoComplex += `;[1:v]scale=${this.channel.iconWidth}:-1[icn];${currentVideo}[icn]overlay=${posAry[this.channel.iconPosition]}${icnDur}[comb]`
                 currentVideo = '[comb]';
             }
-
             if (this.volumePercent != 100) {
                 var f = this.volumePercent / 100.0;
                 audioComplex += `;${currentAudio}volume=${f}[boosted]`;
@@ -332,16 +331,12 @@ class FFMPEG extends events.EventEmitter {
             
         ffmpegArgs.push(`pipe:1`)
 
-        this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs)
+        let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
+        this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
         this.ffmpeg.stdout.on('data', (chunk) => {
             this.sentData = true;
             this.emit('data', chunk)
         })
-        if (this.opts.logFfmpeg) {
-            this.ffmpeg.stderr.on('data', (chunk) => {
-                process.stderr.write(chunk)
-            })
-        }
         this.ffmpeg.on('close', (code) => {
             if (code === null) {
                 this.emit('close', code)

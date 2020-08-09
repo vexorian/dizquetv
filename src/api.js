@@ -1,7 +1,7 @@
 
 const express = require('express')
 const fs = require('fs')
-const defaultSettings = require('./defaultSettings')
+const databaseMigration = require('./database-migration');
 const channelCache = require('./channel-cache')
 const constants = require('./constants')
 
@@ -74,7 +74,7 @@ function api(db, xmltvInterval) {
         res.send(ffmpeg)
     })
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
-        let ffmpeg = defaultSettings.ffmpeg();
+        let ffmpeg = databaseMigration.defaultFFMPEG() ;
         ffmpeg.ffmpegPath = req.body.ffmpegPath;
         db['ffmpeg-settings'].update({ _id: req.body._id },  ffmpeg)
         ffmpeg = db['ffmpeg-settings'].find()[0]

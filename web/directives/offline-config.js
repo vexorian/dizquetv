@@ -10,6 +10,7 @@ module.exports = function ($timeout) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
+            scope.showTools = false;
             scope.showPlexLibrary = false;
             scope.showFallbackPlexLibrary = false;
             scope.finished = (prog) => {
@@ -31,6 +32,28 @@ module.exports = function ($timeout) {
 
                 scope.onDone(JSON.parse(angular.toJson(prog)))
                 scope.program = null
+            }
+            scope.sortFillers = () => {
+                scope.program.filler.sort( (a,b) => { return a.actualDuration - b.actualDuration } );
+            }
+            scope.fillerRemoveAllFiller = () => {
+                scope.program.filler = [];
+            }
+            scope.fillerRemoveDuplicates = () => {
+                function getKey(p) {
+                    return p.server.uri + "|" + p.server.accessToken + "|" + p.plexFile;
+                }
+                let seen = {};
+                let newFiller = [];
+                for (let i = 0; i < scope.program.filler.length; i++) {
+                    let p = scope.program.filler[i];
+                    let k = getKey(p);
+                    if ( typeof(seen[k]) === 'undefined') {
+                        seen[k] = true;
+                        newFiller.push(p);
+                    }
+                }
+                scope.program.filler = newFiller;
             }
             scope.importPrograms = (selectedPrograms) => {
                 for (let i = 0, l = selectedPrograms.length; i < l; i++) {
@@ -55,6 +78,29 @@ module.exports = function ($timeout) {
                 date.setSeconds( Math.floor(duration / 1000) ); // specify value for SECONDS here
                 return date.toISOString().substr(11, 8);
             }
+
+            scope.programSquareStyle = (program, dash) => {
+                let background = "rgb(255, 255, 255)";
+                let ems = Math.pow( Math.min(60*60*1000, program.actualDuration), 0.7 );
+                ems = ems / Math.pow(1*60*1000., 0.7);
+                ems = Math.max( 0.25 , ems);
+                let top = Math.max(0.0, (1.75 - ems) / 2.0) ;
+                if (top == 0.0) {
+                    top = "1px";
+                }
+                let solidOrDash = (dash? 'dashed' : 'solid');
+
+                return {
+                    'width': '0.5em',
+                    'height': ems + 'em',
+                    'margin-right': '0.50em',
+                    'background': background,
+                    'border': `1px ${solidOrDash} black`,
+                    'margin-top': top,
+                    'margin-bottom': '1px',
+                };
+            }
+
         }
     };
 }

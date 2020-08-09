@@ -60,9 +60,10 @@
                     <div ng-show="program.channelOfflineMode == 'clip'">
                         <div class="list-group list-group-root" dnd-list="program.fallback">
                             <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.fallback" dnd-draggable="x" dnd-moved="program.fallback.splice($index, 1)" dnd-effect-allowed="move">
-                                <div class="small text-success" style="margin-right: 15px; font-family:monospace">
+                                <div class="program-start" >
                                     {{durationString(x.actualDuration)}}
                                 </div>
+                                <div ng-style="programSquareStyle(x, true)" />
                                 <div style="margin-right: 5px;">
                                     <strong>Fallback:</strong> {{x.title}}
                                 </div>
@@ -74,7 +75,7 @@
                         <div ng-show="program.fallback.length === 0">
                             <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="showFallbackPlexLibrary = true">Pick fallback</button>
                         </div>
-                        <hr />
+                        <hr style='margin-top:0' />
                     </div>
 
                     <div>
@@ -92,24 +93,49 @@
                             <label class="small" for="overlayDisableIcon" style="margin-bottom: 4px;">&nbsp;Disable overlay icon when playing filler&nbsp;&nbsp;</label>
                         </div>
                         <hr />
-                        <div>
-                            <span class="small" ng-show="program.filler.length > 0">
-                                Filler Clips: {{program.filler.length}}<span class="btn fa fa-trash" ng-click="program.filler=[]"></span>
-                            </span>
-                            <button class="btn btn-sm btn-primary pull-right" ng-click="showPlexLibrary = true">
-                                <span class="fa fa-plus"></span>
-                            </button>
+                        <div class="flex-container">
+                            <div class="programming-counter small" ng-show="program.filler.length > 0">
+                                <span class="small"><b>Filler Clips:</b> {{program.filler.length}}</span>
+                            </div>
+                            <div class='flex-pull-right' />
+                            <div>
+                                <button class="btn btn-sm btn-secondary btn-programming-tools"
+                                ng-click="showTools = !showTools"
+                                ng-show="channel.programs.length !== 0">
+                                <span
+                                class="fa {{ showTools ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>&nbsp;&nbsp;Tools
+                                </button>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-primary" ng-click="showPlexLibrary = true">
+                                    <span class="fa fa-plus"></span>
+                                </button>
+                            </div>
                         </div>
-                        
+                        <div ng-show="showTools">
+                            <div class="row">
+                                <div class="input-group col-md-3" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortFillers()">Sort Lengths</button>
+                                </div>
+                                <div class="input-group col-md-3" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="fillerRemoveDuplicates()">Remove Duplicates</button>
+                                </div>
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="fillerRemoveAllFiller()">Remove All Filler</button>
+                                </div>
+                            </div>
+                        </div>
+
                         
                         <div ng-show="program.filler.length === 0">
                             <p class="text-center text-info">Click the <span class="fa fa-plus"></span> to import filler content from your Plex server(s).</p>
                         </div>
                         <div class="list-group list-group-root" dnd-list="program.filler">
                             <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.filler" dnd-draggable="x" dnd-moved="program.filler.splice($index, 1)" dnd-effect-allowed="move">
-                                <div class="small text-success" style="margin-right: 15px; font-family:monospace">
+                                <div class="program-start" >
                                     {{durationString(x.actualDuration)}}
                                 </div>
+                                <div ng-style="programSquareStyle(x, false)" />
                                 <div style="margin-right: 5px;">
                                     {{x.title}}
                                 </div>

@@ -76,32 +76,6 @@
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <h6 style="margin-top: 10px;">Commercials
-                            <button class="btn btn-sm btn-primary pull-right" ng-click="showPlexLibrary = true">
-                                <span class="fa fa-plus"></span>
-                            </button>
-                        </h6>
-                        <div ng-show="program.commercials.length === 0">
-                            <p class="text-center text-info">Click the <span class="fa fa-plus"></span> to import "commercials" from your Plex server(s).</p>
-                        </div>
-                        <div class="list-group list-group-root" dnd-list="program.commercials">
-                            <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.commercials" dnd-draggable="x" dnd-moved="program.commercials.splice($index, 1)" dnd-effect-allowed="move">
-                                {{x.title}}
-                                <div class="flex-pull-right">
-                                    <span class="small" style="display: inline-block;">
-                                        <b>Position</b><br/>
-                                        {{x.commercialPosition===0?'START':x.commercialPosition=== 1?'1/4':x.commercialPosition===2?'1/2':x.commercialPosition===3?'3/4':'END'}}
-                                    </span>
-                                    <span style="padding-top: 10px; display: inline-block;">
-                                        <input type="range" min="0" max="4" ng-model="x.commercialPosition"/>
-                                    </span>
-                                    <span class="btn fa fa-trash" ng-click="program.commercials.splice($index,1)"></span>
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-link" ng-click="program = null">Cancel</button>
