@@ -39,7 +39,7 @@ class PlexPlayer {
 
         try {
             let plexSettings = db['plex-settings'].find()[0];
-            let plexTranscoder = new PlexTranscoder(plexSettings, lineupItem);
+            let plexTranscoder = new PlexTranscoder(plexSettings, channel, lineupItem);
             this.plexTranscoder = plexTranscoder;
             let enableChannelIcon = this.context.enableChannelIcon;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
