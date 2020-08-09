@@ -9,6 +9,7 @@ module.exports = function ($timeout, $location) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
+            scope.hasFlex = false;
             scope.showHelp = false;
             scope._frequencyModified = false;
             scope._frequencyMessage = "";
@@ -183,7 +184,19 @@ module.exports = function ($timeout, $location) {
                 updateChannelDuration()
             }
             scope.dateForGuide = (date) => {
-                return date.toLocaleString();
+                let t = date.toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                });
+                if (t.charCodeAt(1) == 58) {
+                    t = "0" + t;
+                }
+                return date.toLocaleDateString(undefined,{
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit"
+                }) + " " + t;
             }
             scope.sortByDate = () => {
                 scope.removeOffline();
@@ -254,6 +267,88 @@ module.exports = function ($timeout, $location) {
                 scope.channel.programs = tmpProgs
                 updateChannelDuration()
             }
+
+            scope.describeFallback = () => {
+                if (scope.channel.offlineMode === 'pic') {
+                    if (
+                        (typeof(scope.channel.offlineSoundtrack) !== 'undefined')
+                        && (scope.channel.offlineSoundtrack.length > 0)
+                    ) {
+                        return "pic+sound";
+                    } else {
+                        return "pic";
+                    }
+                } else {
+                    return "clip";
+                }
+            }
+
+            scope.programSquareStyle = (program) => {
+                let background ="";
+                if (program.isOffline) {
+                    background = "rgb(255, 255, 255)";
+                } else {
+                    let r = 0, g = 0, b = 0, r2=0, g2=0,b2=0;
+                    let i = 0;
+                    let angle = 45;
+                    let w = 3;
+                    if (program.type === 'episode') {
+                        let h = Math.abs(scope.getHashCode(program.showTitle, false));
+                        let h2 = Math.abs(scope.getHashCode(program.showTitle, true));
+                        r = h % 256;
+                        g = (h / 256) % 256;
+                        b = (h / (256*256) ) % 256;
+                        i = h % 360;
+                        r2 = (h2 / (256*256) ) % 256;
+                        g2 = (h2 / (256*256) ) % 256;
+                        b2 = (h2 / (256*256) ) % 256;
+                        angle = -90 + h % 180
+                    } else {
+                        r = 10, g = 10, b = 10;
+                        r2 = 245, g2 = 245, b2 = 245;
+                        angle = 45;
+                        w = 6;
+                    }
+                    
+                    let rgb1 = "rgb("+ r + "," + g + "," + b +")";
+                    let rgb2 = "rgb("+ r2 + "," + g2 + "," + b2 +")"
+                    background = "repeating-linear-gradient( " + angle + "deg, " + rgb1 + ", " + rgb1 + " " + w + "px, " + rgb2 + " " + w + "px, " + rgb2 + " " + (w*2) + "px)";
+
+                }
+                let ems = Math.pow( Math.min(24*60*60*1000, program.actualDuration), 0.7 );
+                ems = ems / Math.pow(5*60*1000., 0.7);
+                ems = Math.max( 0.25 , ems);
+                let top = Math.max(0.0, (1.75 - ems) / 2.0) ;
+                if (top == 0.0) {
+                    top = "1px";
+                } else {
+                    top = top + "em";
+                }
+
+                return {
+                    'width': '0.5em',
+                    'height': ems + 'em',
+                    'margin-right': '0.50em',
+                    'background': background,
+                    'border': '1px solid black',
+                    'margin-top': top,
+                    'margin-bottom': '1px',
+                };
+            }
+            scope.getHashCode = (s, rev) => {
+                var hash = 0;
+                if (s.length == 0) return hash;
+                let inc = 1, st = 0, e = s.length;
+                if (rev) {
+                    inc = -1, st = e - 1, e = -1;
+                }
+                for (var i = st; i != e; i+= inc) {
+                    hash = s.charCodeAt(i) + ((hash << 5) - hash);
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return hash;
+            }
+
             scope.nightChannel = (a, b) => {
                 let o =(new Date()).getTimezoneOffset() * 60 * 1000;
                 let m = 24*60*60*1000;
@@ -650,10 +745,14 @@ module.exports = function ($timeout, $location) {
             function updateChannelDuration() {
                 scope.showRotatedNote = false;
                 scope.channel.duration = 0
+                scope.hasFlex = false;
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     scope.channel.programs[i].start = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
                     scope.channel.duration += scope.channel.programs[i].duration
                     scope.channel.programs[i].stop = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
+                    if (scope.channel.programs[i].isOffline) {
+                        scope.hasFlex = true;
+                    }
                 }
             }
             scope.error = {}
