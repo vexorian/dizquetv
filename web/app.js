@@ -7,7 +7,7 @@ require('./ext/angularjs-scroll-glue')
 var app = angular.module('myApp', ['ngRoute', 'angularLazyImg', 'dndLists', 'luegg.directives'])
 
 app.service('plex',             require('./services/plex'))
-app.service('pseudotv',         require('./services/pseudotv'))
+app.service('dizquetv',         require('./services/dizquetv'))
 
 app.directive('plexSettings',   require('./directives/plex-settings'))
 app.directive('ffmpegSettings', require('./directives/ffmpeg-settings'))

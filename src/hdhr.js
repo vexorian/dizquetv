@@ -50,7 +50,7 @@ function hdhr(db) {
         for (let i = 0, l = channels.length; i < l; i++)
             lineup.push({ GuideNumber: channels[i].number.toString(), GuideName: channels[i].name, URL: `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}` })
         if (lineup.length === 0)
-            lineup.push({ GuideNumber: '1', GuideName: 'PseudoTV', URL: `${req.protocol}://${req.get('host')}/setup` })
+            lineup.push({ GuideNumber: '1', GuideName: 'dizqueTV', URL: `${req.protocol}://${req.get('host')}/setup` })
         res.send(JSON.stringify(lineup))
     })
 
@@ -60,14 +60,14 @@ function hdhr(db) {
 function getDevice(db, host) {
     let hdhrSettings = db['hdhr-settings'].find()[0]
     var device = {
-        FriendlyName: "PseudoTV",
-        Manufacturer: "PseudoTV - Silicondust",
-        ManufacturerURL: "https://gitlab.org/DEFENDORe/pseudotv-plex",
+        FriendlyName: "dizqueTV",
+        Manufacturer: "dizqueTV - Silicondust",
+        ManufacturerURL: "https://github.com/vexorian/dizquetv",
         ModelNumber: "HDTC-2US",
         FirmwareName: "hdhomeruntc_atsc",
         TunerCount: hdhrSettings.tunerCount,
         FirmwareVersion: "20170930",
-        DeviceID: 'PseudoTV',
+        DeviceID: 'dizqueTV',
         DeviceAuth: "",
         BaseURL: `${host}`,
         LineupURL: `${host}/lineup.json`
@@ -82,7 +82,7 @@ function getDevice(db, host) {
       </specVersion>
       <device>
       <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
-      <friendlyName>PseudoTV</friendlyName>
+      <friendlyName>dizqueTV</friendlyName>
       <manufacturer>Silicondust</manufacturer>
       <modelName>HDTC-2US</modelName>
       <modelNumber>HDTC-2US</modelNumber>

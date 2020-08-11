@@ -10,7 +10,7 @@ function api(db, xmltvInterval) {
     let router = express.Router()
 
     router.get('/api/version', (req, res) => {
-        res.send( { "pseudotv" : constants.VERSION_NAME } )
+        res.send( { "dizquetv" : constants.VERSION_NAME } )
     })
 
     // Plex Servers
@@ -179,11 +179,11 @@ function api(db, xmltvInterval) {
         let channels = db['channels'].find()
         var data = "#EXTM3U\n"
         for (var i = 0; i < channels.length; i++) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="PseudoTV",${channels[i].name}\n`
+            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
             data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
         }
         if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-name="PseudoTV" tvg-logo="https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png" group-title="PseudoTV",PseudoTV\n`
+            data += `#EXTINF:0 tvg-id="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/master/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
             data += `${req.protocol}://${req.get('host')}/setup\n`
         }
         res.send(data)

@@ -14,13 +14,13 @@ function WriteXMLTV(channels, xmlSettings) {
         ws.on('error', (err) => { reject(err) })
         _writeDocStart(xw)
       async function middle() {
-        if (channels.length === 0) { // Write Dummy PseudoTV Channel if no channel exists
-            _writeChannels(xw, [{ number: 1, name: "PseudoTV", icon: "https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png" }])
+        if (channels.length === 0) { // Write Dummy dizqueTV Channel if no channel exists
+            _writeChannels(xw, [{ number: 1, name: "dizqueTV", icon: "https://raw.githubusercontent.com/vexorain/dizquetv/master/resources/dizquetv.png" }])
             let program = {
                 program: {
                     type: 'movie',
                     title: 'No Channels Configured',
-                    summary: 'Configure your channels using the PseudoTV Web UI.'
+                    summary: 'Configure your channels using the dizqueTV Web UI.'
                 },
                 channel: '1',
                 start: date,

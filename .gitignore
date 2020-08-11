@@ -2,4 +2,5 @@ node_modules/
 dist/
 bin/
 .pseudotv/
+.dizquetv/
 web/public/bundle.js

@@ -1,7 +1,7 @@
 const spawn = require('child_process').spawn
 const events = require('events')
 
-//they can customize this by modifying the picture in .pseudotv folder
+//they can customize this by modifying the picture in .dizquetv folder
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 
@@ -319,7 +319,7 @@ class FFMPEG extends events.EventEmitter {
         }
 
         ffmpegArgs.push(`-metadata`,
-                        `service_provider="PseudoTV"`,
+                        `service_provider="dizqueTV"`,
                         `-metadata`,
                         `service_name="${this.channel.name}`,
                         `-f`, `mpegts`);

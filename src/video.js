@@ -21,9 +21,9 @@ function video(db) {
             return
         }
 
-        console.log(`\r\nStream starting. Channel: 1 (PseudoTV)`)
+        console.log(`\r\nStream starting. Channel: 1 (dizqueTV)`)
 
-        let ffmpeg = new FFMPEG_TEXT(ffmpegSettings, 'PseudoTV (No Channels Configured)', 'Configure your channels using the PseudoTV Web UI')
+        let ffmpeg = new FFMPEG_TEXT(ffmpegSettings, 'dizqueTV (No Channels Configured)', 'Configure your channels using the dizqueTV Web UI')
 
         ffmpeg.on('data', (data) => { res.write(data) })
 
@@ -38,7 +38,7 @@ function video(db) {
 
         res.on('close', () => { // on HTTP close, kill ffmpeg
             ffmpeg.kill()
-            console.log(`\r\nStream ended. Channel: 1 (PseudoTV)`)
+            console.log(`\r\nStream ended. Channel: 1 (dizqueTV)`)
         })
     })
     // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos

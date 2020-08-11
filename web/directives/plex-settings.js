@@ -1,11 +1,11 @@
-module.exports = function (plex, pseudotv, $timeout) {
+module.exports = function (plex, dizquetv, $timeout) {
     return {
         restrict: 'E',
         templateUrl: 'templates/plex-settings.html',
         replace: true,
         scope: {},
         link: function (scope, element, attrs) {
-            pseudotv.getPlexServers().then((servers) => {
+            dizquetv.getPlexServers().then((servers) => {
                 scope.servers = servers
             })
             scope.addPlexServer = function () {
@@ -15,10 +15,10 @@ module.exports = function (plex, pseudotv, $timeout) {
                         result.servers.forEach((server) => {
                             // add in additional settings
                             server.arGuide = true
-                            server.arChannels = false // should not be enabled unless PseudoTV tuner already added to plex
-                            pseudotv.addPlexServer(server)
+                            server.arChannels = false // should not be enabled unless dizqueTV tuner already added to plex
+                            dizquetv.addPlexServer(server)
                         });
-                        return pseudotv.getPlexServers()
+                        return dizquetv.getPlexServers()
                     }).then((servers) => {
                         scope.$apply(() => {
                             scope.servers = servers
@@ -35,21 +35,21 @@ module.exports = function (plex, pseudotv, $timeout) {
                     })
             }
             scope.deletePlexServer = (x) => {
-                pseudotv.removePlexServer(x)
+                dizquetv.removePlexServer(x)
                     .then((servers) => {
                         scope.servers = servers
                     })
             }
-            pseudotv.getPlexSettings().then((settings) => {
+            dizquetv.getPlexSettings().then((settings) => {
                 scope.settings = settings
             })
             scope.updateSettings = (settings) => {
-                pseudotv.updatePlexSettings(settings).then((_settings) => {
+                dizquetv.updatePlexSettings(settings).then((_settings) => {
                     scope.settings = _settings
                 })
             }
             scope.resetSettings = (settings) => {
-                pseudotv.resetPlexSettings(settings).then((_settings) => {
+                dizquetv.resetPlexSettings(settings).then((_settings) => {
                     scope.settings = _settings
                 })
             }

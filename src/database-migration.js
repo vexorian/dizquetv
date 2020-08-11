@@ -17,14 +17,26 @@
  * but with time it will be worth it, really.
  *
  ***/
-const TARGET_VERSION = 200;
+const TARGET_VERSION = 300;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
     [      0,    100, (db) => basicDB(db) ],
     [    100,    200, (db) => commercialsRemover(db) ],
+    [    200,    300, (db) => appNameChange(db) ],
 ]
 
+
+function appNameChange(db) {
+    let xmltv = db['xmltv-settings'].find()
+    if (xmltv.length > 0) {
+        xmltv = xmltv[0];
+        if (typeof(xmltv.file) !== 'undefined') {
+            xmltv.file = xmltv.file.replace(/\.pseudotv/, ".dizquetv");
+            db['xmltv-settings'].update( { "_id" : xmltv._id} , xmltv );
+        }
+    }
+}
 
 function basicDB(db) {
     //this one should either try recovering the db from a very old version
@@ -319,7 +331,7 @@ function initDB(db) {
                     console.log("Done migrating db to version : " + dbVersion.version);
 
                 } catch (e) {
-                    console.log("Error during migration. Sorry, we can't continue. Wiping out your .pseudotv folder might be a workaround, but that means you lose all your settings.", e);
+                    console.log("Error during migration. Sorry, we can't continue. Wiping out your .dizquetv folder might be a workaround, but that means you lose all your settings.", e);
                     throw Error("Migration error, step=" + dbVersion.version);
                 }
             } else {

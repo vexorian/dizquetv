@@ -1,8 +1,8 @@
 #!/bin/sh
-WIN64=pseudotv-win-x64.exe
-WIN32=pseudotv-win-x86.exe
-MACOSX=pseudotv-macos-x64
-LINUX64=pseudotv-linux-x64
+WIN64=dizquetv-win-x64.exe
+WIN32=dizquetv-win-x86.exe
+MACOSX=dizquetv-macos-x64
+LINUX64=dizquetv-linux-x64
 
 rm -R ./dist/*
 npm run build

@@ -1,4 +1,4 @@
-    module.exports = function (pseudotv) {
+    module.exports = function (dizquetv) {
     return {
         restrict: 'E',
         templateUrl: 'templates/ffmpeg-settings.html',
@@ -6,16 +6,16 @@
         scope: {
         },
         link: function (scope, element, attrs) {
-            pseudotv.getFfmpegSettings().then((settings) => {
+            dizquetv.getFfmpegSettings().then((settings) => {
                 scope.settings = settings
             })
             scope.updateSettings = (settings) => {
-                pseudotv.updateFfmpegSettings(settings).then((_settings) => {
+                dizquetv.updateFfmpegSettings(settings).then((_settings) => {
                     scope.settings = _settings
                 })
             }
             scope.resetSettings = (settings) => {
-                pseudotv.resetFfmpegSettings(settings).then((_settings) => {
+                dizquetv.resetFfmpegSettings(settings).then((_settings) => {
                     scope.settings = _settings
                 })
             }

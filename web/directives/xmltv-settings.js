@@ -1,4 +1,4 @@
-module.exports = function (pseudotv) {
+module.exports = function (dizquetv) {
     return {
         restrict: 'E',
         templateUrl: 'templates/xmltv-settings.html',
@@ -6,16 +6,16 @@ module.exports = function (pseudotv) {
         scope: {
         },
         link: function (scope, element, attrs) {
-            pseudotv.getXmltvSettings().then((settings) => {
+            dizquetv.getXmltvSettings().then((settings) => {
                 scope.settings = settings
             })
             scope.updateSettings = (settings) => {
-                pseudotv.updateXmltvSettings(settings).then((_settings) => {
+                dizquetv.updateXmltvSettings(settings).then((_settings) => {
                     scope.settings = _settings
                 })
             }
             scope.resetSettings = (settings) => {
-                pseudotv.resetXmltvSettings(settings).then((_settings) => {
+                dizquetv.resetXmltvSettings(settings).then((_settings) => {
                     scope.settings = _settings
                 })
             }
