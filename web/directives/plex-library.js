@@ -1,4 +1,4 @@
-module.exports = function (plex, pseudotv, $timeout) {
+module.exports = function (plex, dizquetv, $timeout) {
     return {
         restrict: 'E',
         templateUrl: 'templates/plex-library.html',
@@ -41,7 +41,7 @@ module.exports = function (plex, pseudotv, $timeout) {
                     }, 0)
                 })
             }
-            pseudotv.getPlexServers().then((servers) => {
+            dizquetv.getPlexServers().then((servers) => {
                 if (servers.length === 0) {
                     scope.noServers = true
                     return

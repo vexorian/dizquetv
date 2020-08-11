@@ -15,7 +15,7 @@ const Plex = require('./src/plex');
 const channelCache = require('./src/channel-cache');
 const constants = require('./src/constants')
 
-console.log("PseudoTV Version: " + constants.VERSION_NAME)
+console.log("dizqueTV Version: " + constants.VERSION_NAME)
 
 for (let i = 0, l = process.argv.length; i < l; i++) {
     if ((process.argv[i] === "-p" || process.argv[i] === "--port") && i + 1 !== l)
@@ -24,11 +24,15 @@ for (let i = 0, l = process.argv.length; i < l; i++) {
         process.env.DATABASE = process.argv[i + 1]
 }
 
-process.env.DATABASE = process.env.DATABASE || './.pseudotv'
+process.env.DATABASE = process.env.DATABASE || './.dizquetv'
 process.env.PORT = process.env.PORT || 8000
 
-if (!fs.existsSync(process.env.DATABASE))
+if (!fs.existsSync(process.env.DATABASE)) {
+    if (fs.existsSync("./.pseudotv")) {
+        throw Error(process.env.DATABASE + " folder not found but ./.pseudotv has been found. Please rename this folder or create an empty " + process.env.DATABASE + " folder so that the program is not confused about.");
+    }
     fs.mkdirSync(process.env.DATABASE)
+}
 
 if(!fs.existsSync(path.join(process.env.DATABASE, 'images')))
     fs.mkdirSync(path.join(process.env.DATABASE, 'images'))
@@ -61,7 +65,7 @@ let xmltvInterval = {
                     if (plexServers[i].arChannels && channels.length !== 0)
                         plex.RefreshChannels(channels, dvrs).then(() => { }, (err) => { console.error(err, i) })
                 }).catch( (err) => {
-                    console.error("There was an error when fetching Plex DVRs. This means pseudoTV couldn't trigger Plex to update its TV guide." + err);
+                    console.error("There was an error when fetching Plex DVRs. This means dizqueTV couldn't trigger Plex to update its TV guide." + err);
                 });
             }
         }, (err) => {
@@ -107,9 +111,9 @@ function initDB(db) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/font.ttf')))
         fs.writeFileSync(process.env.DATABASE + '/font.ttf', data)
     }
-    if (!fs.existsSync(process.env.DATABASE + '/images/pseudotv.png')) {
-        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/pseudotv.png')))
-        fs.writeFileSync(process.env.DATABASE + '/images/pseudotv.png', data)
+    if (!fs.existsSync(process.env.DATABASE + '/images/dizquetv.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/dizquetv.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/dizquetv.png', data)
     }
     if (!fs.existsSync(process.env.DATABASE + '/images/generic-error-screen.png')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/generic-error-screen.png')))

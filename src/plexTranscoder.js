@@ -7,8 +7,8 @@ class PlexTranscoder {
 
         this.device = "channel-" + channel.number;
         this.deviceName = this.device;
-        this.clientIdentifier = this.session.replace(/-/g,"").slice(0,16) + "-org-pseudotv-" + process.platform;
-        this.product = "PseudoTV";
+        this.clientIdentifier = this.session.replace(/-/g,"").slice(0,16) + "-org-dizquetv-" + process.platform;
+        this.product = "dizqueTV";
         
         this.settings = settings
 

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
-  <Name>pseudotv</Name>
-  <Repository>defendore/pseudotv:latest</Repository>
-  <Registry>https://hub.docker.com/r/defendore/pseudotv</Registry>
+  <Name>dizquetv</Name>
+  <Repository>vexorian/dizquetv:latest</Repository>
+  <Registry>https://hub.docker.com/r/vexorian/dizquetv</Registry>
   <Network>host</Network>
   <MyIP/>
   <Shell>bash</Shell>
@@ -13,7 +13,7 @@
   <Category/>
   <WebUI>http://[IP]:[PORT:8000]</WebUI>
   <TemplateURL/>
-  <Icon>https://raw.githubusercontent.com/DEFENDORe/pseudotv/master/resources/pseudotv.png</Icon>
+  <Icon>https://raw.githubusercontent.com/vexorian/dizquetv/master/resources/dizquetv.png</Icon>
   <ExtraParams></ExtraParams>
   <PostArgs/>
   <CPUset/>
@@ -33,8 +33,8 @@
   </Networking>
   <Data>
     <Volume>
-      <HostDir>/mnt/user/appdata/pseudotv/</HostDir>
-      <ContainerDir>/home/node/app/.pseudotv</ContainerDir>
+      <HostDir>/mnt/user/appdata/dizquetv/</HostDir>
+      <ContainerDir>/home/node/app/.dizquetv</ContainerDir>
       <Mode>rw</Mode>
     </Volume>
   </Data>
@@ -42,5 +42,5 @@
   </Environment>
   <Labels/>
   <Config Name="Webui &amp;amp; HDHR" Target="8000" Default="" Mode="tcp" Description="Container Port: 8000" Type="Port" Display="always" Required="false" Mask="false">8000</Config>
-  <Config Name="Appdata" Target="/home/node/app/.pseudotv" Default="" Mode="rw" Description="Container Path: /home/node/app/.pseudotv" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/pseudotv/</Config>
+  <Config Name="Appdata" Target="/home/node/app/.dizquetv" Default="" Mode="rw" Description="Container Path: /home/node/app/.dizquetv" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/dizquetv/</Config>
 </Container>

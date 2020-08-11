@@ -1,15 +1,15 @@
-module.exports = function ($scope, pseudotv) {
+module.exports = function ($scope, dizquetv) {
     $scope.channels = []
     $scope.showChannelConfig = false
     $scope.selectedChannel = null
     $scope.selectedChannelIndex = -1
 
-    pseudotv.getChannels().then((channels) => {
+    dizquetv.getChannels().then((channels) => {
         $scope.channels = channels
     })
     $scope.removeChannel = (channel) => {
         if (confirm("Are you sure to delete channel: " + channel.name + "?")) {
-            pseudotv.removeChannel(channel).then((channels) => {
+            dizquetv.removeChannel(channel).then((channels) => {
                 $scope.channels = channels
             })
         }
@@ -17,11 +17,11 @@ module.exports = function ($scope, pseudotv) {
     $scope.onChannelConfigDone = (channel) => {
         if (typeof channel !== 'undefined') {
             if ($scope.selectedChannelIndex == -1) { // add new channel
-                pseudotv.addChannel(channel).then((channels) => {
+                dizquetv.addChannel(channel).then((channels) => {
                     $scope.channels = channels
                 })
             } else { // update existing channel
-                pseudotv.updateChannel(channel).then((channels) => {
+                dizquetv.updateChannel(channel).then((channels) => {
                     $scope.channels = channels
                 })
             }
