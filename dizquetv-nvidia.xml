@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>dizquetv</Name>
-  <Repository>vexorian/dizque:latest</Repository>
+  <Repository>vexorian/dizquetv:latest</Repository>
   <Registry>https://hub.docker.com/r/vexorian/dizquetv</Registry>
   <Network>host</Network>
   <MyIP/>

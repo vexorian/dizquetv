@@ -86,8 +86,8 @@ The Docker repository can be viewed [here](https://hub.docker.com/r/vexorian/diz
 
 Use Docker to fetch dizqueTV, then run the container.. (replace `C:\.dizquetv` with your desired config directory location)
 ```
-docker pull vexorian/dizquetv
-docker run --name dizquetv -p 8000:8000 -v C:\.dizquetv:/home/node/app/.dizquetv defendore/dizquetv
+docker pull vexorian/dizquetv:latest
+docker run --name dizquetv -p 8000:8000 -v C:\.dizquetv:/home/node/app/.dizquetv vexorian/dizquetv:latest
 ```
 
 If you were a pseudotv user, make sure to stop the pseudotv container and use the same folder you used for configuration in pseudotv as configuration for dizquetv.
