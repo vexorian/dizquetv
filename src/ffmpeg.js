@@ -321,7 +321,7 @@ class FFMPEG extends events.EventEmitter {
         ffmpegArgs.push(`-metadata`,
                         `service_provider="dizqueTV"`,
                         `-metadata`,
-                        `service_name="${this.channel.name}`,
+                        `service_name="${this.channel.name}"`,
                         `-f`, `mpegts`);
 
         //t should be before output
