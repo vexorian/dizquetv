@@ -796,6 +796,13 @@ module.exports = function ($timeout, $location) {
                     selectedPrograms[i].commercials = []
                 scope.channel.programs = scope.channel.programs.concat(selectedPrograms)
                 updateChannelDuration()
+                setTimeout(
+                    () => {
+                        scope.$apply( () => {
+                            scope.minProgramIndex = Math.max(0, scope.channel.programs.length - 100);
+                        } )
+                    },  0
+                );
             }
             scope.selectProgram = (index) => {
                 scope.selectedProgram = index;

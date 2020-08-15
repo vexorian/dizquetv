@@ -73,8 +73,9 @@ class FFMPEG extends events.EventEmitter {
         this.spawn( {errorTitle: 'offline'}, streamStats, undefined, `${duration}ms`, true, false, 'offline', false);
     }
     async spawn(streamUrl, streamStats, startTime, duration, limitRead, enableIcon, type, isConcatPlaylist) {
+
         let ffmpegArgs = [
-             `-threads`, this.opts.threads,
+             `-threads`, isConcatPlaylist? 1 : this.opts.threads,
                           `-fflags`, `+genpts+discardcorrupt+igndts`];
         
         if (limitRead === true)
@@ -94,6 +95,17 @@ class FFMPEG extends events.EventEmitter {
 
         //TODO: Do something about missing audio stream
         if (!isConcatPlaylist) {
+            let inputFiles = 0;
+            let audioFile = -1;
+            let videoFile = -1;
+            let overlayFile = -1;
+            if ( typeof(streamUrl.errorTitle) === 'undefined') {
+                ffmpegArgs.push(`-i`, streamUrl);
+                videoFile = inputFiles++;
+                audioFile = videoFile;
+            }
+
+
             // When we have an individual stream, there is a pipeline of possible
             // filters to apply.
             //
@@ -108,8 +120,8 @@ class FFMPEG extends events.EventEmitter {
             // Initially, videoComplex does nothing besides assigning the label
             // to the input stream
             var videoIndex = 'v';
-            var audioComplex = `;[0:${audioIndex}]anull[audio]`;
-            var videoComplex = `;[0:${videoIndex}]null[video]`;
+            var audioComplex = `;[${audioFile}:${audioIndex}]anull[audio]`;
+            var videoComplex = `;[${videoFile}:${videoIndex}]null[video]`;
             // Depending on the options we will apply multiple filters
             // each filter modifies the current video stream. Adds a filter to
             // the videoComplex variable. The result of the filter becomes the 
@@ -197,11 +209,10 @@ class FFMPEG extends events.EventEmitter {
                 audioComplex += ';[audioy]arealtime[audiox]';
                 currentVideo = "[videox]";
                 currentAudio = "[audiox]";
-            } else {
-                ffmpegArgs.push(`-i`, streamUrl);
             }
             if (doOverlay) {
                 ffmpegArgs.push(`-i`, `${this.channel.icon}` );
+                overlayFile = inputFiles++;
             }
 
             // Resolution fix: Add scale filter, current stream becomes [siz]
@@ -223,7 +234,7 @@ class FFMPEG extends events.EventEmitter {
                 if (this.channel.iconDuration > 0)
                     icnDur = `:enable='between(t,0,${this.channel.iconDuration})'`
     
-                videoComplex += `;[1:v]scale=${this.channel.iconWidth}:-1[icn];${currentVideo}[icn]overlay=${posAry[this.channel.iconPosition]}${icnDur}[comb]`
+                videoComplex += `;[${overlayFile}:v]scale=${this.channel.iconWidth}:-1[icn];${currentVideo}[icn]overlay=${posAry[this.channel.iconPosition]}${icnDur}[comb]`
                 currentVideo = '[comb]';
             }
             if (this.volumePercent != 100) {
@@ -250,14 +261,14 @@ class FFMPEG extends events.EventEmitter {
                 transcodeVideo = true; //this is useful so that it adds some lines below
                 filterComplex += videoComplex;
             } else {
-                currentVideo = `0:${videoIndex}`;
+                currentVideo = `${videoFile}:${videoIndex}`;
             }
             // same with audio:
             if (currentAudio != '[audio]') {
                 transcodeAudio = true;
                 filterComplex += audioComplex;
             } else {
-                currentAudio = `0:${audioIndex}`;
+                currentAudio = `${audioFile}:${audioIndex}`;
             }
 
             //If there is a filter complex, add it.
@@ -309,7 +320,7 @@ class FFMPEG extends events.EventEmitter {
         } else {
             //Concat stream is simpler and should always copy the codec
             ffmpegArgs.push(
-                            `-probesize`, `100000000`,
+                            `-probesize`, 32 /*`100000000`*/,
                             `-i`, streamUrl,
                             `-map`, `0:v`,
                             `-map`, `0:${audioIndex}`,

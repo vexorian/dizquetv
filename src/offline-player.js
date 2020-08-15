@@ -13,6 +13,11 @@ class OfflinePlayer {
     constructor(error, context) {
         this.context = context;
         this.error = error;
+        if (context.isLoading === true) {
+            context.channel = JSON.parse( JSON.stringify(context.channel) );
+            context.channel.offlinePicture = `http://localhost:${process.env.PORT}/images/loading-screen.png`;
+            context.channel.offlineSoundtrack = undefined;
+        }
         this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
     }
 
