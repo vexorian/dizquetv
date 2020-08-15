@@ -320,7 +320,7 @@ class FFMPEG extends events.EventEmitter {
         } else {
             //Concat stream is simpler and should always copy the codec
             ffmpegArgs.push(
-                            `-probesize`, `100000000`,
+                            `-probesize`, 32 /*`100000000`*/,
                             `-i`, streamUrl,
                             `-map`, `0:v`,
                             `-map`, `0:${audioIndex}`,
