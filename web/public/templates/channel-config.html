@@ -139,7 +139,7 @@
                                 <p>Similar to Balance TV Shows, but this allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows. It has similar caveats as &quot;Balance Shows&quot;.</p>
 
                                 <h6>Add Flex</h6>
-                                <p>Adds a &quot;Flex&quot; Time Slot. Can be configured to play a fallback screen and/or random &quot;filler&quot; content (e.g &quot;commercials&quot;, trailers, prerolls, countdowns, music videos, channel bumpers, etc.). Short Flex periods are hidden from the TV guide and are displayed as extensions to the previous program. Long Flex periods appear as the channel name in the TV guide.</p>
+                                <p>Adds a &quot;Flex&quot; Time Slot. Can be configured to play a fallback screen and/or random &quot;filler&quot; content (e.g &quot;commercials&quot;, trailers, prerolls, countdowns, music videos, channel bumpers, etc.). Short Flex periods are hidden from the TV guide and are displayed as extensions to the previous program. Long Flex periods appear as the channel name in the TV guide. Normally this is not the best way to add Flex time, and you&apos;d be better off using the Pad Times, Restrict Hours or Add Breaks features. This one is for adding specific, single instances of flex time.</p>
 
                                 <h6>Pad Times</h6>
                                 <p>Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones.</p>
@@ -155,6 +155,9 @@
 
                                 <h6>Remove Flex</h6>
                                 <p>Removes any Flex periods from the schedule.</p>
+
+                                <h6>Remove Specials</h6>
+                                <p>Removes any specials from the schedule. Specials are episodes with season &quot;00&quot;.</p>
 
                                 <h6>Remove All</h6>
                                 <p>Wipes out the schedule so that you can start over.</p>
@@ -253,7 +256,10 @@
                                 <div class="input-group col-md-3" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeOffline()">Remove Flex</button>
                                 </div>
-                                <div class="input-group col-md-6" style="padding: 5px;">
+                                <div class="input-group col-md-3" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSpecials()">Remove Specials</button>
+                                </div>
+                                <div class="input-group col-md-3" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSchedule()">Remove All</button>
                                 </div>
                             </div>
