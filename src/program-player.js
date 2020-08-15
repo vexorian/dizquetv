@@ -32,6 +32,11 @@ class ProgramPlayer {
         if (program.err instanceof Error) {
             console.log("About to play error stream");
             this.delegate = new OfflinePlayer(true, context);
+        } else if (program.type === 'loading') {
+            console.log("About to play loading stream");
+            /* loading */
+            context.isLoading = true;
+            this.delegate = new OfflinePlayer(false, context);
         } else if (program.type === 'offline') {
             console.log("About to play offline stream");
             /* offline */

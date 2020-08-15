@@ -15,7 +15,16 @@ const Plex = require('./src/plex');
 const channelCache = require('./src/channel-cache');
 const constants = require('./src/constants')
 
-console.log("dizqueTV Version: " + constants.VERSION_NAME)
+console.log(
+`         \\
+   dizqueTV ${constants.VERSION_NAME}
+.------------.
+|###:::||| o |
+|###:::|||   |
+'###:::||| o |
+'------------'
+`);
+
 
 for (let i = 0, l = process.argv.length; i < l; i++) {
     if ((process.argv[i] === "-p" || process.argv[i] === "--port") && i + 1 !== l)
@@ -37,7 +46,7 @@ if (!fs.existsSync(process.env.DATABASE)) {
 if(!fs.existsSync(path.join(process.env.DATABASE, 'images')))
     fs.mkdirSync(path.join(process.env.DATABASE, 'images'))
 
-db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version'])
+db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id'])
 
 initDB(db)
 
@@ -65,7 +74,7 @@ let xmltvInterval = {
                     if (plexServers[i].arChannels && channels.length !== 0)
                         plex.RefreshChannels(channels, dvrs).then(() => { }, (err) => { console.error(err, i) })
                 }).catch( (err) => {
-                    console.error("There was an error when fetching Plex DVRs. This means dizqueTV couldn't trigger Plex to update its TV guide." + err);
+                    console.log("Couldn't tell Plex to refresh channels for some reason.");
                 });
             }
         }, (err) => {
@@ -123,6 +132,9 @@ function initDB(db) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/generic-offline-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/generic-offline-screen.png', data)
     }
-
+    if (!fs.existsSync(process.env.DATABASE + '/images/loading-screen.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/loading-screen.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)
+    }
 
 }

@@ -10,6 +10,8 @@ const EventEmitter = require('events');
 const helperFuncs = require('./helperFuncs')
 const FFMPEG = require('./ffmpeg')
 
+let USED_CLIENTS = {};
+
 class PlexPlayer {
 
     constructor(context) {
@@ -17,9 +19,17 @@ class PlexPlayer {
         this.ffmpeg = null;
         this.plexTranscoder = null;
         this.killed = false;
+        let coreClientId = this.context.db['client-id'].find()[0].clientId;
+        let i = 0;
+        while ( USED_CLIENTS[coreClientId+"-"+i]===true) {
+            i++;
+        }
+        this.clientId = coreClientId+"-"+i;
+        USED_CLIENTS[this.clientId] = true;
     }
 
     cleanUp() {
+        USED_CLIENTS[this.clientId] = false;
         this.killed = true;
         if (this.plexTranscoder != null) {
             this.plexTranscoder.stopUpdatingPlex();
@@ -39,7 +49,7 @@ class PlexPlayer {
 
         try {
             let plexSettings = db['plex-settings'].find()[0];
-            let plexTranscoder = new PlexTranscoder(plexSettings, channel, lineupItem);
+            let plexTranscoder = new PlexTranscoder(this.clientId, plexSettings, channel, lineupItem);
             this.plexTranscoder = plexTranscoder;
             let enableChannelIcon = this.context.enableChannelIcon;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
