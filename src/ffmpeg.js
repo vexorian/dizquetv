@@ -1,8 +1,6 @@
 const spawn = require('child_process').spawn
 const events = require('events')
 
-//they can customize this by modifying the picture in .dizquetv folder
-
 const MAXIMUM_ERROR_DURATION_MS = 60000;
 
 class FFMPEG extends events.EventEmitter {

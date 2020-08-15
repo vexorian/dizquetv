@@ -92,6 +92,11 @@ docker run --name dizquetv -p 8000:8000 -v C:\.dizquetv:/home/node/app/.dizquetv
 
 If you were a pseudotv user, make sure to stop the pseudotv container and use the same folder you used for configuration in pseudotv as configuration for dizquetv.
 
+#### Unraid
+
+Template Repository: [https://github.com/vexorian/dizquetv/tree/main](https://github.com/vexorian/dizquetv/tree/main)
+
+
 #### Building Docker image from source
 
 Build docker image from source and run the container. (replace `C:\.dizquetv` with your desired config directory location)

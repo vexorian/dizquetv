@@ -137,7 +137,7 @@ module.exports = function ($timeout, $location) {
                     isOffline: true
                 }
                 scope.updateChannelFromOfflineResult(result);
-                scope.channel.programs.push( program );
+                scope.channel.programs.splice(scope.minProgramIndex, 0, program);
                 scope._selectedOffline = null
                 scope._addingOffline = null;
                 updateChannelDuration()
@@ -267,6 +267,20 @@ module.exports = function ($timeout, $location) {
                 scope.channel.programs = tmpProgs
                 updateChannelDuration()
             }
+
+            scope.wipeSpecials = () => {
+                let tmpProgs = []
+                let progs = scope.channel.programs
+                for (let i = 0, l = progs.length; i < l; i++) {
+                    if (progs[i].season !== 0) {
+                        tmpProgs.push(progs[i]);
+                    }
+                }
+                scope.channel.programs = tmpProgs
+                updateChannelDuration()
+            }
+
+
 
             scope.describeFallback = () => {
                 if (scope.channel.offlineMode === 'pic') {
