@@ -1,4 +1,4 @@
-# dizqueTV 0.0.61
+# dizqueTV 0.0.62
 ![Discord](https://img.shields.io/discord/711313431457693727?logo=discord&logoColor=fff&style=flat-square) ![GitHub top language](https://img.shields.io/github/languages/top/vexorian/dizquetv?logo=github&style=flat-square) ![Docker Pulls](https://img.shields.io/docker/pulls/vexorian/dizquetv?logo=docker&logoColor=fff&style=flat-square)
 
 Create live TV channel streams from media on your Plex servers.
@@ -91,6 +91,11 @@ docker run --name dizquetv -p 8000:8000 -v C:\.dizquetv:/home/node/app/.dizquetv
 ```
 
 If you were a pseudotv user, make sure to stop the pseudotv container and use the same folder you used for configuration in pseudotv as configuration for dizquetv.
+
+#### Unraid
+
+Template Repository: [https://github.com/vexorian/dizquetv/tree/main](https://github.com/vexorian/dizquetv/tree/main)
+
 
 #### Building Docker image from source
 

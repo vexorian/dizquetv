@@ -119,13 +119,14 @@ module.exports = function ($http, $window, $interval) {
                 return streams
             })
         },
-        getNested: async (server, key, includeCollections) => {
+        getNested: async (server, key, includeCollections, errors) => {
             var client = new Plex(server)
             const res = await client.Get(key)
             var nested = []
             var seenFiles = {};
             var collections = {};
             for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++) {
+              try {
                 // Skip any videos (movie or episode) without a duration set...
                 if (typeof res.Metadata[i].duration === 'undefined' && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
                     continue
@@ -194,6 +195,11 @@ module.exports = function ($http, $window, $interval) {
                     }
                 }
                 nested.push(program)
+              } catch(err) {
+                  let msg = "Error when attempting to read nested data for " + key + " " + res.Metadata[i].title;
+                  errors.push(msg);
+                  console.error(msg , err);
+              }
             }
             if (includeCollections === true) {
                 let nestedCollections = [];

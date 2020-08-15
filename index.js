@@ -19,9 +19,9 @@ console.log(
 `         \\
    dizqueTV ${constants.VERSION_NAME}
 .------------.
-|###:::||| o |
-|###:::|||   |
-'###:::||| o |
+|:::///### o |
+|:::///###   |
+':::///### o |
 '------------'
 `);
 
@@ -102,6 +102,24 @@ xmltvInterval.startInterval()
 let hdhr = HDHR(db)
 let app = express()
 app.use(bodyParser.json({limit: '50mb'}))
+app.get('/version.js', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'application/javascript'
+    });
+
+    res.write( `
+        function setUIVersionNow() {
+            setTimeout( setUIVersionNow, 1000);
+            var element = document.getElementById("uiversion");
+            if (element != null) {
+                element.innerHTML = "${constants.VERSION_NAME}";
+            }
+        }
+        setTimeout( setUIVersionNow, 1000);
+    ` );
+    res.end();
+});
+app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(api.router(db, xmltvInterval))

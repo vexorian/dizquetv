@@ -29,6 +29,11 @@ class ProgramPlayer {
     constructor( context ) {
         this.context = context;
         let program = context.lineupItem;
+        if (context.m3u8) {
+            context.ffmpegSettings.normalizeAudio = false;
+            // people might want the codec normalization to stay because of player support
+            context.ffmpegSettings.normalizeResolution = false;
+        }
         if (program.err instanceof Error) {
             console.log("About to play error stream");
             this.delegate = new OfflinePlayer(true, context);

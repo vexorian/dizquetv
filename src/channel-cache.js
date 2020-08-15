@@ -27,7 +27,7 @@ function getCurrentLineupItem(channelId, t1) {
     let recorded = cache[channelId];
     let lineupItem =  JSON.parse( JSON.stringify(recorded.lineupItem) );
     let diff = t1 - recorded.t0;
-    if (diff <= SLACK) {
+    if ( (diff <= SLACK) && (lineupItem.actualDuration >= 2*SLACK) ) {
         //closed the stream and opened it again let's not lose seconds for
         //no reason
         return lineupItem;

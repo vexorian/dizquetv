@@ -4,3 +4,4 @@ bin/
 .pseudotv/
 .dizquetv/
 web/public/bundle.js
+*.orig

@@ -3,15 +3,21 @@ const express = require('express')
 const fs = require('fs')
 const databaseMigration = require('./database-migration');
 const channelCache = require('./channel-cache')
-const constants = require('./constants')
+const constants = require('./constants');
+const FFMPEGInfo = require('./ffmpeg-info');
 
 module.exports = { router: api }
 function api(db, xmltvInterval) {
     let router = express.Router()
 
-    router.get('/api/version', (req, res) => {
-        res.send( { "dizquetv" : constants.VERSION_NAME } )
-    })
+    router.get('/api/version', async (req, res) => {
+        let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+        let v = await (new FFMPEGInfo(ffmpegSettings)).getVersion();
+        res.send( {
+            "dizquetv" : constants.VERSION_NAME,
+            "ffmpeg" : v,
+        } );
+    });
 
     // Plex Servers
     router.get('/api/plex-servers', (req, res) => {
@@ -177,13 +183,14 @@ function api(db, xmltvInterval) {
     router.get('/api/channels.m3u', (req, res) => {
         res.type('text')
         let channels = db['channels'].find()
+        channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         var data = "#EXTM3U\n"
         for (var i = 0; i < channels.length; i++) {
             data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
             data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
         }
         if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/master/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
+            data += `#EXTINF:0 tvg-id="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
             data += `${req.protocol}://${req.get('host')}/setup\n`
         }
         res.send(data)

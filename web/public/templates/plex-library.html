@@ -107,6 +107,8 @@
                     <div class="loader" ng-if="pending &gt; 0" ></div> <h6 style='display:inline-block'>Selected Items</h6>
                     
                     <div class="text-info small" ng-show='selection.length &gt; 10'>{{ selection.length }} elements added in total. Only the last 10 elements are displayed:</div>
+                    <div class="text-danger small" ng-repeat="e in errors track by $index">{{ e }}</div>
+
                     <ul class="list-group list-group-root"  style="height: 180px; overflow-y: scroll" dnd-list="selection" scroll-glue>
                         <div ng-if="selection.length === 0">Select media items from your plex library above.</div>
                         <li ng-if="selection.length + x &gt;= 0" class="list-group-item" ng-repeat="x in allowedIndexes" style="cursor:default;" dnd-draggable="x" dnd-moved="selection.splice(selection.length + x, 1)" dnd-effect-allowed="move">

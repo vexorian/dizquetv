@@ -13,7 +13,7 @@
   <Category/>
   <WebUI>http://[IP]:[PORT:8000]</WebUI>
   <TemplateURL/>
-  <Icon>https://raw.githubusercontent.com/vexorian/dizquetv/master/resources/dizquetv.png</Icon>
+  <Icon>https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png</Icon>
   <ExtraParams></ExtraParams>
   <PostArgs/>
   <CPUset/>
