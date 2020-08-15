@@ -66,11 +66,13 @@
                 <label>Video Encoder</label>
                 <input type="text" class="form-control form-control-sm" ng-model="settings.videoEncoder" ria-describedby="videoEncoderHelp"/>
                 <small id="videoEncoderHelp" class="form-text text-muted">Some possible values are:</small>
-                <small id="videoEncoderHelp" class="form-text text-muted">Intel Quick Sync: h264_qsv, mpeg2_qsv</small>
-                <small id="videoEncoderHelp" class="form-text text-muted">NVIDIA: GPU: h264_nvenc</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">h264 with Intel Quick Sync: h264_qsv</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">MPEG2 with Intel Quick Sync: mpeg2_qsv</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">NVIDIA: h264_nvenc</small>
                 <small id="videoEncoderHelp" class="form-text text-muted">MPEG2: mpeg2video (default)</small>
                 <small id="videoEncoderHelp" class="form-text text-muted">H264: libx264</small>
                 <small id="videoEncoderHelp" class="form-text text-muted">MacOS: h264_videotoolbox</small>
+                <small id="videoEncoderHelp" class="form-text text-muted">Hardware encoders are not supported in docker for now</small>
             </div>
             <div class="col-sm-1" />
             <div class="col-sm-4">
