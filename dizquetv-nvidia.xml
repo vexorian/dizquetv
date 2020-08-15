@@ -15,7 +15,7 @@ dizqueTV will show up as a HDHomeRun device within Plex. When configuring your P
   <Category/>
   <WebUI>http://[IP]:[PORT:8000]</WebUI>
   <TemplateURL/>
-  <Icon>https://raw.githubusercontent.com/vexorian/dizquetv/master/resources/dizquetv.png</Icon>
+  <Icon>https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png</Icon>
   <ExtraParams>--runtime=nvidia</ExtraParams>
   <PostArgs/>
   <CPUset/>

@@ -15,7 +15,7 @@ function WriteXMLTV(channels, xmlSettings) {
         _writeDocStart(xw)
       async function middle() {
         if (channels.length === 0) { // Write Dummy dizqueTV Channel if no channel exists
-            _writeChannels(xw, [{ number: 1, name: "dizqueTV", icon: "https://raw.githubusercontent.com/vexorain/dizquetv/master/resources/dizquetv.png" }])
+            _writeChannels(xw, [{ number: 1, name: "dizqueTV", icon: "https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png" }])
             let program = {
                 program: {
                     type: 'movie',

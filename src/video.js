@@ -135,7 +135,7 @@ function video(db) {
             res.status(400).send("No Channel Specified")
             return
         }
-
+        let m3u8 = (req.query.m3u8 === '1');
         let number = parseInt(req.query.channel);
         let channel =  channelCache.getChannelConfig(db, number);
 
@@ -228,6 +228,7 @@ function video(db) {
             ffmpegSettings : ffmpegSettings,
             channel: channel,
             db: db,
+            m3u8: m3u8,
         }
         
         let player = new ProgramPlayer(playerContext);
@@ -320,11 +321,11 @@ function video(db) {
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
 
         if ( ffmpegSettings.enableFFMPEGTranscoding === true) {
-            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=0\n`;
+            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=0&m3u8=1\n`;
         }
-        data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=1\n`
+        data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=1&m3u8=1\n`
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
-            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}\n`
+            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&m3u8=1\n`
         }
 
         res.send(data)
@@ -353,7 +354,13 @@ function video(db) {
 
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
 
-        if ( ffmpegSettings.enableFFMPEGTranscoding === true) {
+        if (
+               (ffmpegSettings.enableFFMPEGTranscoding === true)
+            && (ffmpegSettings.normalizeVideoCodec === true)
+            && (ffmpegSettings.normalizeAudioCodec === true)
+            && (ffmpegSettings.normalizeResolution === true)
+            && (ffmpegSettings.normalizeAudio === true)
+        ) {
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0'\n`;
         }
         data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1'\n`
