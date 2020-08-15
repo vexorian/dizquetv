@@ -2,12 +2,12 @@ const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 
 class PlexTranscoder {
-    constructor(settings, channel, lineupItem) {
+    constructor(clientId, settings, channel, lineupItem) {
         this.session = uuidv4()
 
         this.device = "channel-" + channel.number;
         this.deviceName = this.device;
-        this.clientIdentifier = this.session.replace(/-/g,"").slice(0,16) + "-org-dizquetv-" + process.platform;
+        this.clientIdentifier = clientId;
         this.product = "dizqueTV";
         
         this.settings = settings
@@ -60,7 +60,10 @@ class PlexTranscoder {
                 stream.directPlay = true;
             }
         }
-        if (stream.directPlay) {
+        if (stream.directPlay || this.isAV1() ) {
+            if (! stream.directPlay) {
+                this.log("Plex doesn't support av1, so we are forcing direct play, including for audio because otherwise plex breaks the stream.")
+            }
             this.log("Direct play forced or native paths enabled")
             stream.directPlay = true
             this.setTranscodingArgs(stream.directPlay, true, false)
@@ -78,14 +81,15 @@ class PlexTranscoder {
                 await this.getDecision(stream.directPlay);
                 stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
         } else {
+            //This case sounds complex. Apparently plex is sending us just the audio, so we would need to get the video in a separate stream.
             this.log("Decision: Direct stream. Audio is being transcoded")
+            stream.separateVideoStream = (this.settings.streamPath === 'direct') ? this.file : this.plexFile;
             stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
         }
         stream.streamStats = this.getVideoStats();
 
         // use correct audio stream if direct play
-        let audioIndex = await this.getAudioIndex();
-        stream.streamStats.audioIndex = (stream.directPlay) ? audioIndex : 'a'
+        stream.streamStats.audioIndex = (stream.directPlay) ? ( await this.getAudioIndex() ) : 'a'
 
         this.log(stream)
 
@@ -174,6 +178,14 @@ lang=en`
             return this.getVideoStats().videoDecision === "copy";
         } catch (e) {
             console.log("Error at decision:" + e);
+            return false;
+        }
+    }
+
+    isAV1() {
+        try {
+            return this.getVideoStats().videoCodec === 'av1';
+        } catch (e) {
             return false;
         }
     }

@@ -1,7 +1,7 @@
 const Plex = require('../../src/plex');
 
 module.exports = function ($http, $window, $interval) {
-    return {
+    let exported = {
         login: async () => {
             const headers = {
                 'Accept': 'application/json',
@@ -119,11 +119,12 @@ module.exports = function ($http, $window, $interval) {
                 return streams
             })
         },
-        getNested: async (server, key) => {
+        getNested: async (server, key, includeCollections) => {
             var client = new Plex(server)
             const res = await client.Get(key)
             var nested = []
             var seenFiles = {};
+            var collections = {};
             for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++) {
                 // Skip any videos (movie or episode) without a duration set...
                 if (typeof res.Metadata[i].duration === 'undefined' && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
@@ -178,11 +179,65 @@ module.exports = function ($http, $window, $interval) {
                     program.episode = 1
                     program.season = 1
                 }
+                if (typeof (res.Metadata[i].Collection) !== 'undefined') {
+                    let coll = res.Metadata[i].Collection;
+                    for (let j = 0; j < coll.length; j++) {
+                        let tag = coll[j].tag;
+                        if ( (typeof(tag)!==  "undefined") && (tag.length > 0) ) {
+                            let collection = collections[tag];
+                            if (typeof(collection) === 'undefined') {
+                                collection = [];
+                                collections[tag] = collection;
+                            }
+                            collection.push( program );
+                        }
+                    }
+                }
                 nested.push(program)
             }
+            if (includeCollections === true) {
+                let nestedCollections = [];
+                let keys = [];
+                Object.keys(collections).forEach(function(key,index) {
+                    keys.push(key);
+                });
+                for (let k = 0; k < keys.length; k++) {
+                    let key = keys[k];
+                    if (collections[key].length <= 1) {
+                        //it's pointless to include it.
+                        continue;
+                    }
+                    let collection = {
+                        title: key,
+                        key: "#collection",
+                        icon : "",
+                        type : "collection",
+                        nested: collections[key],
+                    }
+                    if (res.viewGroup === 'show') {
+                        collection.title = collection.title + " Collection";
+                        //nest the seasons directly because that's way too many depth levels already
+                        let shows = collection.nested;
+                        let collectionContents = [];
+                        for (let i = 0; i < shows.length; i++) {
+                            let seasons = await exported.getNested(server, shows[i].key, false);
+                            for (let j = 0; j < seasons.length; j++) {
+                                seasons[j].title = shows[i].title + " - " + seasons[j].title;
+                                collectionContents.push(seasons[j]);
+                            }
+                        }
+                        collection.nested = collectionContents;
+                    }
+                    nestedCollections.push( collection );
+                }
+                nested = nestedCollections.concat(nested);
+            }
+
+
             return nested
         }
     }
+    return exported;
 }
 
 function msToTime(duration) {

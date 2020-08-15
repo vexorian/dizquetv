@@ -143,6 +143,11 @@ function video(db) {
             res.status(404).send("Channel doesn't exist")
             return
         }
+        let isLoading = false;
+        if ( (typeof req.query.first !== 'undefined') && (req.query.first=='0') ) {
+            isLoading = true;
+        }
+
         let isFirst = false;
         if ( (typeof req.query.first !== 'undefined') && (req.query.first=='1') ) {
             isFirst = true;
@@ -164,7 +169,14 @@ function video(db) {
         // Get video lineup (array of video urls with calculated start times and durations.)
       let t0 = (new Date()).getTime();
       let lineupItem = channelCache.getCurrentLineupItem( channel.number, t0);
-      if (lineupItem == null) {
+      if (isLoading) {
+          lineupItem = {
+             type: 'loading',
+             streamDuration: 1000,
+             duration: 1000,
+             start: 0,
+          };
+      } else if (lineupItem == null) {
         let prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel)
 
         if (prog.program.isOffline && channel.programs.length == 1) {
@@ -207,7 +219,9 @@ function video(db) {
         }
         console.log("=========================================================");
 
-        channelCache.recordPlayback(channel.number, t0, lineupItem);
+        if (! isLoading) {
+            channelCache.recordPlayback(channel.number, t0, lineupItem);
+        }
 
         let playerContext = {
             lineupItem : lineupItem,
@@ -280,6 +294,41 @@ function video(db) {
         });
     });
 
+
+    router.get('/m3u8', (req, res) => {
+        res.type('text')
+
+        // Check if channel queried is valid
+        if (typeof req.query.channel === 'undefined') {
+            res.status(500).send("No Channel Specified")
+            return
+        }
+
+        let channelNum = parseInt(req.query.channel, 10)
+        let channel =  channelCache.getChannelConfig(db, channelNum );
+        if (channel.length === 0) {
+            res.status(500).send("Channel doesn't exist")
+            return
+        }
+
+        // Maximum number of streams to concatinate beyond channel starting
+        // If someone passes this number then they probably watch too much television
+        let maxStreamsToPlayInARow = 100;
+
+        var data = "#EXTM3U\n"
+
+        let ffmpegSettings = db['ffmpeg-settings'].find()[0]
+
+        if ( ffmpegSettings.enableFFMPEGTranscoding === true) {
+            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=0\n`;
+        }
+        data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=1\n`
+        for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
+            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}\n`
+        }
+
+        res.send(data)
+    })
     router.get('/playlist', (req, res) => {
         res.type('text')
 
@@ -302,6 +351,11 @@ function video(db) {
 
         var data = "ffconcat version 1.0\n"
 
+        let ffmpegSettings = db['ffmpeg-settings'].find()[0]
+
+        if ( ffmpegSettings.enableFFMPEGTranscoding === true) {
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0'\n`;
+        }
         data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1'\n`
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}'\n`

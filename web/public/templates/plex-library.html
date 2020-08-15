@@ -33,16 +33,19 @@
                     <hr />
                     <ul class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
                         <li class="list-group-item" ng-repeat="a in libraries">
-                            <div class="{{ displayImages ? 'w_images' : 'wo_images' }}" ng-click="getNested(a);">
+                            <div class="flex-container {{ displayImages ? 'w_images' : 'wo_images' }}" ng-click="getNested(a, true);">
                                 <span class="fa {{ a.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
                                 <img ng-if="displayImages" lazy-img="{{a.icon}}" />
                                 <span>{{a.title}}</span><!-- Library -->
+                                <span ng-if="a.type === 'show' || a.type === 'movie'" class="flex-pull-right" ng-click='$event.stopPropagation(); selectLibrary(a)'>
+                                    <span class="fa fa-plus btn"></span>
+                                </span>
                             </div>
                             <ul ng-if="a.collapse" class="list-group">
                                 <li class="list-group-item {{ b.type !== 'movie' ? 'list-group-item-secondary' : 'list-group-item-video' }}"
                                     ng-repeat="b in a.nested">
                                     <div class="flex-container"
-                                        ng-click="b.type !== 'movie' ? getNested(b) : selectItem(b)">
+                                        ng-click="b.type !== 'movie' ? getNested(b) : selectItem(b, true)">
                                         <span ng-if="b.type === 'movie'" class="fa fa-plus-circle tab"></span>
                                         <span ng-if="b.type !== 'movie'" class="tab"></span>
                                         <span ng-if="b.type !== 'movie'" class="fa {{ b.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
@@ -54,7 +57,7 @@
                                         <span ng-if="b.type === 'playlist'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectPlaylist(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
-                                        <span ng-if="b.type === 'show'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectShow(b);">
+                                        <span ng-if="b.type === 'show' || b.type === 'collection'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectShow(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
                                     </div>
@@ -62,7 +65,7 @@
                                         <li ng-repeat="c in b.nested"
                                             class="list-group-item {{ c.type !== 'movie' && c.type !== 'episode' ? 'list-group-item-dark' : 'list-group-item-video' }}">
                                             <div class="flex-container"
-                                                ng-click="c.type !== 'movie' && c.type !== 'episode' ? getNested(c) : selectItem(c)">
+                                                ng-click="c.type !== 'movie' && c.type !== 'episode' ? getNested(c) : selectItem(c, true)">
                                                 <span ng-if="c.type === 'movie' || c.type === 'episode'"
                                                     class="fa fa-plus-circle tab"></span>
                                                 <span ng-if="c.type !== 'movie' && c.type !== 'episode'"
@@ -85,7 +88,7 @@
                                             <ul ng-if="c.collapse" class="list-group">
                                                 <li class="list-group-item list-group-item-video"
                                                     ng-repeat="d in c.nested">
-                                                    <div class="flex-container" ng-click="selectItem(d)">
+                                                    <div class="flex-container" ng-click="selectItem(d, true)">
                                                         <span class="fa fa-plus-circle tab"></span>
                                                         <img ng-if="displayImages" lazy-img="{{d.episodeIcon}}" />
                                                         E{{ d.episode.toString().padStart(2,'0')}} - {{d.title}}
@@ -101,13 +104,15 @@
                         </li>
                     </ul>
                     <hr/>
-                    <h6>Selected Items</h6>
+                    <div class="loader" ng-if="pending &gt; 0" ></div> <h6 style='display:inline-block'>Selected Items</h6>
+                    
+                    <div class="text-info small" ng-show='selection.length &gt; 10'>{{ selection.length }} elements added in total. Only the last 10 elements are displayed:</div>
                     <ul class="list-group list-group-root"  style="height: 180px; overflow-y: scroll" dnd-list="selection" scroll-glue>
                         <div ng-if="selection.length === 0">Select media items from your plex library above.</div>
-                        <li class="list-group-item" ng-repeat="x in selection" style="cursor:default;" dnd-draggable="x" dnd-moved="selection.splice($index, 1)" dnd-effect-allowed="move">
-                            {{ (x.type !== 'episode') ? x.title : (x.showTitle + ' - S' + x.season.toString().padStart(2,'0') + 'E' + x.episode.toString().padStart(2,'0'))}}
+                        <li ng-if="selection.length + x &gt;= 0" class="list-group-item" ng-repeat="x in allowedIndexes" style="cursor:default;" dnd-draggable="x" dnd-moved="selection.splice(selection.length + x, 1)" dnd-effect-allowed="move">
+                            {{ (selection[selection.length + x].type !== 'episode') ? selection[selection.length + x].title : (selection[selection.length + x].showTitle + ' - S' + selection[selection.length + x].season.toString().padStart(2,'0') + 'E' + selection[selection.length + x].episode.toString().padStart(2,'0'))}}
                             <span class="pull-right">
-                                <span class="btn fa fa-trash" ng-click="selection.splice($index,1)"></span>
+                                <span class="btn fa fa-trash" ng-click="selection.splice(selection.length + x,1)"></span>
                             </span>
                         </li>
                     </ul>

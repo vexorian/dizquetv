@@ -17,14 +17,28 @@
  * but with time it will be worth it, really.
  *
  ***/
-const TARGET_VERSION = 300;
+ const TARGET_VERSION = 400;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
     [      0,    100, (db) => basicDB(db) ],
     [    100,    200, (db) => commercialsRemover(db) ],
     [    200,    300, (db) => appNameChange(db) ],
+    [    300,    400, (db) => createDeviceId(db) ],
 ]
+
+const { v4: uuidv4 } = require('uuid');
+
+function createDeviceId(db) {
+    let deviceId = db['client-id'].find();
+    if (deviceId.length == 0) {
+        let clientId = uuidv4().replace(/-/g,"").slice(0,16) + "-org-dizquetv-" + process.platform
+        let dev = {
+            clientId: clientId,
+        }
+        db['client-id'].save( dev );
+    }
+}
 
 
 function appNameChange(db) {
@@ -66,7 +80,7 @@ function basicDB(db) {
             maxPlayableResolution: "1920x1080",
             maxTranscodeResolution: "1920x1080",
             videoCodecs: 'h264,hevc,mpeg2video',
-            audioCodecs: 'ac3',
+            audioCodecs: 'ac3,aac',
             maxAudioChannels: '2',
             audioBoost: '100',
             enableSubtitles: false,
@@ -105,7 +119,7 @@ function basicDB(db) {
     let hdhrSettings = db['hdhr-settings'].find()
     if (hdhrSettings.length === 0) {
         db['hdhr-settings'].save({
-            tunerCount: 1,
+            tunerCount: 2,
             autoDiscovery: true
         })
     }
