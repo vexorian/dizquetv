@@ -57,7 +57,7 @@
                                         <span ng-if="b.type === 'playlist'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectPlaylist(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
-                                        <span ng-if="b.type === 'show' || b.type === 'collection'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectShow(b);">
+                                        <span ng-if="b.type === 'show' || b.type === 'collection' || b.type === 'genre'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectShow(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
                                     </div>

@@ -84,13 +84,29 @@ module.exports = function ($http, $window, $interval) {
             const res = await client.Get('/library/sections')
             var sections = []
             for (let i = 0, l = typeof res.Directory !== 'undefined' ? res.Directory.length : 0; i < l; i++)
-                if (res.Directory[i].type === 'movie' || res.Directory[i].type === 'show')
+                if (res.Directory[i].type === 'movie' || res.Directory[i].type === 'show') {
+                    var genres = []
+                    if (res.Directory[i].type === 'movie') {
+                        const genresRes = await client.Get(`/library/sections/${res.Directory[i].key}/genre`)
+                        for (let q = 0, k = typeof genresRes.Directory !== 'undefined' ? genresRes.Directory.length : 0; q < k; q++) {
+                            if (genresRes.Directory[q].type === 'genre') {
+                                genres.push({
+                                    title: 'Genre: ' + genresRes.Directory[q].title,
+                                    key: genresRes.Directory[q].fastKey,
+                                    type: 'genre'
+                                })
+                            }
+                        }
+                    }
+
                     sections.push({
                         title: res.Directory[i].title,
                         key: `/library/sections/${res.Directory[i].key}/all`,
                         icon: `${server.uri}${res.Directory[i].composite}?X-Plex-Token=${server.accessToken}`,
-                        type: res.Directory[i].type
+                        type: res.Directory[i].type,
+                        genres: genres
                     })
+                }
             return sections
         },
         getPlaylists: async (server) => {
@@ -119,10 +135,14 @@ module.exports = function ($http, $window, $interval) {
                 return streams
             })
         },
-        getNested: async (server, key, includeCollections, errors) => {
+        getNested: async (server, lib, includeCollections, errors) => {
             var client = new Plex(server)
+            const key = lib.key
             const res = await client.Get(key)
             var nested = []
+            if (typeof (lib.genres) !== 'undefined') {
+                nested = Array.from(lib.genres)
+            }
             var seenFiles = {};
             var collections = {};
             for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++) {
@@ -226,7 +246,7 @@ module.exports = function ($http, $window, $interval) {
                         let shows = collection.nested;
                         let collectionContents = [];
                         for (let i = 0; i < shows.length; i++) {
-                            let seasons = await exported.getNested(server, shows[i].key, false);
+                            let seasons = await exported.getNested(server, shows[i], false);
                             for (let j = 0; j < seasons.length; j++) {
                                 seasons[j].title = shows[i].title + " - " + seasons[j].title;
                                 collectionContents.push(seasons[j]);

@@ -104,7 +104,7 @@ module.exports = function (plex, dizquetv, $timeout) {
             }
             scope.fillNestedIfNecessary = async (x, isLibrary) => {
                 if ( (typeof(x.nested) === 'undefined') && (x.type !== 'collection') ) {
-                    x.nested = await plex.getNested(scope.plexServer, x.key, isLibrary, scope.errors);
+                    x.nested = await plex.getNested(scope.plexServer, x, isLibrary, scope.errors);
                 }
             }
             scope.getNested = (list, isLibrary) => {
