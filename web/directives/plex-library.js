@@ -66,7 +66,7 @@ module.exports = function (plex, dizquetv, $timeout) {
               try {
                 for (let i = 0; i < library.nested.length; i++) {
                     //await scope.selectItem( library.nested[i] );
-                    if (library.nested[i].type !== 'collection') {
+                    if (library.nested[i].type !== 'collection' && library.nested[i].type !== 'genre') {
                         await scope.selectShow( library.nested[i] );
                     }
                     scope.pending -= 1;
