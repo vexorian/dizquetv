@@ -32,10 +32,10 @@ class FFMPEG extends events.EventEmitter {
         this.volumePercent =  this.opts.audioVolumePercent;
     }
     async spawnConcat(streamUrl) {
-        this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
+        return await this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
     }
     async spawnStream(streamUrl, streamStats, startTime, duration, enableIcon, type) {
-        this.spawn(streamUrl, streamStats, startTime, duration, true, enableIcon, type, false);
+        return await this.spawn(streamUrl, streamStats, startTime, duration, true, enableIcon, type, false);
     }
     async spawnError(title, subtitle, duration) {
         if (! this.opts.enableFFMPEGTranscoding || this.opts.errorScreen == 'kill') {
@@ -54,7 +54,7 @@ class FFMPEG extends events.EventEmitter {
             videoHeight : this.wantedH,
             duration : duration,
         };
-        this.spawn({ errorTitle: title , subtitle: subtitle }, streamStats, undefined, `${streamStats.duration}ms`, true, false, 'error', false)
+        return await this.spawn({ errorTitle: title , subtitle: subtitle }, streamStats, undefined, `${streamStats.duration}ms`, true, false, 'error', false)
     }
     async spawnOffline(duration) {
         if (! this.opts.enableFFMPEGTranscoding) {
@@ -68,7 +68,7 @@ class FFMPEG extends events.EventEmitter {
             videoHeight : this.wantedH,
             duration : duration,
         };
-        this.spawn( {errorTitle: 'offline'}, streamStats, undefined, `${duration}ms`, true, false, 'offline', false);
+        return await this.spawn( {errorTitle: 'offline'}, streamStats, undefined, `${duration}ms`, true, false, 'offline', false);
     }
     async spawn(streamUrl, streamStats, startTime, duration, limitRead, enableIcon, type, isConcatPlaylist) {
 
@@ -342,10 +342,7 @@ class FFMPEG extends events.EventEmitter {
 
         let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
         this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
-        this.ffmpeg.stdout.on('data', (chunk) => {
-            this.sentData = true;
-            this.emit('data', chunk)
-        })
+
         this.ffmpeg.on('close', (code) => {
             if (code === null) {
                 this.emit('close', code)
@@ -360,6 +357,7 @@ class FFMPEG extends events.EventEmitter {
                 this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}` })
             }
         })
+        return this.ffmpeg.stdout;
     }
     kill() {
         if (typeof this.ffmpeg != "undefined") {

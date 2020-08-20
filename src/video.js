@@ -71,7 +71,6 @@ function video(db) {
 
         console.log(`\r\nStream starting. Channel: ${channel.number} (${channel.name})`)
 
-        let lastWrite = (new Date()).getTime();
         let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
         let stopped = false;
 
@@ -84,27 +83,8 @@ function video(db) {
                 ffmpeg.kill();
             }
         }
-        let watcher = () => {
-            let t1 = (new Date()).getTime();
-            if (t1 - lastWrite >= 30000) {
-                console.log("Client timed out, stop stream.");
-                //way too long without writes, time out
-                stop();
-            }
-            if (! stopped) {
-                setTimeout(watcher, 5000);
-            }
-        };
-        setTimeout(watcher, 5000);
 
 
-
-        ffmpeg.on('data', (data) => {
-            if (! stopped) {
-                lastWrite = (new Date()).getTime();
-                res.write(data)
-            }
-        })
 
         ffmpeg.on('error', (err) => {
             console.error("FFMPEG ERROR", err);
@@ -126,7 +106,8 @@ function video(db) {
         })
 
         let channelNum = parseInt(req.query.channel, 10)
-        ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}`);
+        let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}`);
+        ff.pipe(res);
     })
     // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
     router.get('/stream', async (req, res) => {
@@ -242,8 +223,11 @@ function video(db) {
             }
         };
         var playerObj = null;
+        res.writeHead(200, {
+            'Content-Type': 'video/mp2t'
+        });
         try {
-            playerObj = await player.play();
+            playerObj = await player.play(res);
         } catch (err) {
             console.log("Error when attempting to play video: " +err.stack);
             try {
@@ -254,38 +238,15 @@ function video(db) {
             stop();
             return;
         }
-        let lastWrite = (new Date()).getTime();
-        let watcher = () => {
-            let t1 = (new Date()).getTime();
-            if (t1 - lastWrite >= 30000) {
-                console.log("Demux ffmpeg timed out, stop stream.");
-                //way too long without writes, time out
-                stop();
-            }
-            if (! stopped) {
-                setTimeout(watcher, 5000);
-            }
-        };
-        setTimeout(watcher, 5000);
 
-        let stream = playerObj.stream;
-        res.writeHead(200, {
-            'Content-Type': 'video/mp2t'
-        });
 
-        res.write(playerObj.data);
+        let stream = playerObj;
 
-        stream.on("data", (data) => {
-            try {
-                if (! stopped) {
-                    lastWrite = (new Date()).getTime();
-                    res.write(data);
-                }
-            } catch (err) {
-                console.log("I/O Error: " + err.stack);
-                stop();
-            }
-        });
+
+
+        //res.write(playerObj.data);
+
+
         stream.on("end", () => {
             stop();
         });
