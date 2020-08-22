@@ -13,6 +13,7 @@ module.exports = function ($scope, dizquetv) {
                 pending: true,
             }
         });
+        $scope.$apply();
         $scope.queryChannels();
     }
     $scope.refreshChannels();
