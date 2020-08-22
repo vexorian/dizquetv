@@ -501,6 +501,8 @@ function splitServersSingleChannels(db, channelDB ) {
         delete program.durationStr;
         delete program.start;
         delete program.stop;
+        delete program.streams;
+        delete program.opts;
     }
 
     let fixProgram = (program) => {
