@@ -32,10 +32,10 @@ class FFMPEG extends events.EventEmitter {
         this.volumePercent =  this.opts.audioVolumePercent;
     }
     async spawnConcat(streamUrl) {
-        this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
+        return await this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
     }
     async spawnStream(streamUrl, streamStats, startTime, duration, enableIcon, type) {
-        this.spawn(streamUrl, streamStats, startTime, duration, true, enableIcon, type, false);
+        return await this.spawn(streamUrl, streamStats, startTime, duration, true, enableIcon, type, false);
     }
     async spawnError(title, subtitle, duration) {
         if (! this.opts.enableFFMPEGTranscoding || this.opts.errorScreen == 'kill') {
@@ -54,7 +54,7 @@ class FFMPEG extends events.EventEmitter {
             videoHeight : this.wantedH,
             duration : duration,
         };
-        this.spawn({ errorTitle: title , subtitle: subtitle }, streamStats, undefined, `${streamStats.duration}ms`, true, false, 'error', false)
+        return await this.spawn({ errorTitle: title , subtitle: subtitle }, streamStats, undefined, `${streamStats.duration}ms`, true, false, 'error', false)
     }
     async spawnOffline(duration) {
         if (! this.opts.enableFFMPEGTranscoding) {
@@ -68,7 +68,7 @@ class FFMPEG extends events.EventEmitter {
             videoHeight : this.wantedH,
             duration : duration,
         };
-        this.spawn( {errorTitle: 'offline'}, streamStats, undefined, `${duration}ms`, true, false, 'offline', false);
+        return await this.spawn( {errorTitle: 'offline'}, streamStats, undefined, `${duration}ms`, true, false, 'offline', false);
     }
     async spawn(streamUrl, streamStats, startTime, duration, limitRead, enableIcon, type, isConcatPlaylist) {
 
@@ -214,10 +214,16 @@ class FFMPEG extends events.EventEmitter {
             }
 
             // Resolution fix: Add scale filter, current stream becomes [siz]
+            let beforeSizeChange = currentVideo;
             if (this.ensureResolution && (iW != this.wantedW || iH != this.wantedH) ) {
                 //Maybe the scaling algorithm could be configurable. bicubic seems good though
                 videoComplex += `;${currentVideo}scale=${this.wantedW}:${this.wantedH}:flags=bicubic:force_original_aspect_ratio=decrease,pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[siz]`
                 currentVideo = "[siz]";
+                iW = this.wantedW;
+                iH = this.wantedH;
+            } else if ( isLargerResolution(iW, iH, this.wantedW, this.wantedH) ) {
+                videoComplex += `;${currentVideo}scale=${this.wantedW}:${this.wantedH}:flags=bicubic:force_original_aspect_ratio=decrease,pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[minsiz]`
+                currentVideo = "[minsiz]";
                 iW = this.wantedW;
                 iH = this.wantedH;
             }
@@ -255,6 +261,11 @@ class FFMPEG extends events.EventEmitter {
             var transcodeVideo = (this.opts.normalizeVideoCodec &&  isDifferentVideoCodec( streamStats.videoCodec, this.opts.videoEncoder) );
             var transcodeAudio = (this.opts.normalizeAudioCodec &&  isDifferentAudioCodec( streamStats.audioCodec, this.opts.audioEncoder) );
             var filterComplex = '';
+            if ( (!transcodeVideo) && (currentVideo == '[minsiz]') ) {
+                //do not change resolution if no other transcoding will be done
+                // and resolution normalization is off
+                currentVideo = beforeSizeChange;
+            }
             if (currentVideo != '[video]') {
                 transcodeVideo = true; //this is useful so that it adds some lines below
                 filterComplex += videoComplex;
@@ -342,10 +353,7 @@ class FFMPEG extends events.EventEmitter {
 
         let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
         this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
-        this.ffmpeg.stdout.on('data', (chunk) => {
-            this.sentData = true;
-            this.emit('data', chunk)
-        })
+
         this.ffmpeg.on('close', (code) => {
             if (code === null) {
                 this.emit('close', code)
@@ -360,6 +368,7 @@ class FFMPEG extends events.EventEmitter {
                 this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}` })
             }
         })
+        return this.ffmpeg.stdout;
     }
     kill() {
         if (typeof this.ffmpeg != "undefined") {
@@ -395,10 +404,17 @@ function isDifferentAudioCodec(codec, encoder) {
     return true;
 }
 
+function isLargerResolution(w1,h1, w2,h2) {
+    return (w1 > w2) || (h1 > h2);
+}
+
 function parseResolutionString(s) {
     var i = s.indexOf('x');
     if (i == -1) {
-        return {w:1920, h:1080}
+        i = s.indexOf("×");
+        if (i == -1) {
+           return {w:1920, h:1080}
+        }
     }
     return {
         w: parseInt( s.substring(0,i) , 10 ),

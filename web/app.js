@@ -17,6 +17,7 @@ app.directive('plexLibrary',    require('./directives/plex-library'))
 app.directive('programConfig',  require('./directives/program-config'))
 app.directive('offlineConfig',  require('./directives/offline-config'))
 app.directive('frequencyTweak',  require('./directives/frequency-tweak'))
+app.directive('plexServerEdit',  require('./directives/plex-server-edit'))
 app.directive('channelConfig',  require('./directives/channel-config'))
 
 app.controller('settingsCtrl',  require('./controllers/settings'))

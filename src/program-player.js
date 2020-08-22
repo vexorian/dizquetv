@@ -58,24 +58,13 @@ class ProgramPlayer {
         this.delegate.cleanUp();
     }
 
-    async playDelegate() {
+    async playDelegate(outStream) {
         return await new Promise( async (accept, reject) => {
-            setTimeout( () => {
-                reject( Error("program player timed out before receiving any data.") );
-            }, 30000);
-            
+
             try {
-                let stream = await this.delegate.play();
-                let first = true;
+                let stream = await this.delegate.play(outStream);
+                accept(stream);
                 let emitter = new EventEmitter();
-                stream.on("data", (data) => {
-                    if (first) {
-                        accept( {stream: emitter, data: data} );
-                        first = false;
-                    } else {
-                        emitter.emit("data", data);
-                    }
-                });
                 function end() {
                     reject( Error("Stream ended with no data") );
                     stream.removeAllListeners("data");
@@ -95,9 +84,9 @@ class ProgramPlayer {
             }
         })
     }
-    async play() {
+    async play(outStream) {
         try {
-            return await this.playDelegate();
+            return await this.playDelegate(outStream);
         } catch(err) {
             if (! (err instanceof Error) ) {
                 err= Error("Program player had an error before receiving any data. " + JSON.stringify(err) );
@@ -115,7 +104,7 @@ class ProgramPlayer {
             }
             this.delegate.cleanUp();
             this.delegate = new OfflinePlayer(true, this.context);
-            return await this.play();
+            return await this.play(outStream);
         }
     }
 }

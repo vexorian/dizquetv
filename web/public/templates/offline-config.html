@@ -61,14 +61,16 @@
                         <div class="list-group list-group-root" dnd-list="program.fallback">
                             <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.fallback" dnd-draggable="x" dnd-moved="program.fallback.splice($index, 1)" dnd-effect-allowed="move">
                                 <div class="program-start" >
-                                    {{durationString(x.actualDuration)}}
+                                    {{durationString(x.duration)}}
                                 </div>
                                 <div ng-style="programSquareStyle(x, true)" />
                                 <div style="margin-right: 5px;">
                                     <strong>Fallback:</strong> {{x.title}}
                                 </div>
                                 <div class="flex-pull-right">
-                                    <span class="btn fa fa-trash" ng-click="program.fallback.splice($index,1)"></span>
+                                    <button class="btn btn-sm btn-link" ng-click="program.fallback.splice($index,1)">
+                                    <i class="text-danger fa fa-trash" ></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -133,14 +135,16 @@
                         <div class="list-group list-group-root" dnd-list="program.filler">
                             <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.filler" dnd-draggable="x" dnd-moved="program.filler.splice($index, 1)" dnd-effect-allowed="move">
                                 <div class="program-start" >
-                                    {{durationString(x.actualDuration)}}
+                                    {{durationString(x.duration)}}
                                 </div>
                                 <div ng-style="programSquareStyle(x, false)" />
                                 <div style="margin-right: 5px;">
                                     {{x.title}}
                                 </div>
                                 <div class="flex-pull-right">
-                                    <span class="btn fa fa-trash" ng-click="program.filler.splice($index,1)"></span>
+                                    <button class="btn btn-sm btn-link" ng-click="program.filler.splice($index,1)">
+                                    <i class="text-danger fa fa-trash" ></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>

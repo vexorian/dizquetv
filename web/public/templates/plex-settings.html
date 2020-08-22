@@ -15,31 +15,53 @@
 <table class="table">
     <tr>
         <th>Name</th>
-        <th>Address</th>
-        <th>Refresh Guide</th>
-        <th>Refresh Channels</th>
+        <th>uri</th>
+        <th>UI Route</th>
+        <th>Backend Route</th>
         <th></th>
     </tr>
     <tr ng-if="servers.length === 0">
-        <td colspan="5">
+        <td colspan="7">
             <p class="text-center text-danger">Add a Plex Server</p>
         </td>
     </tr>
-    <tr ng-repeat="x in servers">
+    <tr ng-if="serversPending">
+        <td><div class="loader"></div> <span class='text-info'>{{ addingServer }}</span></td>
+    </tr>
+    <tr ng-repeat="x in servers" ng-hide="serversPending" >
         <td>{{ x.name }}</td>
-        <td>{{ x.uri }}</td>
-        <td>{{ x.arGuide }}</td>
-        <td>{{ x.arChannels }}</td>
+        <td><span class='text-secondary text-small'>{{ x.uri }}</span></td>
         <td>
-            <button class="btn btn-sm btn-danger" ng-click="deletePlexServer(x._id)">
-                <span class="fa fa-minus"></span>
+            <div class='loader' ng-if="x.uiStatus == 0"></div>
+            <div class='fa fa-check text-success' ng-if="x.uiStatus == 1">ok</div>
+            <div class='fa fa-warning text-danger' ng-if="x.uiStatus == -1">error</div>
+        </td>
+        <td>
+            <div class='loader' ng-if="x.backendStatus == 0"></div>
+            <div class='fa fa-check text-success' ng-if="x.backendStatus == 1">ok</div>
+            <div class='fa fa-warning text-danger' ng-if="x.backendStatus == -1">error</div>
+        </td>
+        <td>
+            <button class="btn btn-sm btn-outline-secondary" ng-click="editPlexServer(x)">
+                <span class="fa fa-edit"></span>
             </button>
         </td>
-    <tr ng-if="servers.length !== 0">
+    <tr ng-if="serverError.length &gt; 0">
         <td colspan="5">
-            <p class="text-center text-info small">To further tweak server values you can edit plex-servers.json. Note that changing server address requires you to re-make your channels programming, or else they will still try to use the previous server.</p>
+            <p class="text-center text-danger small">{{serverError}}</p>
         </td>
     </tr>
+    <tr ng-if="isAnyUIBad()">
+        <td colspan="5">
+            <p class="text-center text-danger small">If a Plex server configuration has problems with the UI route, the channel editor won&apos;t be able to access its content.</p>
+        </td>
+    </tr>
+    <tr ng-if="isAnyBackendBad()">
+        <td colspan="5">
+            <p class="text-center text-danger small">If a Plex server configuration has problems with the backend route, dizqueTV won&apos;t be able to play its content.</p>
+        </td>
+    </tr>
+
 </table>
 
 <hr>
@@ -174,3 +196,4 @@
         </div>
     </div>
 </div>
+<plex-server-edit state="_serverEditorState" on-finish="serverEditFinished"></plex-server-edit>

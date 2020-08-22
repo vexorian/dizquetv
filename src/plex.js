@@ -113,6 +113,15 @@ class Plex {
                 })
         })
     }
+    async checkServerStatus() {
+        try {
+            await this.Get('/');
+            return 1;
+        } catch (err) {
+            console.error("Error getting Plex server status", err);
+            return -1;
+        }
+    }
     async GetDVRS() {
         var result = await this.Get('/livetv/dvrs')
         var dvrs = result.Dvr

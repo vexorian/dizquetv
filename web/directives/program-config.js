@@ -37,7 +37,7 @@ module.exports = function ($timeout) {
                     return
                 }
 
-                prog.duration = prog.actualDuration
+                prog.duration = prog.duration
                 for (let i = 0, l = prog.commercials.length; i < l; i++)
                     prog.duration += prog.commercials[i].duration
                 scope.onDone(JSON.parse(angular.toJson(prog)))

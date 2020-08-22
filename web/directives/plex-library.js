@@ -46,7 +46,8 @@ module.exports = function (plex, dizquetv, $timeout) {
                         await scope.wait(0);
                         scope.pending += 1;
                         try {
-                            item.streams = await plex.getStreams(scope.plexServer, item.key, scope.errors)
+                            delete item.server;
+                            item.serverKey = scope.plexServer.name;
                             scope.selection.push(JSON.parse(angular.toJson(item)))
                         } catch (err) {
                             let msg = "Unable to add item: " + item.key + " " + item.title;
@@ -66,7 +67,7 @@ module.exports = function (plex, dizquetv, $timeout) {
               try {
                 for (let i = 0; i < library.nested.length; i++) {
                     //await scope.selectItem( library.nested[i] );
-                    if (library.nested[i].type !== 'collection') {
+                    if (library.nested[i].type !== 'collection' && library.nested[i].type !== 'genre') {
                         await scope.selectShow( library.nested[i] );
                     }
                     scope.pending -= 1;
@@ -104,7 +105,7 @@ module.exports = function (plex, dizquetv, $timeout) {
             }
             scope.fillNestedIfNecessary = async (x, isLibrary) => {
                 if ( (typeof(x.nested) === 'undefined') && (x.type !== 'collection') ) {
-                    x.nested = await plex.getNested(scope.plexServer, x.key, isLibrary, scope.errors);
+                    x.nested = await plex.getNested(scope.plexServer, x, isLibrary, scope.errors);
                 }
             }
             scope.getNested = (list, isLibrary) => {

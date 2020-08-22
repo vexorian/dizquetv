@@ -4,40 +4,85 @@ module.exports = function ($scope, dizquetv) {
     $scope.selectedChannel = null
     $scope.selectedChannelIndex = -1
 
-    dizquetv.getChannels().then((channels) => {
-        $scope.channels = channels
-    })
-    $scope.removeChannel = (channel) => {
-        if (confirm("Are you sure to delete channel: " + channel.name + "?")) {
-            dizquetv.removeChannel(channel).then((channels) => {
-                $scope.channels = channels
-            })
+    $scope.refreshChannels = async () => {
+        $scope.channels = [ { number: 1, pending: true} ]
+        let channelNumbers = await dizquetv.getChannelNumbers();
+        $scope.channels = channelNumbers.map( (x) => {
+            return {
+                number: x,
+                pending: true,
+            }
+        });
+        $scope.queryChannels();
+    }
+    $scope.refreshChannels();
+
+    $scope.queryChannels = () => {
+        for (let i = 0; i < $scope.channels.length; i++) {
+            $scope.queryChannel(i, $scope.channels[i] );
         }
     }
-    $scope.onChannelConfigDone = (channel) => {
+
+    $scope.queryChannel = async (index, channel) => {
+        let ch = await dizquetv.getChannelDescription(channel.number);
+        ch.pending = false;
+        $scope.channels[index] = ch;
+        $scope.$apply();
+    }
+
+    $scope.removeChannel = async ($index, channel) => {
+        if (confirm("Are you sure to delete channel: " + channel.name + "?")) {
+            $scope.channels[$index].pending = true;
+            await dizquetv.removeChannel(channel);
+            $scope.refreshChannels();
+        }
+    }
+    $scope.onChannelConfigDone = async (channel) => {
+        $scope.showChannelConfig = false
+        if ($scope.selectedChannelIndex != -1) {
+            $scope.channels[ $scope.selectedChannelIndex ].pending = false;
+        }
         if (typeof channel !== 'undefined') {
             if ($scope.selectedChannelIndex == -1) { // add new channel
-                dizquetv.addChannel(channel).then((channels) => {
-                    $scope.channels = channels
-                })
+                await dizquetv.addChannel(channel);
+                $scope.refreshChannels();
+            
+            } else if (
+                   (typeof($scope.originalChannelNumber) !== 'undefined')
+                      && ($scope.originalChannelNumber != channel.number)
+            ) {
+                //update + change channel number.
+                $scope.channels[ $scope.selectedChannelIndex ].pending = true;
+                await dizquetv.updateChannel(channel),
+                await dizquetv.removeChannel( { number: $scope.originalChannelNumber } )
+                $scope.$apply();
+                $scope.refreshChannels();
             } else { // update existing channel
-                dizquetv.updateChannel(channel).then((channels) => {
-                    $scope.channels = channels
-                })
+                $scope.channels[ $scope.selectedChannelIndex ].pending = true;
+                await dizquetv.updateChannel(channel);
+                $scope.$apply();
+                $scope.refreshChannels();
             }
         }
-        $scope.showChannelConfig = false
+
+        
     }
-    $scope.selectChannel = (index) => {
-        if (index === -1) {
+    $scope.selectChannel = async (index) => {
+        if ( (index === -1) || $scope.channels[index].pending ) {
+            $scope.originalChannelNumber = undefined;
             $scope.selectedChannel = null
             $scope.selectedChannelIndex = -1
+            $scope.showChannelConfig = true
         } else {
-            let newObj = JSON.parse(angular.toJson($scope.channels[index]))
+            $scope.channels[index].pending = true;
+            let ch = await dizquetv.getChannel($scope.channels[index].number);
+            let newObj = ch;
             newObj.startTime = new Date(newObj.startTime)
+            $scope.originalChannelNumber = newObj.number;
             $scope.selectedChannel = newObj
             $scope.selectedChannelIndex = index
+            $scope.showChannelConfig = true
+            $scope.$apply();
         }
-        $scope.showChannelConfig = true
     }
 }

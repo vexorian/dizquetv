@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 
 class PlexTranscoder {
-    constructor(clientId, settings, channel, lineupItem) {
+    constructor(clientId, server, settings, channel, lineupItem) {
         this.session = uuidv4()
 
         this.device = "channel-" + channel.number;
@@ -16,16 +16,16 @@ class PlexTranscoder {
         this.log("Debug logging enabled")
 
         this.key = lineupItem.key
-        this.plexFile = `${lineupItem.server.uri}${lineupItem.plexFile}?X-Plex-Token=${lineupItem.server.accessToken}`
+        this.plexFile = `${server.uri}${lineupItem.plexFile}?X-Plex-Token=${server.accessToken}`
         if (typeof(lineupItem.file)!=='undefined') {
             this.file = lineupItem.file.replace(settings.pathReplace, settings.pathReplaceWith)
         }
-        this.transcodeUrlBase = `${lineupItem.server.uri}/video/:/transcode/universal/start.m3u8?`
+        this.transcodeUrlBase = `${server.uri}/video/:/transcode/universal/start.m3u8?`
         this.ratingKey = lineupItem.ratingKey
         this.currTimeMs = lineupItem.start
         this.currTimeS = this.currTimeMs / 1000
         this.duration = lineupItem.duration
-        this.server = lineupItem.server
+        this.server = server
 
         this.transcodingArgs = undefined
         this.decisionJson = undefined
