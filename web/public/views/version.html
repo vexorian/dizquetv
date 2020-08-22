@@ -10,15 +10,15 @@
         </tr>
         <tr>
             <td>dizqueTV-backend</td>
-            <td>{{version}}</td>
+            <td><div class='loader' ng-if="version.length &lt;= 0"></div>{{version}}</td>
         </tr>
         <tr>
             <td>dizqueTV-ui</td>
-            <td id='uiversion'>Getting dizqueTV UI version...</td>
+            <td id='uiversion'><div class='loader'></div></td>
         </tr>
         <tr>
             <td>FFMPEG</td>
-            <td>{{ffmpegVersion}}</td>
+            <td><div class='loader' ng-if="version.length &lt;= 0"></div>{{ffmpegVersion}}</td>
         </tr>
         <!-- coming soon, ffmpeg version, nodejs version, plex version, whatever can be used to help debug things-->
     </table>

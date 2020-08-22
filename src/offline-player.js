@@ -25,21 +25,20 @@ class OfflinePlayer {
         this.ffmpeg.kill();
     }
 
-    async play() {
+    async play(outStream) {
         try {
             let emitter = new EventEmitter();
             let ffmpeg = this.ffmpeg;
             let lineupItem = this.context.lineupItem;
             let duration = lineupItem.streamDuration - lineupItem.start;
+            let ff;
             if (this.error) {
-                ffmpeg.spawnError(duration);
+                ff = await ffmpeg.spawnError(duration);
             } else {
-                ffmpeg.spawnOffline(duration);
+                ff = await ffmpeg.spawnOffline(duration);
             }
+            ff.pipe(outStream);
 
-            ffmpeg.on('data', (data) => {
-                emitter.emit('data', data);
-            });
             ffmpeg.on('end', () => {
                 emitter.emit('end');
             });

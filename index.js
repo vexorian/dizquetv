@@ -14,6 +14,7 @@ const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex');
 const channelCache = require('./src/channel-cache');
 const constants = require('./src/constants')
+const ChannelDB = require("./src/dao/channel-db");
 
 console.log(
 `         \\
@@ -43,18 +44,25 @@ if (!fs.existsSync(process.env.DATABASE)) {
     fs.mkdirSync(process.env.DATABASE)
 }
 
-if(!fs.existsSync(path.join(process.env.DATABASE, 'images')))
+if(!fs.existsSync(path.join(process.env.DATABASE, 'images'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'images'))
+}
+
+if(!fs.existsSync(path.join(process.env.DATABASE, 'channels'))) {
+    fs.mkdirSync(path.join(process.env.DATABASE, 'channels'))
+}
+
+channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
 
 db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id'])
 
-initDB(db)
+initDB(db, channelDB)
 
 let xmltvInterval = {
     interval: null,
     lastRefresh: null,
-    updateXML: () => {
-        let channels = db['channels'].find()
+    updateXML: async () => {
+        let channels = await channelDB.getAllChannels()
         channels.forEach( (channel) => {
             // if we are going to go through the trouble of loading the whole channel db, we might
             // as well take that opportunity to reduce stream loading times...
@@ -84,8 +92,8 @@ let xmltvInterval = {
     startInterval: () => {
         let xmltvSettings = db['xmltv-settings'].find()[0]
         if (xmltvSettings.refresh !== 0) {
-            xmltvInterval.interval = setInterval(() => {
-                xmltvInterval.updateXML()
+            xmltvInterval.interval = setInterval( async () => {
+                await xmltvInterval.updateXML()
             }, xmltvSettings.refresh * 60 * 60 * 1000)
         }
     },
@@ -99,7 +107,7 @@ let xmltvInterval = {
 xmltvInterval.updateXML()
 xmltvInterval.startInterval()
 
-let hdhr = HDHR(db)
+let hdhr = HDHR(db, channelDB)
 let app = express()
 app.use(bodyParser.json({limit: '50mb'}))
 app.get('/version.js', (req, res) => {
@@ -122,7 +130,7 @@ app.get('/version.js', (req, res) => {
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
-app.use(api.router(db, xmltvInterval))
+app.use(api.router(db, channelDB, xmltvInterval))
 app.use(video.router(db))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
@@ -132,8 +140,8 @@ app.listen(process.env.PORT, () => {
         hdhr.ssdp.start()
 })
 
-function initDB(db) {
-    dbMigration.initDB(db);
+function initDB(db, channelDB) {
+    dbMigration.initDB(db, channelDB);
     if (!fs.existsSync(process.env.DATABASE + '/font.ttf')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/font.ttf')))
         fs.writeFileSync(process.env.DATABASE + '/font.ttf', data)

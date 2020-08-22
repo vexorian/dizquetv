@@ -34,14 +34,14 @@ module.exports = function ($timeout) {
                 scope.program = null
             }
             scope.sortFillers = () => {
-                scope.program.filler.sort( (a,b) => { return a.actualDuration - b.actualDuration } );
+                scope.program.filler.sort( (a,b) => { return a.duration - b.duration } );
             }
             scope.fillerRemoveAllFiller = () => {
                 scope.program.filler = [];
             }
             scope.fillerRemoveDuplicates = () => {
                 function getKey(p) {
-                    return p.server.uri + "|" + p.server.accessToken + "|" + p.plexFile;
+                    return p.serverKey + "|" + p.plexFile;
                 }
                 let seen = {};
                 let newFiller = [];
@@ -81,7 +81,7 @@ module.exports = function ($timeout) {
 
             scope.programSquareStyle = (program, dash) => {
                 let background = "rgb(255, 255, 255)";
-                let ems = Math.pow( Math.min(60*60*1000, program.actualDuration), 0.7 );
+                let ems = Math.pow( Math.min(60*60*1000, program.duration), 0.7 );
                 ems = ems / Math.pow(1*60*1000., 0.7);
                 ems = Math.max( 0.25 , ems);
                 let top = Math.max(0.0, (1.75 - ems) / 2.0) ;

@@ -41,15 +41,20 @@ class PlexPlayer {
         }
     }
 
-    async play() {
+    async play(outStream) {
         let lineupItem = this.context.lineupItem;
         let ffmpegSettings = this.context.ffmpegSettings;
         let db = this.context.db;
         let channel = this.context.channel;
+        let server = db['plex-servers'].find( { 'name': lineupItem.serverKey } );
+        if (server.length == 0) {
+            throw Error(`Unable to find server "${lineupItem.serverKey}" specied by program.`);
+        }
+        server = server[0];
 
         try {
             let plexSettings = db['plex-settings'].find()[0];
-            let plexTranscoder = new PlexTranscoder(this.clientId, plexSettings, channel, lineupItem);
+            let plexTranscoder = new PlexTranscoder(this.clientId, server, plexSettings, channel, lineupItem);
             this.plexTranscoder = plexTranscoder;
             let enableChannelIcon = this.context.enableChannelIcon;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
@@ -73,13 +78,12 @@ class PlexPlayer {
 
             let emitter = new EventEmitter();
             //setTimeout( () => {
-                ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, enableChannelIcon, lineupItem.type); // Spawn the ffmpeg process
+                let ff = await ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, enableChannelIcon, lineupItem.type); // Spawn the ffmpeg process
+                ff.pipe(outStream);
             //}, 100);
             plexTranscoder.startUpdatingPlex();
 
-            ffmpeg.on('data', (data) => {
-                emitter.emit('data', data);
-            });
+
             ffmpeg.on('end', () => {
                 emitter.emit('end');
             });
