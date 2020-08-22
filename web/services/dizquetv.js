@@ -8,19 +8,46 @@ module.exports = function ($http) {
         },
         addPlexServer: (plexServer) => {
             return $http({
+                method: 'PUT',
+                url: '/api/plex-servers',
+                data: plexServer,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            }).then((d) => { return d.data })
+        },
+        updatePlexServer: (plexServer) => {
+            return $http({
                 method: 'POST',
                 url: '/api/plex-servers',
                 data: plexServer,
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
         },
-        removePlexServer: (serverId) => {
-            return $http({
+        checkExistingPlexServer: async (serverName) => {
+            let d = await $http({
+                method: 'POST',
+                url: '/api/plex-servers/status',
+                data: { name: serverName },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            })
+            return d.data;
+        },
+        checkNewPlexServer: async (server) => {
+            let d = await $http({
+                method: 'POST',
+                url: '/api/plex-servers/foreignstatus',
+                data: server,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            })
+            return d.data;
+        },
+        removePlexServer: async (serverName) => {
+            let d = await $http({
                 method: 'DELETE',
                 url: '/api/plex-servers',
-                data: { _id: serverId },
+                data: { name: serverName },
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
-            }).then((d) => { return d.data })
+            });
+            return d.data;
         },
         getPlexSettings: () => {
             return $http.get('/api/plex-settings').then((d) => { return d.data })
@@ -101,10 +128,24 @@ module.exports = function ($http) {
         getChannels: () => {
             return $http.get('/api/channels').then((d) => { return d.data })
         },
+
+        getChannel: (number) => {
+            return $http.get(`/api/channel/${number}`).then( (d) => { return d.data })
+        },
+
+        getChannelDescription: (number) => {
+            return $http.get(`/api/channel/description/${number}`).then( (d) => { return d.data } )
+        },
+
+
+        getChannelNumbers: () => {
+            return $http.get('/api/channelNumbers').then( (d) => { return d.data } )
+        },
+
         addChannel: (channel) => {
             return $http({
                 method: 'POST',
-                url: '/api/channels',
+                url: '/api/channel',
                 data: angular.toJson(channel),
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
@@ -112,7 +153,7 @@ module.exports = function ($http) {
         updateChannel: (channel) => {
             return $http({
                 method: 'PUT',
-                url: '/api/channels',
+                url: '/api/channel',
                 data: angular.toJson(channel),
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
@@ -120,7 +161,7 @@ module.exports = function ($http) {
         removeChannel: (channel) => {
             return $http({
                 method: 'DELETE',
-                url: '/api/channels',
+                url: '/api/channel',
                 data: angular.toJson(channel),
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })

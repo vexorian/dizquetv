@@ -44,7 +44,7 @@ function createLineup(obj, channel, isFirst) {
 
     if (activeProgram.isOffline === true) {
         //offline case
-        let remaining = activeProgram.actualDuration - timeElapsed;
+        let remaining = activeProgram.duration - timeElapsed;
         //look for a random filler to play
         let filler = null;
         let special = null;
@@ -66,16 +66,16 @@ function createLineup(obj, channel, isFirst) {
         if (filler != null) {
             let fillerstart = 0;
             if (isSpecial) {
-                if (filler.actualDuration > remaining) {
-                    fillerstart = filler.actualDuration - remaining;
+                if (filler.duration > remaining) {
+                    fillerstart = filler.duration - remaining;
                 } else {
                     ffillerstart = 0;
                 }
             } else if(isFirst) {
-                fillerstart = Math.max(0, filler.actualDuration - remaining);
+                fillerstart = Math.max(0, filler.duration - remaining);
                 //it's boring and odd to tune into a channel and it's always
                 //the start of a commercial.
-                let more = Math.max(0, filler.actualDuration - fillerstart - 15000 - SLACK);
+                let more = Math.max(0, filler.duration - fillerstart - 15000 - SLACK);
                 fillerstart += Math.floor(more * Math.random() );
             }
             lineup.push({   // just add the video, starting at 0, playing the entire duration
@@ -86,9 +86,9 @@ function createLineup(obj, channel, isFirst) {
                 file: filler.file,
                 ratingKey: filler.ratingKey,
                 start: fillerstart,
-                streamDuration: Math.max(1, Math.min(filler.actualDuration - fillerstart, remaining) ),
-                duration: filler.actualDuration,
-                server: filler.server
+                streamDuration: Math.max(1, Math.min(filler.duration - fillerstart, remaining) ),
+                duration: filler.duration,
+                serverKey: filler.serverKey
             });
             return lineup;
         }
@@ -118,9 +118,9 @@ function createLineup(obj, channel, isFirst) {
                         file: activeProgram.file,
                         ratingKey: activeProgram.ratingKey,
                         start:  timeElapsed,
-                        streamDuration: activeProgram.actualDuration - timeElapsed,
-                        duration: activeProgram.actualDuration,
-                        server: activeProgram.server
+                        streamDuration: activeProgram.duration - timeElapsed,
+                        duration: activeProgram.duration,
+                        serverKey: activeProgram.serverKey
     } ];
 }
 
@@ -138,21 +138,21 @@ function pickRandomWithMaxDuration(channel, list, maxDuration) {
     for (let i = 0; i < list.length; i++) {
         let clip = list[i];
         // a few extra milliseconds won't hurt anyone, would it? dun dun dun
-        if (clip.actualDuration <= maxDuration + SLACK ) {
+        if (clip.duration <= maxDuration + SLACK ) {
             let t1 = channelCache.getProgramLastPlayTime( channel.number, clip );
             let timeSince = ( (t1 == 0) ?  D :  (t0 - t1) );
 
 
             if (timeSince < channel.fillerRepeatCooldown - SLACK) {
                 let w = channel.fillerRepeatCooldown - timeSince;
-                if (clip.actualDuration + w <= maxDuration + SLACK) {
+                if (clip.duration + w <= maxDuration + SLACK) {
                     minimumWait = Math.min(minimumWait, w);
                 }
                 timeSince = 0;
                 //30 minutes is too little, don't repeat it at all
             }
             if (timeSince >= D) {
-                let w =  Math.pow(clip.actualDuration, 1.0 / 4.0);
+                let w =  Math.pow(clip.duration, 1.0 / 4.0);
                 n += w;
                 if ( n*Math.random() < w) {
                     pick1 = clip;

@@ -303,7 +303,10 @@
                                 <div style="margin-right: 5px; font-weight:ligther"  ng-show="x.isOffline">
                                     <i>Flex</i>
                                 </div>
-                                <span class="flex-pull-right btn fa fa-trash" ng-click="removeItem($index);  $event.stopPropagation()"></span>
+                                <div class="flex-pull-right"></div>
+                                <button class="btn btn-sm btn-link" ng-click="removeItem($index);  $event.stopPropagation()">
+                                    <i class="text-danger fa fa-trash"></i>
+                                </button>
                               </div>
                             </div>
                             <div ng-if="minProgramIndex &lt; channel.programs.length - 100" class="list-group-item flex-container" >

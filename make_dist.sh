@@ -6,8 +6,8 @@ MACOSX=dizquetv-macos-x64
 LINUX64=${LINUXBUILD:-dizquetv-linux-x64}
 
 rm -R ./dist/*
-npm run build
-npm run compile
+npm run build || exit 1
+npm run compile  || exit 1
 cp -R ./web ./dist/web
 cp -R ./resources ./dist/
 cd dist

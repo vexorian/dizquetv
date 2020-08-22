@@ -4,16 +4,16 @@ let cache = {};
 let programPlayTimeCache = {};
 let configCache = {};
 
-function getChannelConfig(db, channelId) {
+async function getChannelConfig(channelDB, channelId) {
     //with lazy-loading
      
     if ( typeof(configCache[channelId]) === 'undefined') {
-        let channel = db['channels'].find( { number: channelId } )
-        configCache[channelId] = channel;
-        return channel;
-    } else {
-        return configCache[channelId];
+        let channel = await channelDB.getChannel(channelId)
+        //console.log("channel=" + JSON.stringify(channel) );
+        configCache[channelId] = [channel];
     }
+    //console.log("channel=" + JSON.stringify(configCache[channelId]).slice(0,200) );
+    return configCache[channelId];
 }
 
 function saveChannelConfig(number, channel ) {
@@ -27,7 +27,7 @@ function getCurrentLineupItem(channelId, t1) {
     let recorded = cache[channelId];
     let lineupItem =  JSON.parse( JSON.stringify(recorded.lineupItem) );
     let diff = t1 - recorded.t0;
-    if ( (diff <= SLACK) && (lineupItem.actualDuration >= 2*SLACK) ) {
+    if ( (diff <= SLACK) && (lineupItem.duration >= 2*SLACK) ) {
         //closed the stream and opened it again let's not lose seconds for
         //no reason
         return lineupItem;
@@ -40,7 +40,7 @@ function getCurrentLineupItem(channelId, t1) {
             return null;
         }
     }
-    if(lineupItem.start + SLACK > lineupItem.actualDuration) {
+    if(lineupItem.start + SLACK > lineupItem.duration) {
         return null;
     }
     return lineupItem;
@@ -48,9 +48,9 @@ function getCurrentLineupItem(channelId, t1) {
 
 function getKey(channelId, program) {
     let serverKey = "!unknown!";
-    if (typeof(program.server) !== 'undefined') {
-        if (typeof(program.server.name) !== 'undefined') {
-            serverKey = "plex|" + program.server.name;
+    if (typeof(program.serverKey) !== 'undefined') {
+        if (typeof(program.serverKey) !== 'undefined') {
+            serverKey = "plex|" + program.serverKey;
         }
     }
     let programKey = "!unknownProgram!";
@@ -67,7 +67,7 @@ function recordProgramPlayTime(channelId, lineupItem, t0) {
     if ( typeof(lineupItem.streamDuration) !== 'undefined') {
         remaining = lineupItem.streamDuration;
     } else {
-        remaining = lineupItem.actualDuration - lineupItem.start;
+        remaining = lineupItem.duration - lineupItem.start;
     }
     programPlayTimeCache[ getKey(channelId, lineupItem) ] = t0 + remaining;
 }

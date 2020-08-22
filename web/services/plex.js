@@ -51,13 +51,6 @@ module.exports = function ($http, $window, $interval) {
                                         if (server.provides != `server`)
                                             return;
 
-                                        // true = local server, false = remote
-                                        const i = (server.publicAddressMatches == true) ? 0 : server.connections.length - 1
-                                        server.uri = server.connections[i].uri
-                                        server.protocol = server.connections[i].protocol
-                                        server.address = server.connections[i].address
-                                        server.port = server.connections[i].port
-    
                                         res_servers.push(server);
                                     });
 
@@ -79,6 +72,18 @@ module.exports = function ($http, $window, $interval) {
                 })
             })
         },
+
+        check: async(server) => {
+            let client = new Plex(server)
+            try {
+                const res = await client.Get('/')
+                return 1;
+            } catch (err) {
+                console.error(err);
+                return -1;
+            }
+        },
+
         getLibrary: async (server) => {
             var client = new Plex(server)
             const res = await client.Get('/library/sections')
@@ -160,7 +165,6 @@ module.exports = function ($http, $window, $interval) {
                     icon: `${server.uri}${res.Metadata[i].thumb}?X-Plex-Token=${server.accessToken}`,
                     type: res.Metadata[i].type,
                     duration: res.Metadata[i].duration,
-                    actualDuration: res.Metadata[i].duration,
                     durationStr: msToTime(res.Metadata[i].duration),
                     subtitle: res.Metadata[i].subtitle,
                     summary: res.Metadata[i].summary,

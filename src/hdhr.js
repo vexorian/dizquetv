@@ -3,7 +3,7 @@ const SSDP = require('node-ssdp').Server
 
 module.exports = hdhr
 
-function hdhr(db) {
+function hdhr(db, channelDB) {
 
     const server = new SSDP({
         location: {
@@ -43,10 +43,10 @@ function hdhr(db) {
         }
         res.send(JSON.stringify(data))
     })
-    router.get('/lineup.json', (req, res) => {
+    router.get('/lineup.json', async (req, res) => {
         res.header("Content-Type", "application/json")
         var lineup = []
-        var channels = db['channels'].find()
+        var channels = await channelDB.getAllChannels();
         for (let i = 0, l = channels.length; i < l; i++)
             lineup.push({ GuideNumber: channels[i].number.toString(), GuideName: channels[i].name, URL: `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}` })
         if (lineup.length === 0)

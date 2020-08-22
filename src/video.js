@@ -42,14 +42,14 @@ function video(db) {
         })
     })
     // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos
-    router.get('/video', (req, res) => {
+    router.get('/video', async (req, res) => {
         // Check if channel queried is valid
         if (typeof req.query.channel === 'undefined') {
             res.status(500).send("No Channel Specified")
             return
         }
         let number = parseInt(req.query.channel, 10);
-        let channel =  channelCache.getChannelConfig(db, number);
+        let channel =  await channelCache.getChannelConfig(db, number);
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return
@@ -118,7 +118,7 @@ function video(db) {
         }
         let m3u8 = (req.query.m3u8 === '1');
         let number = parseInt(req.query.channel);
-        let channel =  channelCache.getChannelConfig(db, number);
+        let channel = await channelCache.getChannelConfig(db, number);
 
         if (channel.length === 0) {
             res.status(404).send("Channel doesn't exist")
@@ -167,7 +167,6 @@ function video(db) {
             //filler to play (if any)
             let t = 365*24*60*60*1000;
             prog.program = {
-                actualDuration: t,
                 duration: t,
                 isOffline : true,
             };
@@ -257,8 +256,9 @@ function video(db) {
     });
 
 
-    router.get('/m3u8', (req, res) => {
-        res.type('text')
+    router.get('/m3u8',  async (req, res) => {
+        res.type('application/vnd.apple.mpegurl')
+        
 
         // Check if channel queried is valid
         if (typeof req.query.channel === 'undefined') {
@@ -267,7 +267,7 @@ function video(db) {
         }
 
         let channelNum = parseInt(req.query.channel, 10)
-        let channel =  channelCache.getChannelConfig(db, channelNum );
+        let channel =  await channelCache.getChannelConfig(db, channelNum );
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return
@@ -279,19 +279,30 @@ function video(db) {
 
         var data = "#EXTM3U\n"
 
+        data += `#EXT-X-VERSION:3
+        #EXT-X-MEDIA-SEQUENCE:0
+        #EXT-X-ALLOW-CACHE:YES
+        #EXT-X-TARGETDURATION:60
+        #EXT-X-PLAYLIST-TYPE:VOD\n`;
+
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
 
+        cur ="59.0";
+
         if ( ffmpegSettings.enableFFMPEGTranscoding === true) {
+            data += `#EXTINF:${cur},\n`;
             data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=0&m3u8=1\n`;
         }
+        data += `#EXTINF:${cur},\n`;
         data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=1&m3u8=1\n`
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
+            data += `#EXTINF:${cur},\n`;
             data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&m3u8=1\n`
         }
 
         res.send(data)
     })
-    router.get('/playlist', (req, res) => {
+    router.get('/playlist', async (req, res) => {
         res.type('text')
 
         // Check if channel queried is valid
@@ -301,7 +312,7 @@ function video(db) {
         }
 
         let channelNum = parseInt(req.query.channel, 10)
-        let channel =  channelCache.getChannelConfig(db, channelNum );
+        let channel = await channelCache.getChannelConfig(db, channelNum );
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return

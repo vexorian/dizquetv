@@ -17,7 +17,7 @@
  * but with time it will be worth it, really.
  *
  ***/
- const TARGET_VERSION = 400;
+ const TARGET_VERSION = 500;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -25,6 +25,7 @@ const STEPS = [
     [    100,    200, (db) => commercialsRemover(db) ],
     [    200,    300, (db) => appNameChange(db) ],
     [    300,    400, (db) => createDeviceId(db) ],
+    [    400,    500, (db,channels) => splitServersSingleChannels(db, channels) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -323,7 +324,10 @@ function commercialsRemover(db) {
 }
 
 
-function initDB(db) {
+function initDB(db, channelDB ) {
+    if (typeof(channelDB) === 'undefined') {
+        throw Error("???");
+    }
     let dbVersion = db['db-version'].find()[0];
     if (typeof(dbVersion) === 'undefined') {
         dbVersion = { 'version': 0 };
@@ -335,7 +339,7 @@ function initDB(db) {
                 ran =  true;
                 console.log("Migrating from db version " + dbVersion.version + " to: " + STEPS[i][1] + "...");
                 try {
-                    STEPS[i][2](db);
+                    STEPS[i][2](db, channelDB);
                     if (typeof(dbVersion._id) === 'undefined') {
                         db['db-version'].save( {'version': STEPS[i][1] }  );
                     } else {
@@ -439,6 +443,139 @@ function repairFFmpeg0(existingConfigs) {
         hasBeenRepaired: hasBeenRepaired,
         fixedConfig : currentConfig,
     };
+}
+
+function splitServersSingleChannels(db, channelDB ) {
+    console.log("Migrating channels and plex servers so that plex servers are no longer embedded in program data");
+    let servers = db['plex-servers'].find();
+    let serverCache = {};
+    let serverNames = {};
+    let newServers = [];
+
+    let getServerKey = (uri, accessToken) => {
+        return uri + "|" + accessToken;
+    }
+
+    let getNewName = (name) => {
+        if ( (typeof(name) === 'undefined') || (typeof(serverNames[name])!=='undefined') ) {
+            //recurse because what if some genius actually named their server plex#3 ?
+            name = getNewName("plex#" + (Object.keys(serverNames).length + 1));
+        }
+        serverNames[name] = true;
+        return name;
+    }
+
+    let saveServer = (name, uri, accessToken, arGuide, arChannels) => {
+        if (typeof(arGuide) === 'undefined') {
+            arGuide = true;
+        }
+        if (typeof(arChannels) === 'undefined') {
+            arChannels = false;
+        }
+        if (uri.endsWith("/")) {
+            uri = uri.slice(0,-1);
+        }
+        let key = getServerKey(uri, accessToken);
+        if (typeof(serverCache[key]) === 'undefined') {
+            serverCache[key] = getNewName(name);
+            console.log(`for key=${key} found server with name=${serverCache[key]}, uri=${uri}, accessToken=${accessToken}` );
+            newServers.push({
+                name: serverCache[key],
+                uri: uri,
+                accessToken: accessToken,
+                index: newServers.length,
+                arChannels : arChannels,
+                arGuide: arGuide,
+            });
+        }
+        return serverCache[key];
+    }
+    for (let i = 0; i < servers.length; i++) {
+        let server = servers[i];
+        saveServer( server.name, server.uri, server.accessToken, server.arGuide, server.arChannels);
+    }
+
+    let cleanupProgram = (program) => {
+        delete program.actualDuration;
+        delete program.commercials;
+        delete program.durationStr;
+        delete program.start;
+        delete program.stop;
+    }
+
+    let fixProgram = (program) => {
+        //Also remove the "actualDuration" and "commercials" fields.
+        try {
+            cleanupProgram(program);
+            if (program.isOffline) {
+                return program;
+            }
+            let newProgram = JSON.parse( JSON.stringify(program) );
+            let s = newProgram.server;
+            delete newProgram.server;
+            let name = saveServer( undefined, s.uri, s.accessToken, undefined, undefined);
+            if (typeof(name) === "undefined") {
+                throw Error("Unable to find server name");
+            }
+            //console.log(newProgram.title + " : " + name);
+            newProgram.serverKey = name;
+            return newProgram;
+        } catch (err) {
+            console.error("Unable to migrate program. Replacing it with flex");
+            return {
+                isOffline: true,
+                duration : program.duration,
+            };
+        }
+    }
+
+    let fixChannel = (channel) => {
+        console.log("Migrating channel: " + channel.name + " " + channel.number);
+        for (let i = 0; i < channel.programs.length; i++) {
+            channel.programs[i] = fixProgram( channel.programs[i] );
+        }
+        //if (channel.programs.length > 10) {
+            //channel.programs = channel.programs.slice(0, 10);
+        //}
+        channel.duration = 0;
+        for (let i = 0; i < channel.programs.length; i++) {
+            channel.duration += channel.programs[i].duration;
+        }
+        if ( typeof(channel.fallback) === 'undefined') {
+            channel.fallback = [];
+        }
+        for (let i = 0; i < channel.fallback.length; i++) {
+            channel.fallback[i] = fixProgram( channel.fallback[i] );
+        }
+        if ( typeof(channel.fillerContent) === 'undefined') {
+            channel.fillerContent = [];
+        }
+        for (let i = 0; i < channel.fillerContent.length; i++) {
+            channel.fillerContent[i] = fixProgram( channel.fillerContent[i] );
+        }
+        return channel;
+    }
+
+    let channels = db['channels'].find();
+    for (let i = 0; i < channels.length; i++) {
+        channels[i] = fixChannel(channels[i]);
+    }
+
+    console.log("Done migrating channels for this step. Saving updates to storage...");
+
+    //wipe out servers
+    for (let i = 0; i < servers.length; i++) {
+        db['plex-servers'].remove( { _id: servers[i]._id } );
+    }
+    //wipe out old channels
+    db['channels'].remove();
+    // insert all over again
+    db['plex-servers'].save( newServers );
+    for (let i = 0; i < channels.length; i++) {
+        channelDB.saveChannelSync( channels[i].number, channels[i] );
+    }
+    console.log("Done migrating channels for this step...");
+
 }
 
 

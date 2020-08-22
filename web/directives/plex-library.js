@@ -46,7 +46,8 @@ module.exports = function (plex, dizquetv, $timeout) {
                         await scope.wait(0);
                         scope.pending += 1;
                         try {
-                            item.streams = await plex.getStreams(scope.plexServer, item.key, scope.errors)
+                            delete item.server;
+                            item.serverKey = scope.plexServer.name;
                             scope.selection.push(JSON.parse(angular.toJson(item)))
                         } catch (err) {
                             let msg = "Unable to add item: " + item.key + " " + item.title;

@@ -46,10 +46,15 @@ class PlexPlayer {
         let ffmpegSettings = this.context.ffmpegSettings;
         let db = this.context.db;
         let channel = this.context.channel;
+        let server = db['plex-servers'].find( { 'name': lineupItem.serverKey } );
+        if (server.length == 0) {
+            throw Error(`Unable to find server "${lineupItem.serverKey}" specied by program.`);
+        }
+        server = server[0];
 
         try {
             let plexSettings = db['plex-settings'].find()[0];
-            let plexTranscoder = new PlexTranscoder(this.clientId, plexSettings, channel, lineupItem);
+            let plexTranscoder = new PlexTranscoder(this.clientId, server, plexSettings, channel, lineupItem);
             this.plexTranscoder = plexTranscoder;
             let enableChannelIcon = this.context.enableChannelIcon;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options

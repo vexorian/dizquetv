@@ -124,7 +124,6 @@ module.exports = function ($timeout, $location) {
                 let duration = program.durationSeconds * 1000;
                 scope.updateChannelFromOfflineResult(program);
                 editedProgram.duration = duration;
-                editedProgram.actualDuration = duration;
                 editedProgram.isOffline = true;
                 scope._selectedOffline = null
                 updateChannelDuration()
@@ -133,7 +132,6 @@ module.exports = function ($timeout, $location) {
                 let duration = result.durationSeconds * 1000;
                 let program = {
                     duration: duration,
-                    actualDuration: duration,
                     isOffline: true
                 }
                 scope.updateChannelFromOfflineResult(result);
@@ -329,7 +327,7 @@ module.exports = function ($timeout, $location) {
                     background = "repeating-linear-gradient( " + angle + "deg, " + rgb1 + ", " + rgb1 + " " + w + "px, " + rgb2 + " " + w + "px, " + rgb2 + " " + (w*2) + "px)";
 
                 }
-                let ems = Math.pow( Math.min(24*60*60*1000, program.actualDuration), 0.7 );
+                let ems = Math.pow( Math.min(24*60*60*1000, program.duration), 0.7 );
                 ems = ems / Math.pow(5*60*1000., 0.7);
                 ems = Math.max( 0.25 , ems);
                 let top = Math.max(0.0, (1.75 - ems) / 2.0) ;
@@ -391,7 +389,6 @@ module.exports = function ($timeout, $location) {
                         progs.push(
                             {
                                 duration: d,
-                                actualDuration: d,
                                 isOffline: true,
                             }
                         )
@@ -406,7 +403,6 @@ module.exports = function ($timeout, $location) {
                     progs.push(
                         {
                             duration: d,
-                            actualDuration: d,
                             isOffline: true,
                         }
                     )
@@ -425,16 +421,15 @@ module.exports = function ($timeout, $location) {
                     if (prog.isOffline) {
                         tired = 0;
                     } else {
-                        if (tired + prog.actualDuration >= after) {
+                        if (tired + prog.duration >= after) {
                             tired = 0;
                             let dur = 1000 * (minDur + Math.floor( (maxDur - minDur) * Math.random() ) );
                             progs.push( {
                                 isOffline : true,
                                 duration: dur,
-                                actualDuration: dur,
                             });
                         }
-                        tired += prog.actualDuration;
+                        tired += prog.duration;
                     }
                     if (i < l) {
                         progs.push(prog);
@@ -465,7 +460,6 @@ module.exports = function ($timeout, $location) {
                         // not worth padding it
                         progs.push( {
                             duration : r,
-                            actualDuration : r,
                             isOffline : true,
                         });
                         t += r;
@@ -474,7 +468,7 @@ module.exports = function ($timeout, $location) {
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     let prog = scope.channel.programs[i];
                     progs.push(prog);
-                    t += prog.actualDuration;
+                    t += prog.duration;
                     addPad(i == l - 1);
                 }
                 scope.channel.programs = progs;
@@ -553,7 +547,7 @@ module.exports = function ($timeout, $location) {
                         if ( typeof(programs[c]) === 'undefined') {
                             programs[c] = 0;
                         }
-                        programs[c] += scope.channel.programs[i].actualDuration;
+                        programs[c] += scope.channel.programs[i].duration;
                     }
                 }
                 let mx = 0;
@@ -659,7 +653,7 @@ module.exports = function ($timeout, $location) {
                             episodes: []
                         }
                     }
-                    shows[code].total += vid.actualDuration;
+                    shows[code].total += vid.duration;
                     shows[code].episodes.push(vid);
                 }
                 let maxDuration = 0;
