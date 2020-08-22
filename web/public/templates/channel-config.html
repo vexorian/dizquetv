@@ -159,6 +159,9 @@
                                 <h6>Remove Specials</h6>
                                 <p>Removes any specials from the schedule. Specials are episodes with season &quot;00&quot;.</p>
 
+                                <h6>Remove Show(s)</h6>
+                                <p>Allows you to pick specific shows to remove from your channel.</p>
+
                                 <h6>Remove All</h6>
                                 <p>Wipes out the schedule so that you can start over.</p>
 
@@ -250,16 +253,19 @@
                             </div>
 
                             <div class="row">
-                                <div class="input-group col-md-3" style="padding: 5px;">
+                                <div class="input-group col" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
                                 </div>
-                                <div class="input-group col-md-3" style="padding: 5px;">
+                                <div class="input-group col" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeOffline()">Remove Flex</button>
                                 </div>
-                                <div class="input-group col-md-3" style="padding: 5px;">
+                                <div class="input-group col" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSpecials()">Remove Specials</button>
                                 </div>
-                                <div class="input-group col-md-3" style="padding: 5px;">
+                                <div class="input-group col" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="startRemoveShows()">Remove Show(s)...</button>
+                                </div>
+                                <div class="input-group col" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSchedule()">Remove All</button>
                                 </div>
                             </div>
@@ -347,6 +353,7 @@
     <program-config program="_selectedProgram" on-done="finshedProgramEdit"></program-config>
     <offline-config offline-title="Modify Flex Time" program="_selectedOffline" on-done="finishedOfflineEdit"></offline-config>
     <frequency-tweak programs="_programFrequencies" message="_frequencyMessage" modified="_frequencyModified" on-done="tweakFrequencies"></frequency-tweak>
+    <remove-shows program-titles="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
     <offline-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></offline-config>
     <plex-library height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
 </div>

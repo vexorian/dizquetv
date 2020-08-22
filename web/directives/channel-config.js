@@ -278,7 +278,22 @@ module.exports = function ($timeout, $location) {
                 updateChannelDuration()
             }
 
-
+            scope.startRemoveShows = () => {
+                scope._removablePrograms = scope.channel.programs
+                    .map(program => program.showTitle)
+                    .reduce((dedupedArr, showTitle) => {
+                        if (!dedupedArr.includes(showTitle)) {
+                            dedupedArr.push(showTitle)
+                        }
+                        return dedupedArr
+                    }, [])
+                    .filter(showTitle => !!showTitle);
+                scope._deletedProgramNames = [];
+            }
+            scope.removeShows = (deletedShowNames) => {
+                const p = scope.channel.programs;
+                scope.channel.programs = p.filter(program => deletedShowNames.indexOf(program.showTitle) === -1);
+            }
 
             scope.describeFallback = () => {
                 if (scope.channel.offlineMode === 'pic') {
