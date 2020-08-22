@@ -17,7 +17,10 @@
  * but with time it will be worth it, really.
  *
  ***/
- const TARGET_VERSION = 500;
+const path = require('path');
+var fs = require('fs');
+
+const TARGET_VERSION = 501;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -26,6 +29,7 @@ const STEPS = [
     [    200,    300, (db) => appNameChange(db) ],
     [    300,    400, (db) => createDeviceId(db) ],
     [    400,    500, (db,channels) => splitServersSingleChannels(db, channels) ],
+    [    500,    501, (db) => fixCorruptedServer(db) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -352,8 +356,6 @@ function initDB(db, channelDB ) {
                     console.log("Error during migration. Sorry, we can't continue. Wiping out your .dizquetv folder might be a workaround, but that means you lose all your settings.", e);
                     throw Error("Migration error, step=" + dbVersion.version);
                 }
-            } else {
-                console.log(STEPS[i][0], " != " , dbVersion.version );
             }
         }
         if (!ran) {
@@ -572,7 +574,9 @@ function splitServersSingleChannels(db, channelDB ) {
     //wipe out old channels
     db['channels'].remove();
     // insert all over again
-    db['plex-servers'].save( newServers );
+    if (newServers.length > 0) {
+        db['plex-servers'].save( newServers );
+    }
     for (let i = 0; i < channels.length; i++) {
         channelDB.saveChannelSync( channels[i].number, channels[i] );
     }
@@ -580,6 +584,25 @@ function splitServersSingleChannels(db, channelDB ) {
 
 }
 
+function fixCorruptedServer(db) {
+    let arr = db['plex-servers'].find();
+    let servers = [];
+    let badFound = false;
+    for (let i = 0; i < arr.length; i++) {
+        let server = arr[i];
+        if ( (typeof(server.name) === 'undefined') && (server.length == 0) ) {
+            badFound = true;
+            console.log("Found a corrupted plex server. And that's why 63 is a bad version. BAD");
+        } else {
+            servers.push(server);
+        }
+    }
+    if (badFound) {
+        console.log("Fixing the plex-server.json...");
+        let f = path.join(process.env.DATABASE, `plex-servers.json` );
+        fs.writeFileSync( f, JSON.stringify(servers) );
+    }
+}
 
 module.exports = {
     initDB: initDB,
