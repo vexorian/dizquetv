@@ -290,13 +290,13 @@ function video(db) {
         cur ="59.0";
 
         if ( ffmpegSettings.enableFFMPEGTranscoding === true) {
-            data += `#EXTINF:${cur},\n`;
+            //data += `#EXTINF:${cur},\n`;
             data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=0&m3u8=1\n`;
         }
-        data += `#EXTINF:${cur},\n`;
+        //data += `#EXTINF:${cur},\n`;
         data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=1&m3u8=1\n`
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
-            data += `#EXTINF:${cur},\n`;
+            //data += `#EXTINF:${cur},\n`;
             data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&m3u8=1\n`
         }
 
