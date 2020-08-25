@@ -1,9 +1,10 @@
-module.exports = function ($timeout, $location) {
+module.exports = function ($timeout, $location, dizquetv) {
     return {
         restrict: 'E',
         templateUrl: 'templates/channel-config.html',
         replace: true,
         scope: {
+            visible: "=visible",
             channels: "=channels",
             channel: "=channel",
             onDone: "=onDone"
@@ -93,6 +94,11 @@ module.exports = function ($timeout, $location) {
                 updateChannelDuration();
                 setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
             }
+            scope._selectedRedirect = {
+                isOffline : true,
+                type : "redirect",
+                duration : 60*60*1000,
+            }
 
             scope.finshedProgramEdit = (program) => {
                 scope.channel.programs[scope.selectedProgram] = program
@@ -151,7 +157,7 @@ module.exports = function ($timeout, $location) {
                 let newProgs = []
                 let progs = scope.channel.programs
                 for (let i = 0, l = progs.length; i < l; i++) {
-                    if (progs[i].type === 'movie') {
+                    if ( progs[i].isOffline || (progs[i].type === 'movie') ) {
                         movies.push(progs[i])
                     } else {
                         if (typeof shows[progs[i].showTitle] === 'undefined')
@@ -241,7 +247,9 @@ module.exports = function ($timeout, $location) {
                 let tmpProgs = {}
                 let progs = scope.channel.programs
                 for (let i = 0, l = progs.length; i < l; i++) {
-                    if (progs[i].type === 'movie') {
+                    if ( progs[i].type ==='redirect' ) {
+                        tmpProgs['_redirect ' + progs[i].channel + ' _ '+ progs[i].duration ] = progs[i];
+                    } else  if (progs[i].type === 'movie') {
                         tmpProgs[progs[i].title + progs[i].durationStr] = progs[i]
                     } else {
                         tmpProgs[progs[i].showTitle + '-' + progs[i].season + '-' + progs[i].episode] = progs[i]
@@ -258,7 +266,7 @@ module.exports = function ($timeout, $location) {
                 let tmpProgs = []
                 let progs = scope.channel.programs
                 for (let i = 0, l = progs.length; i < l; i++) {
-                    if (progs[i].isOffline !== true) {
+                    if ( (progs[i].isOffline !== true) || (progs[i].type === 'redirect') ) {
                         tmpProgs.push(progs[i]);
                     }
                 }
@@ -278,9 +286,17 @@ module.exports = function ($timeout, $location) {
                 updateChannelDuration()
             }
 
+            scope.getShowTitle = (program) => {
+                if (program.isOffline && program.type == 'redirect') {
+                    return `Redirect to channel ${program.channel}`;
+                } else {
+                    return program.showTitle;
+                }
+            }
+
             scope.startRemoveShows = () => {
                 scope._removablePrograms = scope.channel.programs
-                    .map(program => program.showTitle)
+                    .map(scope.getShowTitle)
                     .reduce((dedupedArr, showTitle) => {
                         if (!dedupedArr.includes(showTitle)) {
                             dedupedArr.push(showTitle)
@@ -292,7 +308,9 @@ module.exports = function ($timeout, $location) {
             }
             scope.removeShows = (deletedShowNames) => {
                 const p = scope.channel.programs;
-                scope.channel.programs = p.filter(program => deletedShowNames.indexOf(program.showTitle) === -1);
+                let set = {};
+                deletedShowNames.forEach( (a) => set[a] = true  );
+                scope.channel.programs = p.filter( (a) => (set[scope.getShowTitle(a)]!==true) );
             }
 
             scope.describeFallback = () => {
@@ -312,31 +330,45 @@ module.exports = function ($timeout, $location) {
 
             scope.programSquareStyle = (program) => {
                 let background ="";
-                if (program.isOffline) {
+                if  ( (program.isOffline) && (program.type !== 'redirect') ) {
                     background = "rgb(255, 255, 255)";
                 } else {
                     let r = 0, g = 0, b = 0, r2=0, g2=0,b2=0;
-                    let i = 0;
                     let angle = 45;
                     let w = 3;
-                    if (program.type === 'episode') {
+                    if (program.type === 'redirect') {
+                        angle = 0;
+                        w = 4 + (program.channel % 10);
+                        let c = (program.channel * 100019);
+                        //r = 255, g = 0, b = 0;
+                        //r2 = 0, g2 = 0, b2 = 255;
+
+                        r = ( (c & 3) * 77 );
+                        g = ( ( (c >> 1) & 3) * 77 );
+                        b = ( ( (c >> 2) & 3) * 77 );
+                        r2 = ( ( (c >> 5) & 3) * 37 );
+                        g2 = ( ( (c >> 3) & 3) * 37 );
+                        b2 = ( ( (c >> 4) & 3) * 37 );
+                        
+                    } else if (program.type === 'episode') {
                         let h = Math.abs(scope.getHashCode(program.showTitle, false));
                         let h2 = Math.abs(scope.getHashCode(program.showTitle, true));
                         r = h % 256;
                         g = (h / 256) % 256;
                         b = (h / (256*256) ) % 256;
-                        i = h % 360;
                         r2 = (h2 / (256*256) ) % 256;
                         g2 = (h2 / (256*256) ) % 256;
                         b2 = (h2 / (256*256) ) % 256;
-                        angle = -90 + h % 180
+                        angle = (360 - 90 + h % 180) % 360;
+                        if ( angle >= 350 || angle < 10 ) {
+                            angle += 53;
+                        }
                     } else {
                         r = 10, g = 10, b = 10;
                         r2 = 245, g2 = 245, b2 = 245;
                         angle = 45;
                         w = 6;
                     }
-                    
                     let rgb1 = "rgb("+ r + "," + g + "," + b +")";
                     let rgb2 = "rgb("+ r2 + "," + g2 + "," + b2 +")"
                     background = "repeating-linear-gradient( " + angle + "deg, " + rgb1 + ", " + rgb1 + " " + w + "px, " + rgb2 + " " + w + "px, " + rgb2 + " " + (w*2) + "px)";
@@ -376,7 +408,7 @@ module.exports = function ($timeout, $location) {
                 return hash;
             }
 
-            scope.nightChannel = (a, b) => {
+            scope.nightChannel = (a, b, ch) => {
                 let o =(new Date()).getTimezoneOffset() * 60 * 1000;
                 let m = 24*60*60*1000;
                 a = (m + a * 60 * 60 * 1000 + o) % m;
@@ -405,6 +437,8 @@ module.exports = function ($timeout, $location) {
                             {
                                 duration: d,
                                 isOffline: true,
+                                channel: ch,
+                                type: (typeof(ch) === 'undefined') ? undefined: "redirect",
                             }
                         )
                         t += d;
@@ -419,6 +453,8 @@ module.exports = function ($timeout, $location) {
                         {
                             duration: d,
                             isOffline: true,
+                            type: (typeof(ch) === 'undefined') ? undefined: "redirect",
+                            channel: ch,
                         }
                     )
                 }
@@ -433,7 +469,7 @@ module.exports = function ($timeout, $location) {
                 let tired = 0;
                 for (let i = 0, l = scope.channel.programs.length; i <= l; i++) {
                     let prog = scope.channel.programs[i % l];
-                    if (prog.isOffline) {
+                    if (prog.isOffline && prog.type != 'redirect') {
                         tired = 0;
                     } else {
                         if (tired + prog.duration >= after) {
@@ -557,7 +593,7 @@ module.exports = function ($timeout, $location) {
             scope.startFrequencyTweak = () => {
                 let programs = {};
                 for (let i = 0; i < scope.channel.programs.length; i++) {
-                    if (! scope.channel.programs[i].isOffline) {
+                    if ( !scope.channel.programs[i].isOffline || (scope.channel.programs[i].type === 'redirect')  ) {
                         let c = getShowCode(scope.channel.programs[i]);
                         if ( typeof(programs[c]) === 'undefined') {
                             programs[c] = 0;
@@ -629,7 +665,9 @@ module.exports = function ($timeout, $location) {
             function getShowCode(program) {
                 //used for equalize and frequency tweak
                 let showName = "_internal.Unknown";
-                if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
+                if ( program.isOffline && (program.type == 'redirect') ) {
+                    showName = `Redirect to channel ${program.channel}`;
+                } else if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
                     showName = program.showTitle;
                 } else {
                     showName = "_internal.Movies";
@@ -657,11 +695,11 @@ module.exports = function ($timeout, $location) {
                 let shows = {};
                 let progs = [];
                 for (let i = 0; i < array.length; i++) {
-                    if (array[i].isOffline) {
+                    if (array[i].isOffline && array[i].type !== 'redirect') {
                         continue;
                     }
-                    vid = array[i];
-                    let code = getShowCode(array[i]);
+                    let vid = array[i];
+                    let code = getShowCode(vid);
                     if ( typeof(shows[code]) === 'undefined') {
                         shows[code] = {
                             total: 0,
@@ -708,7 +746,7 @@ module.exports = function ($timeout, $location) {
                 let counts = {};
                 // some precalculation, useful to stop the shuffle from being quadratic...
                 for (let i = 0; i < array.length; i++) {
-                    var vid = array[i];
+                    let vid = array[i];
                     if (vid.type === 'episode' && vid.season != 0) {
                         let countKey = {
                             title: vid.showTitle,
@@ -752,10 +790,10 @@ module.exports = function ($timeout, $location) {
                 });
                 shuffle(array);
                 for (let i = 0; i < array.length; i++) {
-                    if (array[i].type !== 'movie' && array[i].season != 0) {
+                    if (array[i].type === 'episode' && array[i].season != 0) {
                         let title = array[i].showTitle;
                         var sequence = shows[title];
-                        var j = next[title];
+                        let j = next[title];
                         array[i] = sequence[j].it;
                         
                         next[title] = (j + 1) % sequence.length;
@@ -827,12 +865,37 @@ module.exports = function ($timeout, $location) {
                     },  0
                 );
             }
+            scope.finishRedirect = (program) => {
+                if (scope.selectedProgram == -1) {
+                    scope.channel.programs.splice(scope.minProgramIndex, 0, program);
+                } else {
+                    scope.channel.programs[ scope.selectedProgram ] = program;
+                }
+                updateChannelDuration();
+            }
+            scope.addRedirect = () => {
+                scope.selectedProgram = -1;
+                scope._displayRedirect = true;
+                scope._redirectTitle = "Add Redirect";
+                scope._selectedRedirect = {
+                    isOffline : true,
+                    type : "redirect",
+                    duration : 60*60*1000,
+                }
+
+            };
             scope.selectProgram = (index) => {
                 scope.selectedProgram = index;
                 let program = scope.channel.programs[index];
 
                 if(program.isOffline) {
-                    scope._selectedOffline = scope.makeOfflineFromChannel( Math.round( (program.duration + 500) / 1000 ) );
+                    if (program.type === 'redirect') {
+                        scope._displayRedirect = true;
+                        scope._redirectTitle = "Edit Redirect";
+                        scope._selectedRedirect = JSON.parse(angular.toJson(program));
+                    } else {
+                        scope._selectedOffline = scope.makeOfflineFromChannel( Math.round( (program.duration + 500) / 1000 ) );
+                    }
                 } else {
                     scope._selectedProgram = JSON.parse(angular.toJson(program));
                 }
@@ -841,6 +904,32 @@ module.exports = function ($timeout, $location) {
                 scope.channel.programs.splice(x, 1)
                 updateChannelDuration()
             }
+            scope.knownChannels = [
+                { id: -1, description: "# Channel #"},
+            ]
+            scope.loadChannels = async () => {
+                let channelNumbers = await dizquetv.getChannelNumbers();
+                try {
+                    await Promise.all( channelNumbers.map( async(x) => {
+                        let desc = await dizquetv.getChannelDescription(x);
+                        if (desc.number != scope.channel.number) {
+                            scope.knownChannels.push( {
+                                id: desc.number,
+                                description: `${desc.number} - ${desc.name}`,
+                            });
+                        }
+                    }) );
+                } catch (err) {
+                    console.error(err);
+                }
+                scope.knownChannels.sort( (a,b) => a.id - b.id);
+                scope.channelsDownloaded = true;
+                $timeout( () => scope.$apply(), 0);
+
+
+            };
+            scope.loadChannels();
+
             scope.paddingOptions = [
                 { id: -1, description: "Allowed start times", allow5: false },
                 { id: 30, description: ":00, :30", allow5: false },
@@ -894,6 +983,9 @@ module.exports = function ($timeout, $location) {
             scope.nightEndHours   = [ { id: -1, description: "End" } ];
             scope.nightStart = -1;
             scope.nightEnd = -1;
+            scope.atNightChannelNumber = -1;
+            scope.atNightStart = -1;
+            scope.atNightEnd = -1;
             for (let i=0; i < 24; i++) {
                 let v = { id: i, description: ( (i<10) ? "0" : "") + i + ":00" };
                 scope.nightStartHours.push(v);

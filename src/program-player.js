@@ -34,7 +34,7 @@ class ProgramPlayer {
             // people might want the codec normalization to stay because of player support
             context.ffmpegSettings.normalizeResolution = false;
         }
-        if (program.err instanceof Error) {
+        if ( typeof(program.err) !== 'undefined') {
             console.log("About to play error stream");
             this.delegate = new OfflinePlayer(true, context);
         } else if (program.type === 'loading') {

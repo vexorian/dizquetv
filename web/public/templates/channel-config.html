@@ -150,6 +150,13 @@
                                 <h6>Add Breaks</h6>
                                 <p>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes.</p>
 
+                                <h6>Add Redirect</h6>
+                                <p>Adds a channel redirect. During this period of time, the channel will redirect to another channel.</p>
+
+                                <h6>&quot;Channel at Night&quot;<h6>
+                                <p>Will redirect to another channel while between the selected hours.</p>
+
+
                                 <h6>Remove Duplicates</h6>
                                 <p>Removes repeated videos.</p>
 
@@ -207,9 +214,10 @@
                                 </div>
 
                             </div>
+
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addOffline()">Add Flex</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addOffline()">Add Flex...</button>
                                 </div>
 
                                 <div class="col-md-6" style="padding: 5px;">
@@ -251,6 +259,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="row">
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addRedirect()">Add Redirect...</button>
+                                </div>
+
+                                <div class="col-md-6" style="padding: 5px;">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class='loader' ng-hide='channelsDownloaded'></div>
+                                            <select  ng-show='channelsDownloaded' style='width:5em;' ng-model="atNightChannelNumber"
+                                            ng-options="o.id as o.description for o in knownChannels" ></select>
+                                            <select ng-model="atNightStart"
+                                            ng-options="o.id as o.description for o in nightStartHours" ></select>
+                                            <select ng-model="atNightEnd"
+                                            ng-options="o.id as o.description for o in nightEndHours" ></select>
+                                        </div>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(atNightEnd, atNightStart, atNightChannelNumber)" ng-disabled="atNightChannelNumber==-1 || atNightStart==-1 || atNightEnd==-1">&quot;Channel at Night&quot;</button>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
 
                             <div class="row">
                                 <div class="input-group col" style="padding: 5px;">
@@ -307,7 +339,8 @@
                                     {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
                                 </div>
                                 <div style="margin-right: 5px; font-weight:ligther"  ng-show="x.isOffline">
-                                    <i>Flex</i>
+                                    <i ng-if="x.type !== 'redirect' " >Flex</i>
+                                    <span ng-if="x.type === 'redirect' " ><i>Redirect to channel:</i> <b>{{x.channel}}</b></span>
                                 </div>
                                 <div class="flex-pull-right"></div>
                                 <button class="btn btn-sm btn-link" ng-click="removeItem($index);  $event.stopPropagation()">
@@ -356,4 +389,5 @@
     <remove-shows program-titles="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
     <offline-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></offline-config>
     <plex-library height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
+    <channel-redirect visible="_displayRedirect" on-done="finishRedirect" form-title="_redirectTitle" program="_selectedRedirect" ></channel-redirect>
 </div>
