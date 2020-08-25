@@ -9,6 +9,7 @@ const PlexTranscoder = require('./plexTranscoder')
 const EventEmitter = require('events');
 const helperFuncs = require('./helperFuncs')
 const FFMPEG = require('./ffmpeg')
+const constants = require('./constants');
 
 let USED_CLIENTS = {};
 
@@ -60,8 +61,10 @@ class PlexPlayer {
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
             this.ffmpeg = ffmpeg;
             let streamDuration;
-            if (typeof(streamDuration)!=='undefined') {
-                streamDuration = lineupItem.streamDuration / 1000;
+            if (typeof(lineupItem.streamDuration)!=='undefined') {
+                if (lineupItem.start + lineupItem.streamDuration + constants.SLACK < lineupItem.duration) {
+                    streamDuration = lineupItem.streamDuration / 1000;
+                }
             }
             let deinterlace = ffmpegSettings.enableFFMPEGTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
 

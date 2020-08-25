@@ -42,6 +42,20 @@ function createLineup(obj, channel, isFirst) {
 
     let lineup = []
 
+    if ( typeof(activeProgram.err) !== 'undefined') {
+        let remaining = activeProgram.duration - timeElapsed;
+        lineup.push( {
+            type: 'offline',
+            title: 'Error',
+            err: activeProgram.err,
+            streamDuration: remaining,
+            duration: remaining,
+            start: 0
+        })
+        return lineup;
+    }
+
+
     if (activeProgram.isOffline === true) {
         //offline case
         let remaining = activeProgram.duration - timeElapsed;
