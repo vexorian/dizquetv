@@ -150,6 +150,9 @@
                                 <h6>Add Breaks</h6>
                                 <p>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes.</p>
 
+                                <h6>Repeat Blocks</h6>
+                                <p>There&apos;s hopefully going to be an explanation here</p>
+
                                 <h6>Add Redirect</h6>
                                 <p>Adds a channel redirect. During this period of time, the channel will redirect to another channel.</p>
 
@@ -262,6 +265,24 @@
 
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
+                                    <div class="input-group-prepend">
+                                        <select ng-model="rerunStart"
+                                        ng-options="o.id as o.description for o in rerunStartHours">
+                                        </select>
+                                        <select ng-model="rerunBlockSize"
+                                        ng-options="o.id as o.description for o in rerunBlockSizes">
+                                        </select>
+                                        <select ng-model="rerunRepeats"
+                                        ng-options="o.id as o.description for o in rerunRepeatOptions">
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="doReruns(rerunStart, rerunBlockSize, rerunRepeats)" ng-disabled="rerunStart == -1 || rerunBlockSize == -1 || rerunRepeats == -1" >Reruns</button>
+                                </div>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="input-group col-md-6" style="padding: 5px;">
                                     <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addRedirect()">Add Redirect...</button>
                                 </div>
 
@@ -325,7 +346,7 @@
                                     &#8942;
                                 </div>
                             </div>
-                            <div ng-if="minProgramIndex &lt;= $index &amp;&amp; $index &lt; minProgramIndex+100" ng-repeat="x in channel.programs" ng-click="selectProgram($index)" dnd-list="" dnd-drop="dropFunction(index , $index, item)"
+                            <div ng-if="minProgramIndex &lt;= $index &amp;&amp; $index &lt; minProgramIndex+100" ng-repeat="x in channel.programs track by $index" ng-click="selectProgram($index)" dnd-list="" dnd-drop="dropFunction(index , $index, item)"
                             >
                               <div class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1);" dnd-effect-allowed="move"
                               >
