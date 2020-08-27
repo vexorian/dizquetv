@@ -214,7 +214,7 @@ function video( channelDB , db) {
             res.status(500).send("server error");
             throw Error("Shouldn't prog be non-null?");
         }
-        if (prog.program.isOffline && channel.programs.length == 1) {
+        if (prog.program.isOffline && channel.programs.length == 1 && prog.programIndex != -1) {
             //there's only one program and it's offline. So really, the channel is
             //permanently offline, it doesn't matter what duration was set
             //and it's best to give it a long duration to ensure there's always

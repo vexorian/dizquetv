@@ -9,7 +9,8 @@
         </button>
     </h5>
     <h6>Output Path</h6>
-    <input type="text" class="form-control form-control-sm" ng-model="settings.file"/>
+    <input type="text" class="form-control form-control-sm" ng-model="settings.file" aria-describedby="pathhelp"  readonly />
+    <small id="pathhelp" class="form-text text-muted">You can edit this location in file xmltv-settings.json.</small>
     <br/>
     <div class="row">
         <div class="col-sm-6">

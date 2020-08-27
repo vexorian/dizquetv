@@ -408,6 +408,66 @@ module.exports = function ($timeout, $location, dizquetv) {
                 return hash;
             }
 
+            scope.doReruns = (rerunStart, rerunBlockSize, rerunRepeats) => {
+                let o =(new Date()).getTimezoneOffset() * 60 * 1000;
+                let start = (o + rerunStart * 60 * 60 * 1000) % (24*60*60*1000);
+                let blockSize = rerunBlockSize * 60*60* 1000;
+                let repeats = rerunRepeats;
+
+                let programs = [];
+                let block = [];
+                let currentBlockSize = 0;
+                let currentSize = 0;
+                let addBlock = () => {
+
+                    let high = currentSize + currentBlockSize;
+                    let m = high % blockSize;
+                    if (m >= 1000) {
+                        high = high - m + blockSize;
+                    }
+                    high -= currentSize;
+                    let rem = Math.max(0, high - currentBlockSize);
+                    if (rem >= 1000) {
+                        currentBlockSize += rem;
+                        let t = block.length;
+                        if (
+                            (t > 0)
+                            && block[t-1].isOffline
+                            && (block[t-1].type !== 'redirect')
+                        ) {
+                            block[t-1].duration += rem;
+                        } else {
+                            block.push( {
+                                isOffline: true,
+                                duration: rem,
+                            } );
+                        }
+                    }
+                    for (let i = 0; i < repeats; i++) {
+                        for (let j = 0; j < block.length; j++) {
+                            programs.push( JSON.parse( JSON.stringify(block[j]) ) );
+                        }
+                    }
+                    currentSize += repeats * currentBlockSize;
+                    block = [];
+                    currentBlockSize = 0;
+
+                };
+                for (let i = 0; i < scope.channel.programs.length; i++) {
+                    if (currentBlockSize + scope.channel.programs[i].duration - 500 > blockSize) {
+                        addBlock();
+                    }
+                    block.push( scope.channel.programs[i] );
+                    currentBlockSize += scope.channel.programs[i].duration;
+                }
+                if (currentBlockSize != 0) {
+                    addBlock();
+                }
+                scope.channel.startTime = new Date( scope.channel.startTime.getTime() - scope.channel.startTime % (24*60*60*1000) + start );
+                scope.channel.programs = programs;
+                scope.updateChannelDuration();
+            };
+
             scope.nightChannel = (a, b, ch) => {
                 let o =(new Date()).getTimezoneOffset() * 60 * 1000;
                 let m = 24*60*60*1000;
@@ -979,6 +1039,23 @@ module.exports = function ($timeout, $location, dizquetv) {
             ]
             scope.maxBreakSizeOptions = scope.maxBreakSizeOptions.concat(breakSizeOptions);
 
+            scope.rerunStart = -1;
+            scope.rerunBlockSize = -1;
+            scope.rerunBlockSizes = [
+                { id: -1, description: "Block" },
+                { id: 6, description: "6 Hours" },
+                { id: 8, description: "8 Hours" },
+                { id: 12, description: "12 Hours" },
+            ];
+            scope.rerunRepeats = -1;
+            scope.rerunRepeatOptions = [
+                { id: -1, description: "Repeats" },
+                { id: 2, description: "2" },
+                { id: 3, description: "3" },
+                { id: 4, description: "4" },
+            ];
+
+
             scope.nightStartHours = [ { id: -1, description: "Start" } ];
             scope.nightEndHours   = [ { id: -1, description: "End" } ];
             scope.nightStart = -1;
@@ -991,6 +1068,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope.nightStartHours.push(v);
                 scope.nightEndHours.push(v);
             }
+            scope.rerunStartHours = scope.nightStartHours;
             scope.paddingMod = 30;
         }
     }
