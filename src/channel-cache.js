@@ -9,8 +9,12 @@ async function getChannelConfig(channelDB, channelId) {
      
     if ( typeof(configCache[channelId]) === 'undefined') {
         let channel = await channelDB.getChannel(channelId)
-        //console.log("channel=" + JSON.stringify(channel) );
-        configCache[channelId] = [channel];
+        if (channel == null) {
+            configCache[channelId]  = [];
+        } else {
+            //console.log("channel=" + JSON.stringify(channel) );
+            configCache[channelId] = [channel];
+        }
     }
     //console.log("channel=" + JSON.stringify(configCache[channelId]).slice(0,200) );
     return configCache[channelId];

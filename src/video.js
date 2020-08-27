@@ -9,7 +9,7 @@ const channelCache  = require('./channel-cache')
 
 module.exports = { router: video }
 
-function video(db) {
+function video( channelDB , db) {
     var router = express.Router()
 
     router.get('/setup', (req, res) => {
@@ -49,7 +49,7 @@ function video(db) {
             return
         }
         let number = parseInt(req.query.channel, 10);
-        let channel =  await channelCache.getChannelConfig(db, number);
+        let channel =  await channelCache.getChannelConfig(channelDB, number);
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return
@@ -118,7 +118,7 @@ function video(db) {
         }
         let m3u8 = (req.query.m3u8 === '1');
         let number = parseInt(req.query.channel);
-        let channel = await channelCache.getChannelConfig(db, number);
+        let channel = await channelCache.getChannelConfig(channelDB, number);
 
         if (channel.length === 0) {
             res.status(404).send("Channel doesn't exist")
@@ -150,6 +150,11 @@ function video(db) {
         // Get video lineup (array of video urls with calculated start times and durations.)
       let t0 = (new Date()).getTime();
       let lineupItem = channelCache.getCurrentLineupItem( channel.number, t0);
+      let prog = null;
+      let brandChannel = channel;
+      let redirectChannels = [];
+      let upperBounds = [];
+
       if (isLoading) {
           lineupItem = {
              type: 'loading',
@@ -158,9 +163,58 @@ function video(db) {
              start: 0,
           };
       } else if (lineupItem == null) {
-        let prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel)
+        prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel);
+        
+        while (true) {
+            redirectChannels.push( brandChannel );
+            upperBounds.push( prog.program.duration - prog.timeElapsed );
 
-        if (prog.program.isOffline && channel.programs.length == 1) {
+            if ( !(prog.program.isOffline) || (prog.program.type != 'redirect') ) {
+                break;
+            }
+            channelCache.recordPlayback( brandChannel.number, t0, {
+                /*type: 'offline',*/
+                title: 'Error',
+                err: Error("Recursive channel redirect found"),
+                duration : 60000,
+                start: 0,
+            });
+
+
+
+            let newChannelNumber= prog.program.channel;
+            let newChannel = await channelCache.getChannelConfig(channelDB, newChannelNumber);
+
+            if (newChannel.length == 0) {
+                let err = Error("Invalid redirect to a channel that doesn't exist");
+                console.error("Invalid redirect to channel that doesn't exist.", err);
+                prog = {
+                    program: {
+                        isOffline: true,
+                        err: err,
+                        duration : 60000,
+                    },
+                    timeElapsed: 0,
+                }
+                continue;
+            }
+            newChannel = newChannel[0];
+            brandChannel = newChannel;
+            lineupItem = channelCache.getCurrentLineupItem( newChannel.number, t0);
+            if (lineupItem != null) {
+                lineupItem = JSON.parse( JSON.stringify(lineupItem)) ;
+                break;
+            } else {
+                prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, newChannel);
+            }
+        }
+      }
+      if (lineupItem == null) {
+        if (prog == null) {
+            res.status(500).send("server error");
+            throw Error("Shouldn't prog be non-null?");
+        }
+        if (prog.program.isOffline && channel.programs.length == 1 && prog.programIndex != -1) {
             //there's only one program and it's offline. So really, the channel is
             //permanently offline, it doesn't matter what duration was set
             //and it's best to give it a long duration to ensure there's always
@@ -180,15 +234,33 @@ function video(db) {
         if ( (prog == null) || (typeof(prog) === 'undefined') || (prog.program == null) || (typeof(prog.program) == "undefined") ) {
             throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted."
         }
-        let lineup = helperFuncs.createLineup(prog, channel, isFirst)
+        let lineup = helperFuncs.createLineup(prog, brandChannel, isFirst)
         lineupItem = lineup.shift()
       }
-     
+
+        if ( !isLoading && (lineupItem != null) ) {
+            let upperBound = 1000000000;
+            //adjust upper bounds and record playbacks
+            for (let i = redirectChannels.length-1; i >= 0; i--) {
+                lineupItem = JSON.parse( JSON.stringify(lineupItem ));
+                let u = upperBounds[i];
+                if (typeof(u) !== 'undefined') {
+                    let u2 = upperBound;
+                    if ( typeof(lineupItem.streamDuration) !== 'undefined') {
+                        u2 = Math.min(u2, lineupItem.streamDuration);
+                    }
+                    lineupItem.streamDuration = Math.min(u2, u);
+                    upperBound = lineupItem.streamDuration;
+                }
+                channelCache.recordPlayback( redirectChannels[i].number, t0, lineupItem );
+            }
+        }
+ 
 
         console.log("=========================================================");
         console.log("! Start playback");
         console.log(`! Channel: ${channel.name} (${channel.number})`);
-        if (typeof(lineupItem) === 'undefined') {
+        if (typeof(lineupItem.title) === 'undefined') {
             lineupItem.title = 'Unknown';
         }
         console.log(`! Title: ${lineupItem.title}`);
@@ -206,7 +278,7 @@ function video(db) {
         let playerContext = {
             lineupItem : lineupItem,
             ffmpegSettings : ffmpegSettings,
-            channel: channel,
+            channel: brandChannel,
             db: db,
             m3u8: m3u8,
         }
@@ -267,7 +339,7 @@ function video(db) {
         }
 
         let channelNum = parseInt(req.query.channel, 10)
-        let channel =  await channelCache.getChannelConfig(db, channelNum );
+        let channel =  await channelCache.getChannelConfig(channelDB, channelNum );
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return
@@ -312,7 +384,7 @@ function video(db) {
         }
 
         let channelNum = parseInt(req.query.channel, 10)
-        let channel = await channelCache.getChannelConfig(db, channelNum );
+        let channel = await channelCache.getChannelConfig(channelDB, channelNum );
         if (channel.length === 0) {
             res.status(500).send("Channel doesn't exist")
             return

@@ -70,19 +70,21 @@ function _writeChannels(xw, channels) {
 }
 
 async function _writePrograms(xw, channel, date, cache) {
-    let prog = helperFuncs.getCurrentProgramAndTimeElapsed(date, channel)
+    let item = helperFuncs.getCurrentProgramAndTimeElapsed(date.getTime(), channel)
+    let prog = item.program;
     let cutoff = new Date( date.valueOf() + (cache * 60 * 60 * 1000) )
-    let temp = new Date(date.valueOf() - prog.timeElapsed)
-    if (channel.programs.length === 0)
+    let temp = new Date(date.valueOf() - item.timeElapsed)
+    if (channel.programs.length === 0) {
         return
-    let i = prog.programIndex
+    }
+    let i = item.programIndex;
     for (; temp < cutoff;) {
         await _throttle(); //let's not block for this process
         let program = {
-            program: channel.programs[i],
+            program: prog,
             channel: channel.number,
             start: new Date(temp.valueOf()),
-            stop: new Date(temp.valueOf() + channel.programs[i].duration)
+            stop: new Date(temp.valueOf() + prog.duration)
         }
         let ni = (i + 1) % channel.programs.length;
         if (
@@ -92,13 +94,14 @@ async function _writePrograms(xw, channel, date, cache) {
             &&
             (channel.programs[ni].duration < constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS )
         ) {
-            program.stop = new Date(temp.valueOf() + channel.programs[i].duration + channel.programs[ni].duration)
+            program.stop = new Date(temp.valueOf() + prog.duration + channel.programs[ni].duration)
             i = (i + 2) % channel.programs.length;
         } else {
             i = ni;
         }
         _writeProgramme(channel, xw, program, cutoff)
         temp = program.stop;
+        prog = channel.programs[i];
     }
 }
 
@@ -159,11 +162,9 @@ async function _writeProgramme(channel, xw, program, cutoff) {
     xw.endElement()
 }
 function _createXMLTVDate(d) {
-    //console.log("d=" + d.getTime() );
     try {
         return d.toISOString().substring(0,19).replace(/[-T:]/g,"") + " +0000";
     } catch(e) {
-        console.log("d=" + d.getTime(), e);
         return (new Date()).toISOString().substring(0,19).replace(/[-T:]/g,"") + " +0000";
     }
 }

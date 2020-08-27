@@ -8,10 +8,22 @@ let channelCache = require('./channel-cache');
 const SLACK = require('./constants').SLACK;
 
 function getCurrentProgramAndTimeElapsed(date, channel) {
-    let channelStartTime = new Date(channel.startTime)
-    if (channelStartTime > date)
-        throw new Error("startTime cannot be set in the future. something fucked up..")
-    let timeElapsed = (date.valueOf() - channelStartTime.valueOf()) % channel.duration
+    let channelStartTime = (new Date(channel.startTime)).getTime();
+    if (channelStartTime > date) {
+        let t0 = date;
+        let t1 = channelStartTime;
+        console.log(t0, t1);
+        console.log("Channel start time is above the given date. Flex time is picked till that.");
+        return {
+            program: {
+                isOffline: true,
+                duration : t1 - t0,
+            },
+            timeElapsed: 0,
+            programIndex: -1,
+        }
+    }
+    let timeElapsed = (date - channelStartTime) % channel.duration
     let currentProgramIndex = -1
     for (let y = 0, l2 = channel.programs.length; y < l2; y++) {
         let program = channel.programs[y]
@@ -41,6 +53,20 @@ function createLineup(obj, channel, isFirst) {
     let activeProgram = obj.program
 
     let lineup = []
+
+    if ( typeof(activeProgram.err) !== 'undefined') {
+        let remaining = activeProgram.duration - timeElapsed;
+        lineup.push( {
+            type: 'offline',
+            title: 'Error',
+            err: activeProgram.err,
+            streamDuration: remaining,
+            duration: remaining,
+            start: 0
+        })
+        return lineup;
+    }
+
 
     if (activeProgram.isOffline === true) {
         //offline case
