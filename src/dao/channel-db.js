@@ -9,18 +9,23 @@ class ChannelDB {
 
     async getChannel(number) {
         let f = path.join(this.folder, `${number}.json` );
-        return await new Promise( (resolve, reject) => {
-            fs.readFile(f, (err, data) => {
-                if (err) {
-                    return reject(err);
-                }
-                try {
-                    resolve( JSON.parse(data) )
-                } catch (err) {
-                    reject(err);
-                }
-            })
-        });
+        try {
+            return await new Promise( (resolve, reject) => {
+                fs.readFile(f, (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    try {
+                        resolve( JSON.parse(data) )
+                    } catch (err) {
+                        reject(err);
+                    }
+                })
+            });
+        } catch (err) {
+            console.error(err);
+            return null;
+        }
     }
     
     async saveChannel(number, json) {

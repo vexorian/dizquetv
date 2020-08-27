@@ -131,7 +131,7 @@ app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(api.router(db, channelDB, xmltvInterval))
-app.use(video.router(db))
+app.use(video.router( channelDB, db))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)

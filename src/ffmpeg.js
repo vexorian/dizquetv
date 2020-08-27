@@ -299,7 +299,6 @@ class FFMPEG extends events.EventEmitter {
                 // add the video encoder flags
                 ffmpegArgs.push(
                             `-b:v`, `${this.opts.videoBitrate}k`,
-                            `-minrate:v`, `${this.opts.videoBitrate}k`,
                             `-maxrate:v`, `${this.opts.videoBitrate}k`,
                             `-bufsize:v`, `${this.opts.videoBufSize}k`
                 );
@@ -308,7 +307,6 @@ class FFMPEG extends events.EventEmitter {
                 // add the audio encoder flags
                 ffmpegArgs.push(
                             `-b:a`, `${this.opts.audioBitrate}k`,
-                            `-minrate:a`, `${this.opts.audioBitrate}k`,
                             `-maxrate:a`, `${this.opts.audioBitrate}k`,
                             `-bufsize:a`, `${this.opts.videoBufSize}k`
                 );
@@ -318,6 +316,15 @@ class FFMPEG extends events.EventEmitter {
                         `-ar`, `${this.opts.audioSampleRate}k`
                     );
                 }
+            }
+            if (transcodeAudio && transcodeVideo) {
+                console.log("Video and Audio are being transcoded by ffmpeg");
+            } else if (transcodeVideo) {
+                console.log("Video is being transcoded by ffmpeg. Audio is being copied.");
+            } else  if (transcodeAudio) {
+                console.log("Audio is being transcoded by ffmpeg. Video is being copied.");
+            } else {
+                console.log("Video and Audio are being copied. ffmpeg is not transcoding.");
             }
             ffmpegArgs.push(
                             `-c:a`,  (transcodeAudio ? this.opts.audioEncoder : 'copy'),

@@ -17,6 +17,8 @@ app.directive('plexLibrary',    require('./directives/plex-library'))
 app.directive('programConfig',  require('./directives/program-config'))
 app.directive('offlineConfig',  require('./directives/offline-config'))
 app.directive('frequencyTweak',  require('./directives/frequency-tweak'))
+app.directive('removeShows',  require('./directives/remove-shows'))
+app.directive('channelRedirect',  require('./directives/channel-redirect'))
 app.directive('plexServerEdit',  require('./directives/plex-server-edit'))
 app.directive('channelConfig',  require('./directives/channel-config'))
 
