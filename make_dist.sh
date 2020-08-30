@@ -12,15 +12,15 @@ cp -R ./web ./dist/web
 cp -R ./resources ./dist/
 cd dist
 if [ "$MODE" == "all" ]; then
-    nexe -r "./**/*" -t windows-x64-12.18.2 --output $WIN64
+    nexe --temp /var/nexe -r "./**/*" -t windows-x64-12.18.2 --output $WIN64
     mv $WIN64 ../
-    nexe -r "./**/*" -t mac-x64-12.18.2 --output $MACOSX
+    nexe --temp /var/nexe -r "./**/*" -t mac-x64-12.18.2 --output $MACOSX
     mv $MACOSX ../
-    nexe -r "./**/*" -t windows-x86-12.18.2 --output $WIN32
+    nexe --temp /var/nexe -r "./**/*" -t windows-x86-12.18.2 --output $WIN32
     mv $WIN32 ../
 fi
 
-nexe  -r "./**/*" -t linux-x64-12.16.2 --output $LINUX64 || exit 1
+nexe --temp /var/nexe -r "./**/*" -t linux-x64-12.16.2 --output $LINUX64 || exit 1
 echo dist/$LINUX64
 if [ "$MODE" == "all" ]; then
     mv ../$WIN64 ./
