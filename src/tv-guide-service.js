@@ -125,7 +125,7 @@ class TVGuideService
             } else {
                 depth.push( channel.number );
                 let channel2 = this.channelsByNumber[ch2];
-                if (typeof(channel2) === undefined) {
+                if (typeof(channel2) === 'undefined') {
                     console.error("Redirrect to an unknown channel found! Involved channels = " + JSON.stringify(depth) );
                 } else {
                     let otherPlaying = await this.getChannelPlaying( channel2, undefined, t, depth );
@@ -148,6 +148,9 @@ class TVGuideService
     }
 
     async getChannelPrograms(t0, t1, channel)  {
+        if (typeof(channel) === 'undefined') {
+            throw Error("Couldn't find channel?");
+        }
         let result = {
             channel: makeChannelEntry(channel),
         };
@@ -296,17 +299,15 @@ class TVGuideService
 
     async buildIt() {
         try {
-            console.log("<buildit>");
             this.cached = await this.buildItManaged();
-            console.log("</buildit>");
             console.log("Internal TV Guide data refreshed at " + (new Date()).toLocaleString() );
             await this.refreshXML();
         } catch(err) {
-            if (this.cached == null) {
-                throw err;
-            } else {
-                console.error("Unable to update internal guide data", err);
-            }
+            console.error("Unable to update internal guide data", err);
+            await _wait(100);
+            console.error("Retrying TV guide...");
+            await this.buildIt();
+
         } finally {
             this.lastUpdate = this.currentUpdate;
             this.currentUpdate = -1;
