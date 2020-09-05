@@ -9,7 +9,7 @@ const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 
 module.exports = { router: api }
-function api(db, channelDB, xmltvInterval) {
+function api(db, channelDB, xmltvInterval,  guideService ) {
     let router = express.Router()
     let plexServerDB = new PlexServerDB(channelDB, channelCache, db);
 
@@ -152,6 +152,7 @@ function api(db, channelDB, xmltvInterval) {
                 number: channel.number,
                 icon: channel.icon,
                 name: channel.name,
+                stealth: channel.stealth,
             });
         } else {
             return res.status(404).send("Channel not found");
@@ -351,8 +352,45 @@ function api(db, channelDB, xmltvInterval) {
         console.error(err);
         res.status(500).send("error");
       }
-
     })
+
+    router.get('/api/guide/status', async (req, res) => {
+        try {
+            let s = await guideService.getStatus();
+            res.send(s);
+        } catch(err) {
+            console.error(err);
+            res.status(500).send("error");
+        }
+    });
+
+    router.get('/api/guide/debug', async (req, res) => {
+      try {
+          let s = await guideService.get();
+          res.send(s);
+      } catch(err) {
+          console.error(err);
+          res.status(500).send("error");
+      }
+  });
+
+
+    router.get('/api/guide/channels/:number', async (req, res) => {
+        try {
+            let dateFrom = new Date(req.query.dateFrom);
+            let dateTo = new Date(req.query.dateTo);
+            let lineup = await guideService.getChannelLineup(  req.params.number , dateFrom, dateTo );
+            if (lineup == null) {
+              console.log(`GET /api/guide/channels/${req.params.number} : 404 Not Found`);
+              res.status(404).send("Channel not found in TV guide");
+            } else {
+              res.send( lineup );
+            }
+        } catch (err) {
+            console.error(err);
+            res.status(500).send("error");
+        }
+    });
 
 
     //HDHR SETTINGS
@@ -417,8 +455,10 @@ function api(db, channelDB, xmltvInterval) {
         channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         var data = "#EXTM3U\n"
         for (var i = 0; i < channels.length; i++) {
+          if (channels[i].stealth!==true) {
             data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-chno="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
             data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
+          }
         }
         if (channels.length === 0) {
             data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
@@ -429,7 +469,6 @@ function api(db, channelDB, xmltvInterval) {
         console.error(err);
         res.status(500).send("error");
       }
-
 
     })
 

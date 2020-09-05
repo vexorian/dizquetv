@@ -67,6 +67,13 @@
                             <hr/>
                         </div>
                     </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="stealth" aria-describedby="stealthHelp" ng-model='channel.stealth'>
+                        <label class="form-check-label" for="stealth">Stealth Mode</label>
+
+                        <span class='text-muted' id="stealthHelp">(This will hide the channel from TV guides, spoofed HDHR, m3u...)</span>
+                    </div>
+
                     <div>
                         <span class="pull-right text-danger">{{error.startTime}}</span>
                         <label id="channelStartTime" class="small">Channel Timeline Start {{maxDate}}</label>
@@ -150,8 +157,8 @@
                                 <h6>Add Breaks</h6>
                                 <p>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes.</p>
 
-                                <h6>Repeat Blocks</h6>
-                                <p>There&apos;s hopefully going to be an explanation here</p>
+                                <h6>Reruns</h6>
+                                <p>Divides the programming in blocks of 6, 8 or 12 hours then repeats each of the blocks the specified number of times. For example,  you can make a channel that plays exactly the same channels in the morning and in the afternoon. </p>
 
                                 <h6>Add Redirect</h6>
                                 <p>Adds a channel redirect. During this period of time, the channel will redirect to another channel.</p>

@@ -19,7 +19,7 @@
                 <p class="text-center text-danger">No channels found. Click the <span class="fa fa-plus"></span> to create a channel.</p>
             </td>
         </tr>
-        <tr ng-repeat="x in channels" ng-click="selectChannel($index)" style="cursor: pointer; height: 3em">
+        <tr ng-repeat="x in channels" ng-click="selectChannel($index)" style="cursor: pointer; height: 3em" ng-class="{'stealth-channel':(x.stealth===true)}" >
             <td style='height: 3em'>
                 <div class="loader" ng-if="x.pending"></div>
                 <span ng-show="!x.pending">{{x.number}}</span>
@@ -28,7 +28,7 @@
                 <img ng-if="x.icon !== ''" ng-src="{{x.icon}}" alt="{{x.name}}" style="max-height: 40px;"/>
                 <div ng-if="x.icon === ''" style="padding-top: 14px;"><small>{{x.name}}</small></div>
             </td>
-            <td>{{x.name}}</td>
+            <td>{{x.name}} <span ng-if='x.stealth===true' class='text-muted'>(Stealth)</span></td>
             <td class="text-right">
                 <button ng-show="!x.pending" class="btn btn-sm btn-link" ng-click="removeChannel($index, x); $event.stopPropagation()">
                     <span class="text-danger fa fa-trash"></span>

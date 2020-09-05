@@ -215,17 +215,58 @@ class FFMPEG extends events.EventEmitter {
 
             // Resolution fix: Add scale filter, current stream becomes [siz]
             let beforeSizeChange = currentVideo;
-            if (this.ensureResolution && (iW != this.wantedW || iH != this.wantedH) ) {
-                //Maybe the scaling algorithm could be configurable. bicubic seems good though
-                videoComplex += `;${currentVideo}scale=${this.wantedW}:${this.wantedH}:flags=bicubic:force_original_aspect_ratio=decrease,pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[siz]`
-                currentVideo = "[siz]";
-                iW = this.wantedW;
-                iH = this.wantedH;
-            } else if ( isLargerResolution(iW, iH, this.wantedW, this.wantedH) ) {
-                videoComplex += `;${currentVideo}scale=${this.wantedW}:${this.wantedH}:flags=bicubic:force_original_aspect_ratio=decrease,pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[minsiz]`
-                currentVideo = "[minsiz]";
-                iW = this.wantedW;
-                iH = this.wantedH;
+            let algo = "fast_bilinear";
+            let resizeMsg = "";
+            if (
+                  (this.ensureResolution && ( streamStats.anamorphic || (iW != this.wantedW || iH != this.wantedH) ) )
+                  ||
+                  isLargerResolution(iW, iH, this.wantedW, this.wantedH)
+            ) {
+                //scaler stuff, need to change the size of the video and also add bars
+                // calculate wanted aspect ratio
+                let p = iW * streamStats.pixelP ;
+                let q = iH * streamStats.pixelQ;
+                let g = gcd(q,p); // and people kept telling me programming contests knowledge had no use real programming!
+                p = Math.floor(p / g);
+                q = Math.floor(q / g);
+                let hypotheticalW1 = this.wantedW;
+                let hypotheticalH1 = Math.floor(hypotheticalW1*q / p);
+                let hypotheticalH2 = this.wantedH;
+                let hypotheticalW2 = Math.floor( (this.wantedH * p) / q );
+                let cw, ch;
+                if (hypotheticalH1 <= this.wantedH) {
+                    cw = hypotheticalW1;
+                    ch = hypotheticalH1;
+                } else {
+                    cw = hypotheticalW2;
+                    ch = hypotheticalH2;
+                }
+                videoComplex += `;${currentVideo}scale=${cw}:${ch}:flags=${algo}[scaled]`;
+                currentVideo = "scaled";
+                resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
+                if (this.ensureResolution) {
+                    console.log(`First stretch to ${cw} x ${ch}. Then add padding to make it ${this.wantedW} x ${this.wantedH} `);
+                } else if (cw % 2 == 1 || ch % 2 ==1)  {
+                    //we need to add padding so that the video dimensions are even
+                    let xw  = cw + cw % 2;
+                    let xh  = ch + ch % 2;
+                    resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}. Then add 1 pixel of padding so that dimensions are not odd numbers, because they are frowned upon. The final resolution will be ${xw} x ${xh}`;
+                    this.wantedW = xw;
+                    this.wantedH = xh;
+                } else {
+                    resizeMsg = `Stretch to ${cw} x ${ch}. To fit target resolution of ${this.wantedW} x ${this.wantedH}.`;
+                }
+                if ( (this.wantedW != cw) || (this.wantedH != ch) ) {
+                    // also add black bars, because in this case it HAS to be this resolution
+                    videoComplex += `;[${currentVideo}]pad=${this.wantedW}:${this.wantedH}:(ow-iw)/2:(oh-ih)/2[blackpadded]`;
+                    currentVideo = "blackpadded";
+                }
+                let name = "siz";
+                if (! this.ensureResolution) {
+                    name = "minsiz";
+                }
+                videoComplex += `;[${currentVideo}]setsar=1[${name}]`;
+                currentVideo = `[${name}]`;
             }
 
             // Channel overlay:
@@ -265,6 +306,8 @@ class FFMPEG extends events.EventEmitter {
                 //do not change resolution if no other transcoding will be done
                 // and resolution normalization is off
                 currentVideo = beforeSizeChange;
+            } else {
+                console.log(resizeMsg)
             }
             if (currentVideo != '[video]') {
                 transcodeVideo = true; //this is useful so that it adds some lines below
@@ -411,8 +454,8 @@ function isDifferentAudioCodec(codec, encoder) {
     return true;
 }
 
-function isLargerResolution(w1,h1, w2,h2) {
-    return (w1 > w2) || (h1 > h2);
+function isLargerResolution( w1,h1, w2,h2) {
+    return (w1 > w2) || (h1 > h2) || (w1 % 2 ==1) || (h1 % 2 == 1);
 }
 
 function parseResolutionString(s) {
@@ -427,6 +470,16 @@ function parseResolutionString(s) {
         w: parseInt( s.substring(0,i) , 10 ),
         h: parseInt( s.substring(i+1) , 10 ),
     }
+}
+
+function gcd(a, b) {
+    
+    while (b != 0) {
+        let c = b;
+        b = a % b;
+        a = c;
+    }
+    return a;
 }
 
 module.exports = FFMPEG

@@ -15,6 +15,7 @@ const Plex = require('./src/plex');
 const channelCache = require('./src/channel-cache');
 const constants = require('./src/constants')
 const ChannelDB = require("./src/dao/channel-db");
+const TVGuideService = require("./src/tv-guide-service");
 
 console.log(
 `         \\
@@ -58,42 +59,65 @@ db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings',
 
 initDB(db, channelDB)
 
+const guideService = new TVGuideService(xmltv);
+
+
+
 let xmltvInterval = {
     interval: null,
     lastRefresh: null,
     updateXML: async () => {
-        let channels = await channelDB.getAllChannels()
-        channels.forEach( (channel) => {
-            // if we are going to go through the trouble of loading the whole channel db, we might
-            // as well take that opportunity to reduce stream loading times...
-            channelCache.saveChannelConfig( channel.number, channel );
-        });
-        channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
-        let xmltvSettings = db['xmltv-settings'].find()[0]
-        xmltv.WriteXMLTV(channels, xmltvSettings).then(async () => {    // Update XML
+        let channels = [];
+        try {
+            let channelNumbers = await channelDB.getAllChannelNumbers();
+            channels = await Promise.all( channelNumbers.map( async (x) => {
+                return await channelCache.getChannelConfig(channelDB, x);
+            }) );
+            await guideService.refresh( await channelDB.getAllChannels(), 12*60*60*1000 );
             xmltvInterval.lastRefresh = new Date()
-            console.log('XMLTV Updated at ', xmltvInterval.lastRefresh.toLocaleString())
-            let plexServers = db['plex-servers'].find()
-            for (let i = 0, l = plexServers.length; i < l; i++) {       // Foreach plex server
-                var plex = new Plex(plexServers[i])
-                await plex.GetDVRS().then(async (dvrs) => {             // Refresh guide and channel mappings
-                    if (plexServers[i].arGuide)
-                        plex.RefreshGuide(dvrs).then(() => { }, (err) => { console.error(err, i) })
-                    if (plexServers[i].arChannels && channels.length !== 0)
-                        plex.RefreshChannels(channels, dvrs).then(() => { }, (err) => { console.error(err, i) })
-                }).catch( (err) => {
-                    console.log("Couldn't tell Plex to refresh channels for some reason.");
-                });
+            console.log('XMLTV Updated at ', xmltvInterval.lastRefresh.toLocaleString());
+        } catch (err) {
+            console.error("Unable to update TV guide?", err);
+        }
+
+        let plexServers = db['plex-servers'].find()
+        for (let i = 0, l = plexServers.length; i < l; i++) {       // Foreach plex server
+            let plex = new Plex(plexServers[i])
+            let dvrs;
+            if ( !plexServers[i].arGuide && !plexServers[i].arChannels) {
+                continue;
             }
-        }, (err) => {
-            console.error("Failed to write the xmltv.xml file. Something went wrong. Check your output directory via the web UI and verify file permissions?", err)
-        })
+            try {
+                dvrs = await plex.GetDVRS() // Refresh guide and channel mappings
+            } catch(err) {
+                console.error(`Couldn't get DVRS list from ${plexServers[i].name}. This error will prevent 'refresh guide' or 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.` , err );
+                continue;
+            }
+            if (plexServers[i].arGuide) {
+                try {
+                    await plex.RefreshGuide(dvrs);
+                } catch(err) {
+                    console.error(`Couldn't tell Plex ${plexServers[i].name} to refresh guide for some reason. This error will prevent 'refresh guide' from working for this Plex server. But it is NOT related to playback issues.` , err);
+                }
+            }
+            if (plexServers[i].arChannels && channels.length !== 0) {
+                try {
+                    await plex.RefreshChannels(channels, dvrs);
+                } catch(err) {
+                    console.error(`Couldn't tell Plex ${plexServers[i].name} to refresh channels for some reason. This error will prevent 'refresh channels' from working for this Plex server. But it is NOT related to playback issues.` , err);
+                }
+            }
+        }
     },
     startInterval: () => {
         let xmltvSettings = db['xmltv-settings'].find()[0]
         if (xmltvSettings.refresh !== 0) {
             xmltvInterval.interval = setInterval( async () => {
-                await xmltvInterval.updateXML()
+                try {
+                    await xmltvInterval.updateXML()
+                } catch(err) {
+                    console.error("update XMLTV error", err);
+                }
             }, xmltvSettings.refresh * 60 * 60 * 1000)
         }
     },
@@ -130,7 +154,7 @@ app.get('/version.js', (req, res) => {
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
-app.use(api.router(db, channelDB, xmltvInterval))
+app.use(api.router(db, channelDB, xmltvInterval, guideService ))
 app.use(video.router( channelDB, db))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
