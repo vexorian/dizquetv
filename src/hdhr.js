@@ -47,8 +47,11 @@ function hdhr(db, channelDB) {
         res.header("Content-Type", "application/json")
         var lineup = []
         var channels = await channelDB.getAllChannels();
-        for (let i = 0, l = channels.length; i < l; i++)
+        for (let i = 0, l = channels.length; i < l; i++) {
+          if (channels[i].stealth !== true) {
             lineup.push({ GuideNumber: channels[i].number.toString(), GuideName: channels[i].name, URL: `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}` })
+          }
+        }
         if (lineup.length === 0)
             lineup.push({ GuideNumber: '1', GuideName: 'dizqueTV', URL: `${req.protocol}://${req.get('host')}/setup` })
         res.send(JSON.stringify(lineup))

@@ -135,8 +135,14 @@ table.tvguide {
   font-weight: 300;
 }
 
+.tvguide button {
+  padding-left: 0.1em;
+  padding-right: 0.1em;
+}
+
 .tvguide th button {
-  max-width: 20%;
+  min-width: 20%;
+  max-width: 24%;
 }
 
 
@@ -220,9 +226,9 @@ table.tvguide {
 
 .tvguide td .play-channel {
   top:25%;
-  left:25%;
-  width:50%;
-  height:50%
+  left:12.5%;
+  width:75%;
+  height:75%
 }
 
 .tv-guide-now {
@@ -231,6 +237,10 @@ table.tvguide {
   position: absolute;
   background: #FFFF0040;
   top:0;
+}
+
+.stealth-channel td img {
+  opacity: 0.5;
 }
 
 /* Safari */

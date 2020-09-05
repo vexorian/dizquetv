@@ -27,10 +27,11 @@ class TVGuideService
         return this.cached;
     }
 
-    async refresh(channels, limit) {
+    async refresh(inputChannels, limit) {
         let t = (new Date()).getTime();
         this.updateTime = t;
         this.updateLimit = t + limit;
+        let channels = inputChannels.filter( ch =>  (ch.stealth !== true) );
         this.updateChannels = channels;
         while( this.lastUpdate < t) {
             if (this.currentUpdate == -1) {
