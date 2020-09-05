@@ -272,21 +272,25 @@ class TVGuideService
         this.accumulateTable = accumulateTable;
         let result = {};
         if (channels.length == 0) {
+            let channel = {
+                name: "dizqueTV",
+                icon: FALLBACK_ICON,
+            }
             result[1] = {
-                channel : {
-                    name: "dizqueTV",
-                    icon: FALLBACK_ICON,
-                },
+                channel : channel,
                 programs: [
-                    makeEntry( {
+                    makeEntry(
+                      channel
+                      , {
                         start: t0 - t0 % (30 * 60*1000),
                         program: {
+                            duration: 24*60*60*1000,
                             icon: FALLBACK_ICON,
-                            title: "No channels configured",
-                            date: (new Date()).format('YYYY-MM-DD'),
+                            showTitle: "No channels configured",
+                            date: formatDateYYYYMMDD(new Date()),
                             summary : "Use the dizqueTV web UI to configure channels."
                         }
-                    } )
+                      } )
                 ]
             }
         } else {
@@ -427,6 +431,9 @@ function makeEntry(channel, x) {
             }
         }
     }
+    if (typeof(title)==='undefined') {
+        title=".";
+    }
     //what data is needed here?
     return {
         start: (new Date(x.start)).toISOString(),
@@ -438,6 +445,13 @@ function makeEntry(channel, x) {
         title: title,
         sub: sub,
     }
+}
+
+function formatDateYYYYMMDD(date) {
+    var year = date.getFullYear().toString();
+    var month = (date.getMonth() + 101).toString().substring(1);
+    var day = (date.getDate() + 100).toString().substring(1);
+    return year + "-" + month + "-" + day;
 }
 
 module.exports = TVGuideService

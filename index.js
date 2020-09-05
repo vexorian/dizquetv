@@ -67,9 +67,10 @@ let xmltvInterval = {
     interval: null,
     lastRefresh: null,
     updateXML: async () => {
+        let channels = [];
         try {
             let channelNumbers = await channelDB.getAllChannelNumbers();
-            await Promise.all( channelNumbers.map( async (x) => {
+            channels = await Promise.all( channelNumbers.map( async (x) => {
                 return await channelCache.getChannelConfig(channelDB, x);
             }) );
             await guideService.refresh( await channelDB.getAllChannels(), 12*60*60*1000 );

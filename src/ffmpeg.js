@@ -475,7 +475,6 @@ function parseResolutionString(s) {
 function gcd(a, b) {
     
     while (b != 0) {
-        console.log(a,b);
         let c = b;
         b = a % b;
         a = c;
