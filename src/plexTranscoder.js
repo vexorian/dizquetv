@@ -208,6 +208,18 @@ lang=en`
             streams.forEach(function (stream) {
                 // Video
                 if (stream["streamType"] == "1") {
+                    ret.anamorphic = (stream.anamorphic === "1");
+                    if (ret.anamorphic) {
+                        let parsed = parsePixelAspectRatio(stream.pixelAspectRatio);
+                        if (isNaN(parsed.p) || isNaN(parsed.q) ) {
+                            throw Error("isNaN");
+                        }
+                        ret.pixelP = parsed.p;
+                        ret.pixelQ = parsed.q;
+                    } else {
+                        ret.pixelP= 1;
+                        ret.pixelQ = 1;
+                    }
                     ret.videoCodec = stream.codec;
                     ret.videoWidth = stream.width;
                     ret.videoHeight = stream.height;
@@ -342,4 +354,12 @@ X-Plex-Token=${this.server.accessToken}`;
     }
 }
 
+
+function parsePixelAspectRatio(s) {
+    let x = s.split(":");
+    return {
+        p: parseInt(x[0], 10),
+        q: parseInt(x[1], 10),
+    }
+}
 module.exports = PlexTranscoder

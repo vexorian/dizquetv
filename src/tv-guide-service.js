@@ -27,10 +27,11 @@ class TVGuideService
         return this.cached;
     }
 
-    async refresh(channels, limit) {
+    async refresh(inputChannels, limit) {
         let t = (new Date()).getTime();
         this.updateTime = t;
         this.updateLimit = t + limit;
+        let channels = inputChannels.filter( ch =>  (ch.stealth !== true) );
         this.updateChannels = channels;
         while( this.lastUpdate < t) {
             if (this.currentUpdate == -1) {
@@ -125,7 +126,7 @@ class TVGuideService
             } else {
                 depth.push( channel.number );
                 let channel2 = this.channelsByNumber[ch2];
-                if (typeof(channel2) === undefined) {
+                if (typeof(channel2) === 'undefined') {
                     console.error("Redirrect to an unknown channel found! Involved channels = " + JSON.stringify(depth) );
                 } else {
                     let otherPlaying = await this.getChannelPlaying( channel2, undefined, t, depth );
@@ -148,6 +149,9 @@ class TVGuideService
     }
 
     async getChannelPrograms(t0, t1, channel)  {
+        if (typeof(channel) === 'undefined') {
+            throw Error("Couldn't find channel?");
+        }
         let result = {
             channel: makeChannelEntry(channel),
         };
@@ -268,21 +272,25 @@ class TVGuideService
         this.accumulateTable = accumulateTable;
         let result = {};
         if (channels.length == 0) {
+            let channel = {
+                name: "dizqueTV",
+                icon: FALLBACK_ICON,
+            }
             result[1] = {
-                channel : {
-                    name: "dizqueTV",
-                    icon: FALLBACK_ICON,
-                },
+                channel : channel,
                 programs: [
-                    makeEntry( {
+                    makeEntry(
+                      channel
+                      , {
                         start: t0 - t0 % (30 * 60*1000),
                         program: {
+                            duration: 24*60*60*1000,
                             icon: FALLBACK_ICON,
-                            title: "No channels configured",
-                            date: (new Date()).format('YYYY-MM-DD'),
+                            showTitle: "No channels configured",
+                            date: formatDateYYYYMMDD(new Date()),
                             summary : "Use the dizqueTV web UI to configure channels."
                         }
-                    } )
+                      } )
                 ]
             }
         } else {
@@ -296,17 +304,15 @@ class TVGuideService
 
     async buildIt() {
         try {
-            console.log("<buildit>");
             this.cached = await this.buildItManaged();
-            console.log("</buildit>");
             console.log("Internal TV Guide data refreshed at " + (new Date()).toLocaleString() );
             await this.refreshXML();
         } catch(err) {
-            if (this.cached == null) {
-                throw err;
-            } else {
-                console.error("Unable to update internal guide data", err);
-            }
+            console.error("Unable to update internal guide data", err);
+            await _wait(100);
+            console.error("Retrying TV guide...");
+            await this.buildIt();
+
         } finally {
             this.lastUpdate = this.currentUpdate;
             this.currentUpdate = -1;
@@ -425,6 +431,9 @@ function makeEntry(channel, x) {
             }
         }
     }
+    if (typeof(title)==='undefined') {
+        title=".";
+    }
     //what data is needed here?
     return {
         start: (new Date(x.start)).toISOString(),
@@ -436,6 +445,13 @@ function makeEntry(channel, x) {
         title: title,
         sub: sub,
     }
+}
+
+function formatDateYYYYMMDD(date) {
+    var year = date.getFullYear().toString();
+    var month = (date.getMonth() + 101).toString().substring(1);
+    var day = (date.getDate() + 100).toString().substring(1);
+    return year + "-" + month + "-" + day;
 }
 
 module.exports = TVGuideService

@@ -67,6 +67,13 @@
                             <hr/>
                         </div>
                     </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="stealth" aria-describedby="stealthHelp" ng-model='channel.stealth'>
+                        <label class="form-check-label" for="stealth">Stealth Mode</label>
+
+                        <span class='text-muted' id="stealthHelp">(This will hide the channel from TV guides, spoofed HDHR, m3u...)</span>
+                    </div>
+
                     <div>
                         <span class="pull-right text-danger">{{error.startTime}}</span>
                         <label id="channelStartTime" class="small">Channel Timeline Start {{maxDate}}</label>

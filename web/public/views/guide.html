@@ -8,16 +8,16 @@
         <tr>
             <th colspan="{{channelColspan}}" class='guidenav even' >
                 <button class="btn btn-sm btn-primary" ng-click="zoomIn()" ng-disabled='!zoomInEnabled()'>
-                    <span class="fa fa-search-plus"></span>
+                    <i class="fa fa-search-plus"></i>
                 </button>
                 <button class="btn btn-sm btn-primary" ng-click="zoomOut()" ng-disabled='!zoomOutEnabled()'>
-                    <span class="fa fa-search-minus"></span>
+                    <i class="fa fa-search-minus"></i>
                 </button>
                 <button class="btn btn-sm btn-primary" ng-click="back()" ng-disabled='!backEnabled()'>
-                    <span class="fa fa-arrow-left"></span>
+                    <i class="fa fa-arrow-left"></i>
                 </button>
                 <button class="btn btn-sm btn-primary" ng-click="next()" ng-disabled='!nextEnabled()'>
-                    <span class="fa fa-arrow-right"></span>
+                    <i class="fa fa-arrow-right"></i>
                 </button>
 
             </th>
@@ -26,12 +26,19 @@
             </th>
         </tr>
 
-        <tr ng-repeat="channelNumber in channelNumbers track by $index" ng-Class="{'even' : ($index % 2==0), 'odd' : ($index % 2==1) }" >
+        <tr ng-mouseover="channels[channelNumber].mouse=true" ng-mouseleave="channels[channelNumber].mouse=false"  ng-repeat="channelNumber in channelNumbers track by $index" ng-Class="{'even' : ($index % 2==0), 'odd' : ($index % 2==1) }" >
             <td title='{{channels[channelNumber].altTitle}}' class='even channel-number' colspan="{{channelNumberColspan}}" >
-                <div>{{channels[channelNumber].number}}</div>
+                <div>
+                    <a role="button" href='/media-player/{{channelNumber}}.m3u' title="Attempt to play channel: '{{channels[channelNumber].altTitle}}' in local media player" class='btn btn-sm btn-outline-primary play-channel'  ng-show='channels[channelNumber].mouse'>
+                        <span class='fa fa-play'></span>
+                    </a>
+                    <span ng-hide='channels[channelNumber].mouse' >
+                        {{channels[channelNumber].number}}
+                    </span>
+                </div>
             </td>
             <td title='{{channels[channelNumber].altTitle}}' class='even channel-icon' colspan="{{channelIconColspan}}" >
-                <img src='{{channels[channelNumber].icon}}' alt='{{channels[channelNumber].name}}'></img>
+                <img src='{{channels[channelNumber].icon}}' alt='{{channels[channelNumber].name}}' ng-click='channels[channelNumber].mouse=true'  ></img>
             </td>
 
             <td class='odd program' colspan="{{totalSpan}}" ng-if="channels[channelNumber].loading">
