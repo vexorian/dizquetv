@@ -48,8 +48,23 @@ class Plex {
             })
         })
     }
-    Get(path, optionalHeaders = {}) {
-        var req = {
+
+    doRequest(req) {
+        return new Promise( (resolve, reject) => {
+            request( req, (err, res) => {
+                if (err) {
+                    reject(err);
+                } else if ((res.statusCode < 200) || (res.statusCode >= 300) ) {
+                    reject( Error(`Request returned status code ${res.statusCode}`) );
+                } else {
+                    resolve(res);
+                }
+            });
+        });
+    }
+
+    async Get(path, optionalHeaders = {}) {
+        let req = {
             method: 'get',
             url: `${this.URL}${path}`,
             headers: this._headers,
@@ -57,19 +72,14 @@ class Plex {
         }
         Object.assign(req, optionalHeaders)
         req.headers['X-Plex-Token'] = this._accessToken
-        return new Promise((resolve, reject) => {
-            if (this._accessToken === '')
-                reject("No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.")
-            else
-                request(req, (err, res) => {
-                    if (err || res.statusCode !== 200)
-                        reject(`Plex 'Get' request failed. URL: ${this.URL}${path}`)
-                    else
-                        resolve(JSON.parse(res.body).MediaContainer)
-                })
-        })
+        if (this._accessToken === '') {
+            throw Error("No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.");
+        } else {
+            let res = await this.doRequest(req);
+            return JSON.parse(res.body).MediaContainer;
+        }
     }
-    Put(path, query = {}, optionalHeaders = {}) {
+    async Put(path, query = {}, optionalHeaders = {}) {
         var req = {
             method: 'put',
             url: `${this.URL}${path}`,
@@ -79,7 +89,7 @@ class Plex {
         }
         Object.assign(req, optionalHeaders)
         req.headers['X-Plex-Token'] = this._accessToken
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             if (this._accessToken === '')
                 reject("No Plex token provided. Please use the SignIn method or provide a X-Plex-Token in the Plex constructor.")
             else
@@ -123,30 +133,42 @@ class Plex {
         }
     }
     async GetDVRS() {
-        var result = await this.Get('/livetv/dvrs')
-        var dvrs = result.Dvr
-        dvrs = typeof dvrs === 'undefined' ? [] : dvrs
-        return dvrs
+        try {
+            var result = await this.Get('/livetv/dvrs')
+            var dvrs = result.Dvr
+            dvrs = typeof dvrs === 'undefined' ? [] : dvrs
+            return dvrs
+        } catch (err) {
+            throw Error( "GET /livetv/drs failed: " + err.message);
+        }
     }
     async RefreshGuide(_dvrs) {
-        var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS()
-        for (var i = 0; i < dvrs.length; i++)
-            this.Post(`/livetv/dvrs/${dvrs[i].key}/reloadGuide`).then(() => { }, (err) => { console.log(err) })
+        try {
+            var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS()
+            for (var i = 0; i < dvrs.length; i++) {
+                await this.Post(`/livetv/dvrs/${dvrs[i].key}/reloadGuide`);
+            }
+        } catch (err) {
+            throw Error("Zort", err);
+        }
     }
     async RefreshChannels(channels, _dvrs) {
         var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS()
         var _channels = []
         let qs = {}
-        for (var i = 0; i < channels.length; i++)
+        for (var i = 0; i < channels.length; i++) {
             _channels.push(channels[i].number)
+        }
         qs.channelsEnabled = _channels.join(',')
         for (var i = 0; i < _channels.length; i++) {
             qs[`channelMapping[${_channels[i]}]`] = _channels[i]
             qs[`channelMappingByKey[${_channels[i]}]`] = _channels[i]
         }
-        for (var i = 0; i < dvrs.length; i++)
-            for (var y = 0; y < dvrs[i].Device.length; y++)
-                this.Put(`/media/grabbers/devices/${dvrs[i].Device[y].key}/channelmap`, qs).then(() => { }, (err) => { console.log(err) })
+        for (var i = 0; i < dvrs.length; i++) {
+            for (var y = 0; y < dvrs[i].Device.length; y++) {
+                await this.Put(`/media/grabbers/devices/${dvrs[i].Device[y].key}/channelmap`, qs);
+            }
+        }
     }
 }
 
