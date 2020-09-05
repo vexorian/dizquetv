@@ -165,6 +165,32 @@ module.exports = function ($http) {
                 data: angular.toJson(channel),
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
-        }
+        },
+
+
+        /*======================================================================
+        * TV Guide endpoints
+        */
+        getGuideStatus: async () => {
+            let d = await $http( {
+                method: 'GET',
+                url : '/api/guide/status',
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            } );
+            return d.data;
+        },
+
+        getChannelLineup: async (channelNumber, dateFrom, dateTo) => {
+            let a = dateFrom.toISOString();
+            let b = dateTo.toISOString();
+            let d = await $http( {
+                method: 'GET',
+                url : `/api/guide/channels/${channelNumber}?dateFrom=${a}&dateTo=${b}`,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            } );
+            return d.data;
+        },
+
+
     }
 }

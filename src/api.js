@@ -9,7 +9,7 @@ const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 
 module.exports = { router: api }
-function api(db, channelDB, xmltvInterval) {
+function api(db, channelDB, xmltvInterval,  guideService ) {
     let router = express.Router()
     let plexServerDB = new PlexServerDB(channelDB, channelCache, db);
 
@@ -351,8 +351,45 @@ function api(db, channelDB, xmltvInterval) {
         console.error(err);
         res.status(500).send("error");
       }
-
     })
+
+    router.get('/api/guide/status', async (req, res) => {
+        try {
+            let s = await guideService.getStatus();
+            res.send(s);
+        } catch(err) {
+            console.error(err);
+            res.status(500).send("error");
+        }
+    });
+
+    router.get('/api/guide/debug', async (req, res) => {
+      try {
+          let s = await guideService.get();
+          res.send(s);
+      } catch(err) {
+          console.error(err);
+          res.status(500).send("error");
+      }
+  });
+
+
+    router.get('/api/guide/channels/:number', async (req, res) => {
+        try {
+            let dateFrom = new Date(req.query.dateFrom);
+            let dateTo = new Date(req.query.dateTo);
+            let lineup = await guideService.getChannelLineup(  req.params.number , dateFrom, dateTo );
+            if (lineup == null) {
+              console.log(`GET /api/guide/channels/${req.params.number} : 404 Not Found`);
+              res.status(404).send("Channel not found in TV guide");
+            } else {
+              res.send( lineup );
+            }
+        } catch (err) {
+            console.error(err);
+            res.status(500).send("error");
+        }
+    });
 
 
     //HDHR SETTINGS
@@ -429,7 +466,6 @@ function api(db, channelDB, xmltvInterval) {
         console.error(err);
         res.status(500).send("error");
       }
-
 
     })
 
