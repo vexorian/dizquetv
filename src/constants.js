@@ -4,5 +4,5 @@ module.exports = {
     STEALTH_DURATION: 5 * 60* 1000,
     TVGUIDE_MAXIMUM_FLEX_DURATION : 6 * 60 * 60 * 1000,
 
-    VERSION_NAME: "0.0.66-prerelease"
+    VERSION_NAME: "0.0.66"
 }
