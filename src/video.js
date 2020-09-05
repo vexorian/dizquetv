@@ -329,8 +329,8 @@ function video( channelDB , db) {
 
 
     router.get('/m3u8',  async (req, res) => {
-        res.type('application/vnd.apple.mpegurl')
-        
+        //res.type('application/vnd.apple.mpegurl')
+        res.type("application/x-mpegURL");
 
         // Check if channel queried is valid
         if (typeof req.query.channel === 'undefined') {
@@ -414,5 +414,26 @@ function video( channelDB , db) {
 
         res.send(data)
     })
+
+    router.get('/media-player/:number.m3u', async (req, res) => {
+        try {
+            let channelNum = parseInt(req.params.number, 10);
+            let channel = await channelCache.getChannelConfig(channelDB, channelNum );
+            if (channel.length === 0) {
+                res.status(404).send("Channel not found.");
+                return;
+            }
+            res.type('video/x-mpegurl');
+            let path ="video";
+            if (req.query.fast==="1") {
+                path ="m3u8";
+            }
+            res.status(200).send(`#EXTM3U\n${req.protocol}://${req.get('host')}/${path}?channel=${channelNum}\n\n`);
+        } catch(err) {
+            console.error(err);
+            res.status(500).send("There was an error.");
+        }
+    });
+
     return router
 }

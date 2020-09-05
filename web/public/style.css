@@ -218,6 +218,13 @@ table.tvguide {
   background: #414141;
 }
 
+.tvguide td .play-channel {
+  top:25%;
+  left:25%;
+  width:50%;
+  height:50%
+}
+
 .tv-guide-now {
   width:0.2em;
   height: 100%;
