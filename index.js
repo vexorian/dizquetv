@@ -59,7 +59,7 @@ db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings',
 
 initDB(db, channelDB)
 
-const guideService = new TVGuideService(xmltv);
+const guideService = new TVGuideService(xmltv, db);
 
 
 
@@ -73,7 +73,8 @@ let xmltvInterval = {
             channels = await Promise.all( channelNumbers.map( async (x) => {
                 return await channelCache.getChannelConfig(channelDB, x);
             }) );
-            await guideService.refresh( await channelDB.getAllChannels(), 12*60*60*1000 );
+            let xmltvSettings = db['xmltv-settings'].find()[0];
+            await guideService.refresh( await channelDB.getAllChannels(), xmltvSettings.cache*60*60*1000 );
             xmltvInterval.lastRefresh = new Date()
             console.log('XMLTV Updated at ', xmltvInterval.lastRefresh.toLocaleString());
         } catch (err) {
