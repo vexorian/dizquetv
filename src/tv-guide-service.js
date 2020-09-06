@@ -7,7 +7,7 @@ class TVGuideService
     /****
      *
      **/
-    constructor(xmltv) {
+    constructor(xmltv, db) {
         this.cached = null;
         this.lastUpdate = 0;
         this.updateTime = 0;
@@ -17,6 +17,7 @@ class TVGuideService
         this.throttleX = 0;
         this.doThrottle = false;
         this.xmltv = xmltv;
+        this.db = db;
     }
 
     async get() {
@@ -327,9 +328,7 @@ class TVGuideService
     }
 
     async refreshXML() {
-        let xmltvSettings = {
-            file : "./.dizquetv/xmltv.xml",
-        }
+        let xmltvSettings = this.db['xmltv-settings'].find()[0];
         await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle() );
     }
 
