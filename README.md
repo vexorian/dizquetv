@@ -114,7 +114,7 @@ docker run --name dizquetv -p 8000:8000 -v C:\.dizquetv:/home/node/app/.dizquetv
 #### Unraid Install
 Add
 ```
-https://github.com/vexorian/dizquetv
+https://github.com/vexorian/dizquetv/tree/main
 ```
 to your "Template repositories" in the Docker tab.
 Click the "Add Container" button
