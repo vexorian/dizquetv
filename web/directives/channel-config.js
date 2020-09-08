@@ -113,6 +113,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 setTimeout( () => {
                     scope.channel.programs.splice(dropIndex + index, 0, program);
                     updateChannelDuration()
+                    scope.$apply();
                 }, 1);
                 return true;
             }
@@ -375,14 +376,15 @@ module.exports = function ($timeout, $location, dizquetv) {
 
                 }
                 let ems = Math.pow( Math.min(24*60*60*1000, program.duration), 0.7 );
-                ems = ems / Math.pow(5*60*1000., 0.7);
-                ems = Math.max( 0.25 , ems);
-                let top = Math.max(0.0, (1.75 - ems) / 2.0) ;
+                ems = 1.3;
+                let top = 0.01;
                 if (top == 0.0) {
                     top = "1px";
                 } else {
                     top = top + "em";
                 }
+
+                
 
                 return {
                     'width': '0.5em',
@@ -869,6 +871,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope.hasFlex = false;
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     scope.channel.programs[i].start = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
+                    scope.channel.programs[i].$index = i;
                     scope.channel.duration += scope.channel.programs[i].duration
                     scope.channel.programs[i].stop = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
                     if (scope.channel.programs[i].isOffline) {
@@ -906,6 +909,9 @@ module.exports = function ($timeout, $location, dizquetv) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
                     else {
                         channel.startTime.setMilliseconds( scope.millisecondsOffset);
+                        for (let i = 0; i < scope.channel.programs.length; i++) {
+                            delete scope.channel.programs[i].$index;
+                        }
                         scope.onDone(JSON.parse(angular.toJson(channel)))
                     }
                     $timeout(() => { scope.error = {} }, 3500)

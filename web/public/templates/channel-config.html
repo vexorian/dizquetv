@@ -340,22 +340,10 @@
 
                         </div>
                         <div class="list-group list-group-root">
-                            <div ng-show="channel.programs.length &gt; 100">
-                                <div>Showing programs {{minProgramIndex+1}} to {{minProgramIndex+100}}</div>
-                            </div>
-                            <input ng-show="channel.programs.length &gt; 100"  type="range" ng-model="minProgramIndex" min="0" max="{{ channel.programs.length - 100 }}" />
-                            <div ng-if="minProgramIndex &gt; 0" class="list-group-item flex-container" >
-                                <div class="program-start">
-                                    {{ dateForGuide(channel.startTime) }}
-                                </div>
-
-                                <div style="margin-right: 5px; font-weight:ligther; text-align:center">
-                                    &#8942;
-                                </div>
-                            </div>
-                            <div ng-if="minProgramIndex &lt;= $index &amp;&amp; $index &lt; minProgramIndex+100" ng-repeat="x in channel.programs track by $index" ng-click="selectProgram($index)" dnd-list="" dnd-drop="dropFunction(index , $index, item)"
-                            >
-                              <div class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice($index, 1);" dnd-effect-allowed="move"
+                          <div vs-repeat="options" style='max-height: 30em; overflow-y: auto;'>
+                            <div ng-repeat="x in channel.programs track by x.$index" ng-click="selectProgram(x.$index)" dnd-list="" dnd-drop="dropFunction(index , x.$index, item)" style="height: 1.5em; overflow:hidden">
+                                                        
+                              <div class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice(x.$index, 1);" dnd-effect-allowed="move"
                               >
                                 
                                 <div class="program-start">
@@ -371,20 +359,12 @@
                                     <span ng-if="x.type === 'redirect' " ><i>Redirect to channel:</i> <b>{{x.channel}}</b></span>
                                 </div>
                                 <div class="flex-pull-right"></div>
-                                <button class="btn btn-sm btn-link" ng-click="removeItem($index);  $event.stopPropagation()">
+                                <button class="btn btn-sm btn-link" ng-click="removeItem(x.$index);  $event.stopPropagation()">
                                     <i class="text-danger fa fa-trash"></i>
                                 </button>
                               </div>
                             </div>
-                            <div ng-if="minProgramIndex &lt; channel.programs.length - 100" class="list-group-item flex-container" >
-                                <div class="program-start">
-                                    {{ dateForGuide(channel.programs[minProgramIndex + 100 - 1].stop)}}
-                                </div>
-
-                                <div style="margin-right: 5px; font-weight:ligther; text-align:center">
-                                    &#8942;
-                                </div>
-                            </div>
+                          </div>
                             <div class="list-group-item flex-container" ng-if="channel.programs.length &gt; 0" >
                                 <div class="program-start">
                                     {{ dateForGuide(channel.programs[channel.programs.length-1].stop)}}

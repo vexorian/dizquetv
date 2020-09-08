@@ -3,8 +3,9 @@ require('angular-router-browserify')(angular)
 require('./ext/lazyload')(angular)
 require('./ext/dragdrop')
 require('./ext/angularjs-scroll-glue')
+require('angular-vs-repeat');
 
-var app = angular.module('myApp', ['ngRoute', 'angularLazyImg', 'dndLists', 'luegg.directives'])
+var app = angular.module('myApp', ['ngRoute', 'vs-repeat', 'angularLazyImg', 'dndLists', 'luegg.directives'])
 
 app.service('plex',             require('./services/plex'))
 app.service('dizquetv',         require('./services/dizquetv'))
