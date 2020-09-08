@@ -32,7 +32,7 @@ class TVGuideService
         let t = (new Date()).getTime();
         this.updateTime = t;
         this.updateLimit = t + limit;
-        let channels = inputChannels.filter( ch =>  (ch.stealth !== true) );
+        let channels = inputChannels;
         this.updateChannels = channels;
         while( this.lastUpdate < t) {
             if (this.currentUpdate == -1) {
@@ -296,8 +296,10 @@ class TVGuideService
             }
         } else {
             for (let i = 0; i < channels.length; i++) {
+              if(! channels[i].stealth) {
                 let programs = await this.getChannelPrograms(t0, t1, channels[i] );
                 result[ channels[i].number ] = programs;
+              }
             }
         }
         return result;
