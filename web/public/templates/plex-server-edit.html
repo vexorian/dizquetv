@@ -53,7 +53,7 @@
 
                     <div ng-if="state.channelReport == null" ng-hide="state.showDelete"  class="form-group">
                         <button class="btn btn-link" ng-click="onShowDelete()">
-                            <span class="text-danger"><i class="fa fa-trash"></i> Delete server...</span>
+                            <span class="text-danger"><i class="fa fa-trash-alt"></i> Delete server...</span>
                         </button>
                     </div>
 
@@ -65,7 +65,7 @@
                           <p class="card-text">If you delete a plex server, all the existing programs that reference to it will be
                               replaced with Flex time. Fillers that reference to the server will be removed. This operation cannot be undone.</p>
                         </div>
-                        <button ng-if="state.channelReport == null" type="button" class="btn btn-sm btn-danger" ng-click="onDelete();" ><i class='fa fa-trash'></i> Delete</button>
+                        <button ng-if="state.channelReport == null" type="button" class="btn btn-sm btn-danger" ng-click="onDelete();" ><i class='fa fa-trash-alt'></i> Delete</button>
                     </div>
 
 

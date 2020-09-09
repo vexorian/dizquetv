@@ -493,6 +493,17 @@ module.exports = function ($timeout, $location, dizquetv) {
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     let p = pos(t);
                     if ( (p != 0) && (p + scope.channel.programs[i].duration > b) ) {
+                        if (b - 30000 > p) {
+                            let d = b- p;
+                            t += d;
+                            p = pos(t);
+                            progs.push(
+                                {
+                                    duration: d,
+                                    isOffline: true,
+                                }
+                            )
+                        }
                         //time to pad
                         let d = m - p;
                         progs.push(
@@ -510,13 +521,23 @@ module.exports = function ($timeout, $location, dizquetv) {
                     t += scope.channel.programs[i].duration;
                 }
                 if (pos(t) != 0) {
+                    if (b >  pos(t)) {
+                        let d = b - pos(t) % m;
+                        t += d;
+                        progs.push(
+                            {
+                                duration: d,
+                                isOffline: true,
+                            }
+                        )
+                    }
                     let d = m - pos(t);
                     progs.push(
                         {
                             duration: d,
                             isOffline: true,
-                            type: (typeof(ch) === 'undefined') ? undefined: "redirect",
                             channel: ch,
+                            type: (typeof(ch) === 'undefined') ? undefined: "redirect",
                         }
                     )
                 }

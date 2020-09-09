@@ -197,37 +197,53 @@
                                                 <input id="randomizeBlockShuffle" type="checkbox" ng-model="randomizeBlockShuffle">&nbsp;
                                             </div>
                                         </div>
-                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="blockShuffle(blockCount, randomizeBlockShuffle)">Block Shuffle</button>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="blockShuffle(blockCount, randomizeBlockShuffle)">
+                                                <i class='fa fa-random'></i> Block Shuffle
+                                            </button>
                                     </div>
                                 </div>
                                 <div class="input-group col-md-3" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="randomShuffle()">Random Shuffle</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="randomShuffle()">
+                                        <i class='fa fa-random'></i> Random Shuffle
+                                    </button>
                                 </div>
                                 <div class="input-group col-md-3" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="cyclicShuffle()">Cyclic Shuffle</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="cyclicShuffle()">
+                                        <i class='fa fa-random'></i> Cyclic Shuffle
+                                    </button>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()">Sort TV Shows</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()">
+                                        <i class='fa fa-sort-alpha-down'></i> Sort TV Shows
+                                    </button>
                                 </div>
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortByDate()">Sort Release Dates</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortByDate()">
+                                        <i class='fa fa-sort-numeric-down'></i> Sort Release Dates
+                                    </button>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="equalizeShows()">Balance Shows</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="equalizeShows()">
+                                        <i class='fa fa-balance-scale'></i> Balance Shows
+                                    </button>
                                 </div>
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="startFrequencyTweak()">Tweak Weights...</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="startFrequencyTweak()">
+                                        <i class='fa fa-balance-scale'></i> Tweak Weights...
+                                    </button>
                                 </div>
 
                             </div>
 
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addOffline()">Add Flex...</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addOffline()">
+                                        <i class='fa fa-plus'></i> Add Flex...
+                                    </button>
                                 </div>
 
                                 <div class="col-md-6" style="padding: 5px;">
@@ -238,7 +254,10 @@
                                             <select ng-model="nightEnd"
                                             ng-options="o.id as o.description for o in nightEndHours" />
                                         </div>
-                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(nightStart, nightEnd)" ng-disabled="nightStart==-1 || nightEnd==-1">Restrict Hours</button>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(nightStart, nightEnd)" ng-disabled="nightStart==-1 || nightEnd==-1">
+                                            
+                                            <i class='far fa-moon'></i> Restrict Hours
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -251,7 +270,9 @@
                                             ng-options="o as o.description for o in paddingOptions" />
 
                                         </div>
-                                        <button ng-disabled="paddingOption.id==-1" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)">Pad Times</button>
+                                        <button ng-disabled="paddingOption.id==-1" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)">
+                                            <i class='far fa-clock'></i> Pad Times
+                                        </button>
                                     </div>
                                 </div>
 
@@ -265,7 +286,9 @@
                                             <select ng-model="maxBreakSize"
                                             ng-options="o.id as o.description for o in maxBreakSizeOptions" />
                                         </div>
-                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breakAfter==-1 || minBreakSize==-1 || maxBreakSize==-1 || (minBreakSize > maxBreakSize)">Add Breaks</button>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breakAfter==-1 || minBreakSize==-1 || maxBreakSize==-1 || (minBreakSize > maxBreakSize)">
+                                            <i class='fa fa-coffee'></i> Add Breaks
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -283,14 +306,18 @@
                                         ng-options="o.id as o.description for o in rerunRepeatOptions">
                                         </select>
                                     </div>
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="doReruns(rerunStart, rerunBlockSize, rerunRepeats)" ng-disabled="rerunStart == -1 || rerunBlockSize == -1 || rerunRepeats == -1" >Reruns</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="doReruns(rerunStart, rerunBlockSize, rerunRepeats)" ng-disabled="rerunStart == -1 || rerunBlockSize == -1 || rerunRepeats == -1" >
+                                        <i class='far fa-clone'></i> Reruns
+                                    </button>
                                 </div>
                             </div>
 
 
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addRedirect()">Add Redirect...</button>
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addRedirect()">
+                                        <i class='fas fa-external-link-alt'></i> Add Redirect...
+                                    </button>
                                 </div>
 
                                 <div class="col-md-6" style="padding: 5px;">
@@ -304,7 +331,9 @@
                                             <select ng-model="atNightEnd"
                                             ng-options="o.id as o.description for o in nightEndHours" ></select>
                                         </div>
-                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(atNightEnd, atNightStart, atNightChannelNumber)" ng-disabled="atNightChannelNumber==-1 || atNightStart==-1 || atNightEnd==-1">&quot;Channel at Night&quot;</button>
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(atNightEnd, atNightStart, atNightChannelNumber)" ng-disabled="atNightChannelNumber==-1 || atNightStart==-1 || atNightEnd==-1">
+                                            <i class='far fa-moon'></i> &quot;Channel at Night&quot;
+                                        </button>
                                     </div>
                                 </div>
 
@@ -314,19 +343,29 @@
 
                             <div class="row">
                                 <div class="input-group col" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeDuplicates()">Remove Duplicates</button>
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeDuplicates()">
+                                        <i class='fa fa-trash-alt'></i> Remove Duplicates
+                                    </button>
                                 </div>
                                 <div class="input-group col" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeOffline()">Remove Flex</button>
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="removeOffline()">
+                                        <i class='fa fa-trash-alt'></i> Remove Flex
+                                    </button>
                                 </div>
                                 <div class="input-group col" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSpecials()">Remove Specials</button>
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSpecials()">
+                                        <i class='fa fa-trash-alt'></i> Remove Specials
+                                    </button>
                                 </div>
                                 <div class="input-group col" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="startRemoveShows()">Remove Show(s)...</button>
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="startRemoveShows()">
+                                        <i class='fa fa-trash-alt'></i> Remove Show(s)...
+                                    </button>
                                 </div>
                                 <div class="input-group col" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSchedule()">Remove All</button>
+                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSchedule()">
+                                        <i class='fa fa-trash-alt'></i> Remove All
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -334,7 +373,8 @@
                             <div class="small">Add programs to this channel by selecting media from your Plex library</div>
                             <br/>
                             <h5 class="text-center text-danger">No programs are currently scheduled
-                                <button class="btn btn-sm btn-secondary" style="margin-left: 10px" type="button" ng-click="addOffline()">Schedule Flex Time
+                                <button class="btn btn-sm btn-secondary" style="margin-left: 10px" type="button" ng-click="addOffline()">
+                                    <i class='fa fa-plus'></i> Schedule Flex Time
                                 </button>
                             </h6>
 
@@ -360,7 +400,7 @@
                                 </div>
                                 <div class="flex-pull-right"></div>
                                 <button class="btn btn-sm btn-link" ng-click="removeItem(x.$index);  $event.stopPropagation()">
-                                    <i class="text-danger fa fa-trash"></i>
+                                    <i class="text-danger fa fa fa-trash-alt"></i>
                                 </button>
                               </div>
                             </div>
