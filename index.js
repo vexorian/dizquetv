@@ -67,19 +67,29 @@ let xmltvInterval = {
     interval: null,
     lastRefresh: null,
     updateXML: async () => {
-        let channels = [];
-        try {
+        let getChannelsCached = async() => {
             let channelNumbers = await channelDB.getAllChannelNumbers();
-            channels = await Promise.all( channelNumbers.map( async (x) => {
-                return await channelCache.getChannelConfig(channelDB, x);
+            return await Promise.all( channelNumbers.map( async (x) => {
+                return (await channelCache.getChannelConfig(channelDB, x))[0];
             }) );
+        }
+
+        let channels = [];
+
+        try {
+            channels = await getChannelsCached();
             let xmltvSettings = db['xmltv-settings'].find()[0];
-            await guideService.refresh( await channelDB.getAllChannels(), xmltvSettings.cache*60*60*1000 );
+            let t = guideService.prepareRefresh(channels, xmltvSettings.cache*60*60*1000);
+            channels = null;
+
+            await guideService.refresh(t);
             xmltvInterval.lastRefresh = new Date()
             console.log('XMLTV Updated at ', xmltvInterval.lastRefresh.toLocaleString());
         } catch (err) {
             console.error("Unable to update TV guide?", err);
+            return;
         }
+        channels = await getChannelsCached();
 
         let plexServers = db['plex-servers'].find()
         for (let i = 0, l = plexServers.length; i < l; i++) {       // Foreach plex server
