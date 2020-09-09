@@ -1,3 +1,5 @@
+.pull-right { float: right; }
+
 .commercials-panel {
   background-color: rgb(70, 70, 70);
   border-top: 1px solid #daa104;

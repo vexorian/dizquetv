@@ -114,7 +114,7 @@
                         <li ng-if="selection.length + x &gt;= 0" class="list-group-item" ng-repeat="x in allowedIndexes" style="cursor:default;" dnd-draggable="x" dnd-moved="selection.splice(selection.length + x, 1)" dnd-effect-allowed="move">
                             {{ (selection[selection.length + x].type !== 'episode') ? selection[selection.length + x].title : (selection[selection.length + x].showTitle + ' - S' + selection[selection.length + x].season.toString().padStart(2,'0') + 'E' + selection[selection.length + x].episode.toString().padStart(2,'0'))}}
                             <button class="pull-right btn btn-sm btn-link" ng-click="selection.splice(selection.length + x,1)">
-                                <span class="text-danger fa fa-trash" ></span>
+                                <span class="text-danger fa fa-trash-alt" ></span>
                             </button>
                         </li>
                     </ul>
