@@ -178,8 +178,8 @@
             <input type="text" class="form-control form-control-sm" ng-model="settings.subtitleSize" />
         </div>
         <div class="form-group">
-            <input id="enableSubtitles" type="checkbox" ng-model="settings.enableSubtitles"/>
-            <label for="enableSubtitles">Enable Subtitles (Requires Transcoding)</label>
+            <input class="form-check-input" id="enableSubtitles" type="checkbox" ng-model="settings.enableSubtitles" ng-disabled="shouldDisableSubtitles()"  />
+            <label class="form-check-label" for="enableSubtitles">Enable Subtitles (Requires Transcoding)</label>
         </div>
     </div>
 </div>
