@@ -42,9 +42,11 @@ class PlexTranscoder {
         this.log(`  deinterlace:     ${deinterlace}`)
         this.log(`  streamPath:      ${this.settings.streamPath}`)
 
-
-
         if (this.settings.streamPath === 'direct' || this.settings.forceDirectPlay) {
+            if (this.settings.enableSubtitles) {
+                console.log("Direct play is forced, so subtitles are forcibly disabled.");
+                this.settings.enableSubtitles = false;
+            }
             stream = {directPlay: true}
         } else {
             try {

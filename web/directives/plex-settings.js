@@ -145,6 +145,9 @@ module.exports = function (plex, dizquetv, $timeout) {
                 return r;
             }
 
+            scope.shouldDisableSubtitles = () => {
+                return scope.settings.forceDirectPlay || (scope.settings.streamPath === "direct" );
+            }
 
             scope.addPlexServer = async () => {
                 scope.isProcessing = true;
