@@ -332,6 +332,22 @@ module.exports = function ($timeout, $location, dizquetv) {
                 }
             }
 
+            let interpolate = ( () => {
+                let h = 60*60*1000;
+                let ix = [0, 1*h, 2*h, 4*h, 8*h, 24*h];
+                let iy = [0, 1.0, 1.25, 1.5, 1.75, 2.0];
+                let n = ix.length;
+
+                return (x) => {
+                    for (let i = 0; i < n-1; i++) {
+                        if( (ix[i] <= x) && ( (x < ix[i+1]) || i==n-2 ) ) {
+                            return iy[i] + (iy[i+1] - iy[i]) * ( (x - ix[i]) / (ix[i+1] - ix[i]) );
+                        }
+                    }
+                }
+
+            } )();
+
             scope.programSquareStyle = (program) => {
                 let background ="";
                 if  ( (program.isOffline) && (program.type !== 'redirect') ) {
@@ -375,27 +391,26 @@ module.exports = function ($timeout, $location, dizquetv) {
                     }
                     let rgb1 = "rgb("+ r + "," + g + "," + b +")";
                     let rgb2 = "rgb("+ r2 + "," + g2 + "," + b2 +")"
+                    angle += 90;
                     background = "repeating-linear-gradient( " + angle + "deg, " + rgb1 + ", " + rgb1 + " " + w + "px, " + rgb2 + " " + w + "px, " + rgb2 + " " + (w*2) + "px)";
 
                 }
-                let ems = Math.pow( Math.min(24*60*60*1000, program.duration), 0.7 );
-                ems = 1.3;
-                let top = 0.01;
-                if (top == 0.0) {
-                    top = "1px";
-                } else {
-                    top = top + "em";
-                }
-
-                
+                let f = interpolate;
+                let w = 5.0;
+                let t = 4*60*60*1000;
+                //let d = Math.log( Math.min(t, program.duration) ) / Math.log(2);
+                //let a = (d * Math.log(2) ) / Math.log(t);
+                let a = ( f(program.duration) *w) / f(t);
+                a = Math.min( w, Math.max(0.3, a) );
+                b = w - a + 0.01;
 
                 return {
-                    'width': '0.5em',
-                    'height': ems + 'em',
-                    'margin-right': '0.50em',
+                    'width': `${a}%`,
+                    'height': '1.3em',
+                    'margin-right': `${b}%`,
                     'background': background,
                     'border': '1px solid black',
-                    'margin-top': top,
+                    'margin-top': "0.01em",
                     'margin-bottom': '1px',
                 };
             }
