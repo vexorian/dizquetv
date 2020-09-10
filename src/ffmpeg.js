@@ -30,6 +30,7 @@ class FFMPEG extends events.EventEmitter {
         this.audioChannelsSampleRate = this.opts.normalizeAudio;
         this.ensureResolution = this.opts.normalizeResolution;
         this.volumePercent =  this.opts.audioVolumePercent;
+        this.hasBeenKilled = false;
     }
     async spawnConcat(streamUrl) {
         return await this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
@@ -404,24 +405,37 @@ class FFMPEG extends events.EventEmitter {
         let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
         this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
 
-        this.ffmpeg.on('close', (code) => {
+        let ffmpegName = (isConcatPlaylist ? "Concat FFMPEG":  "Stream FFMPEG");
+
+        this.ffmpeg.on('exit', (code, signal) => {
             if (code === null) {
+                console.log( `${ffmpegName} exited due to signal: ${signal}` );
                 this.emit('close', code)
             } else if (code === 0) {
+                console.log( `${ffmpegName} exited normally.` );
                 this.emit('end')
             } else if (code === 255) {
+                if (this.hasBeenKilled) {
+                    console.log( `${ffmpegName} finished with code 255.` );
+                    this.emit('close', code)
+                    return;
+                }
                 if (! this.sentData) {
                     this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}` })
                 }
+                console.log( `${ffmpegName} exited with code 255.` );
                 this.emit('close', code)
             } else {
+                console.log( `${ffmpegName} exited with code ${code}.` );
                 this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}` })
             }
-        })
+        });
+
         return this.ffmpeg.stdout;
     }
     kill() {
         if (typeof this.ffmpeg != "undefined") {
+            this.hasBeenKilled = true;
             this.ffmpeg.kill()
         }
     }
