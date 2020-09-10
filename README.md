@@ -1,4 +1,4 @@
-# dizqueTV 0.0.68-prerelease
+# dizqueTV 0.0.68
 ![Discord](https://img.shields.io/discord/711313431457693727?logo=discord&logoColor=fff&style=flat-square) ![GitHub top language](https://img.shields.io/github/languages/top/vexorian/dizquetv?logo=github&style=flat-square) ![Docker Pulls](https://img.shields.io/docker/pulls/vexorian/dizquetv?logo=docker&logoColor=fff&style=flat-square)
 
 Create live TV channel streams from media on your Plex servers.
