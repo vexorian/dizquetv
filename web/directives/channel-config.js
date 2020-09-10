@@ -16,6 +16,9 @@ module.exports = function ($timeout, $location, dizquetv) {
             scope._frequencyMessage = "";
             scope.millisecondsOffset = 0;
             scope.minProgramIndex = 0;
+            scope.episodeMemory = {
+                saved : false,
+            };
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
@@ -113,6 +116,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 setTimeout( () => {
                     scope.channel.programs.splice(dropIndex + index, 0, program);
                     updateChannelDuration()
+                    scope.$apply();
                 }, 1);
                 return true;
             }
@@ -328,6 +332,22 @@ module.exports = function ($timeout, $location, dizquetv) {
                 }
             }
 
+            let interpolate = ( () => {
+                let h = 60*60*1000;
+                let ix = [0, 1*h, 2*h, 4*h, 8*h, 24*h];
+                let iy = [0, 1.0, 1.25, 1.5, 1.75, 2.0];
+                let n = ix.length;
+
+                return (x) => {
+                    for (let i = 0; i < n-1; i++) {
+                        if( (ix[i] <= x) && ( (x < ix[i+1]) || i==n-2 ) ) {
+                            return iy[i] + (iy[i+1] - iy[i]) * ( (x - ix[i]) / (ix[i+1] - ix[i]) );
+                        }
+                    }
+                }
+
+            } )();
+
             scope.programSquareStyle = (program) => {
                 let background ="";
                 if  ( (program.isOffline) && (program.type !== 'redirect') ) {
@@ -371,26 +391,26 @@ module.exports = function ($timeout, $location, dizquetv) {
                     }
                     let rgb1 = "rgb("+ r + "," + g + "," + b +")";
                     let rgb2 = "rgb("+ r2 + "," + g2 + "," + b2 +")"
+                    angle += 90;
                     background = "repeating-linear-gradient( " + angle + "deg, " + rgb1 + ", " + rgb1 + " " + w + "px, " + rgb2 + " " + w + "px, " + rgb2 + " " + (w*2) + "px)";
 
                 }
-                let ems = Math.pow( Math.min(24*60*60*1000, program.duration), 0.7 );
-                ems = ems / Math.pow(5*60*1000., 0.7);
-                ems = Math.max( 0.25 , ems);
-                let top = Math.max(0.0, (1.75 - ems) / 2.0) ;
-                if (top == 0.0) {
-                    top = "1px";
-                } else {
-                    top = top + "em";
-                }
+                let f = interpolate;
+                let w = 5.0;
+                let t = 4*60*60*1000;
+                //let d = Math.log( Math.min(t, program.duration) ) / Math.log(2);
+                //let a = (d * Math.log(2) ) / Math.log(t);
+                let a = ( f(program.duration) *w) / f(t);
+                a = Math.min( w, Math.max(0.3, a) );
+                b = w - a + 0.01;
 
                 return {
-                    'width': '0.5em',
-                    'height': ems + 'em',
-                    'margin-right': '0.50em',
+                    'width': `${a}%`,
+                    'height': '1.3em',
+                    'margin-right': `${b}%`,
                     'background': background,
                     'border': '1px solid black',
-                    'margin-top': top,
+                    'margin-top': "0.01em",
                     'margin-bottom': '1px',
                 };
             }
@@ -491,6 +511,17 @@ module.exports = function ($timeout, $location, dizquetv) {
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     let p = pos(t);
                     if ( (p != 0) && (p + scope.channel.programs[i].duration > b) ) {
+                        if (b - 30000 > p) {
+                            let d = b- p;
+                            t += d;
+                            p = pos(t);
+                            progs.push(
+                                {
+                                    duration: d,
+                                    isOffline: true,
+                                }
+                            )
+                        }
                         //time to pad
                         let d = m - p;
                         progs.push(
@@ -508,19 +539,126 @@ module.exports = function ($timeout, $location, dizquetv) {
                     t += scope.channel.programs[i].duration;
                 }
                 if (pos(t) != 0) {
+                    if (b >  pos(t)) {
+                        let d = b - pos(t) % m;
+                        t += d;
+                        progs.push(
+                            {
+                                duration: d,
+                                isOffline: true,
+                            }
+                        )
+                    }
                     let d = m - pos(t);
                     progs.push(
                         {
                             duration: d,
                             isOffline: true,
-                            type: (typeof(ch) === 'undefined') ? undefined: "redirect",
                             channel: ch,
+                            type: (typeof(ch) === 'undefined') ? undefined: "redirect",
                         }
                     )
                 }
                 scope.channel.programs = progs;
                 updateChannelDuration();
             }
+            scope.savePositions = () => {
+                scope.episodeMemory = {
+                    saved : false,
+                };
+                let array = scope.channel.programs;
+                for (let i = 0; i < array.length; i++) {
+                    if (array[i].type === 'episode' && array[i].season != 0) {
+                        let key = array[i].showTitle;
+                        if (typeof(scope.episodeMemory[key]) === 'undefined') {
+                            scope.episodeMemory[key] = {
+                                season: array[i].season,
+                                episode: array[i].episode,
+                            }
+                        }
+                    }
+                }
+                scope.episodeMemory.saved = true;
+            }
+            scope.recoverPositions = () => {
+                //this is basically the code for cyclic shuffle
+                let array = scope.channel.programs;
+                let shows = {};
+                let next = {};
+                let counts = {};
+                // some precalculation, useful to stop the shuffle from being quadratic...
+                for (let i = 0; i < array.length; i++) {
+                    let vid = array[i];
+                    if (vid.type === 'episode' && vid.season != 0) {
+                        let countKey = {
+                            title: vid.showTitle,
+                            s: vid.season,
+                            e: vid.episode,
+                        }
+                        let key = JSON.stringify(countKey);
+                        let c = ( (typeof(counts[key]) === 'undefined') ? 0 : counts[key] );
+                        counts[key] = c + 1;
+                        let showEntry = {
+                            c: c,
+                            it: vid
+                        }
+                        if ( typeof(shows[vid.showTitle]) === 'undefined') {
+                            shows[vid.showTitle] = [];
+                        }
+                        shows[vid.showTitle].push(showEntry);
+                    }
+                }
+                //this is O(|N| log|M|) where |N| is the total number of TV
+                // episodes and |M| is the maximum number of episodes
+                // in a single show. I am pretty sure this is a lower bound
+                // on the time complexity that's possible here.
+                Object.keys(shows).forEach(function(key,index) {
+                    shows[key].sort( (a,b) => {
+                        if (a.c == b.c) {
+                            if (a.it.season == b.it.season) {
+                                if (a.it.episode == b.it.episode) {
+                                    return 0;
+                                } else {
+                                    return (a.it.episode < b.it.episode)?-1: 1;
+                                }
+                            } else {
+                                return (a.it.season < b.it.season)?-1: 1;
+                            }
+                        } else {
+                            return (a.c < b.c)? -1: 1;
+                        }
+                    });
+                    next[key] = 0;
+                    if (typeof(scope.episodeMemory[key]) !== 'undefined') {
+                        for (let i = 0; i < shows[key].length; i++) {
+                            if (
+                                (shows[key][i].it.season === scope.episodeMemory[key].season)
+                              &&(shows[key][i].it.episode === scope.episodeMemory[key].episode)
+                            ) {
+                                next[key] = i;
+                                break;
+                            }
+                        }
+                    }
+                });
+                for (let i = 0; i < array.length; i++) {
+                    if (array[i].type === 'episode' && array[i].season != 0) {
+                        let title = array[i].showTitle;
+                        var sequence = shows[title];
+                        let j = next[title];
+                        array[i] = sequence[j].it;
+                        
+                        next[title] = (j + 1) % sequence.length;
+                    }
+                }
+                scope.channel.programs = array;
+                updateChannelDuration();
+
+            }
+            scope.cannotRecoverPositions  = () => {
+                return scope.episodeMemory.saved !== true;
+            }
+
             scope.addBreaks = (afterMinutes, minDurationSeconds, maxDurationSeconds) => {
                 let after = afterMinutes * 60 * 1000 + 5000; //allow some seconds of excess
                 let minDur = minDurationSeconds;
@@ -869,6 +1007,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope.hasFlex = false;
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     scope.channel.programs[i].start = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
+                    scope.channel.programs[i].$index = i;
                     scope.channel.duration += scope.channel.programs[i].duration
                     scope.channel.programs[i].stop = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
                     if (scope.channel.programs[i].isOffline) {
@@ -906,6 +1045,9 @@ module.exports = function ($timeout, $location, dizquetv) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
                     else {
                         channel.startTime.setMilliseconds( scope.millisecondsOffset);
+                        for (let i = 0; i < scope.channel.programs.length; i++) {
+                            delete scope.channel.programs[i].$index;
+                        }
                         scope.onDone(JSON.parse(angular.toJson(channel)))
                     }
                     $timeout(() => { scope.error = {} }, 3500)

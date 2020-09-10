@@ -33,13 +33,13 @@
         <td><span class='text-secondary text-small'>{{ x.uri }}</span></td>
         <td>
             <div class='loader' ng-if="x.uiStatus == 0"></div>
-            <div class='fa fa-check text-success' ng-if="x.uiStatus == 1">ok</div>
-            <div class='fa fa-warning text-danger' ng-if="x.uiStatus == -1">error</div>
+            <div class='text-success' ng-if="x.uiStatus == 1"><i class='fa fa-check'></i>ok</div>
+            <div class='text-danger' ng-if="x.uiStatus == -1"><i class='fa fa-exclamation-triangle'></i>error</div>
         </td>
         <td>
             <div class='loader' ng-if="x.backendStatus == 0"></div>
-            <div class='fa fa-check text-success' ng-if="x.backendStatus == 1">ok</div>
-            <div class='fa fa-warning text-danger' ng-if="x.backendStatus == -1">error</div>
+            <div class='text-success' ng-if="x.backendStatus == 1"><i class='fa fa-check'></i>ok</div>
+            <div class='text-danger' ng-if="x.backendStatus == -1"><i class='fa fa-exclamation-triangle'></i>error</div>
         </td>
         <td>
             <button class="btn btn-sm btn-outline-secondary" ng-click="editPlexServer(x)">
@@ -178,8 +178,8 @@
             <input type="text" class="form-control form-control-sm" ng-model="settings.subtitleSize" />
         </div>
         <div class="form-group">
-            <input id="enableSubtitles" type="checkbox" ng-model="settings.enableSubtitles"/>
-            <label for="enableSubtitles">Enable Subtitles (Requires Transcoding)</label>
+            <input class="form-check-input" id="enableSubtitles" type="checkbox" ng-model="settings.enableSubtitles" ng-disabled="shouldDisableSubtitles()"  />
+            <label class="form-check-label" for="enableSubtitles">Enable Subtitles (Requires Transcoding)</label>
         </div>
     </div>
 </div>

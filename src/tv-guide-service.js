@@ -28,12 +28,16 @@ class TVGuideService
         return this.cached;
     }
 
-    async refresh(inputChannels, limit) {
+    prepareRefresh(inputChannels, limit) {
         let t = (new Date()).getTime();
         this.updateTime = t;
         this.updateLimit = t + limit;
-        let channels = inputChannels.filter( ch =>  (ch.stealth !== true) );
+        let channels = inputChannels;
         this.updateChannels = channels;
+        return t;
+    }
+
+    async refresh(t) {
         while( this.lastUpdate < t) {
             if (this.currentUpdate == -1) {
                 this.currentUpdate = this.updateTime;
@@ -47,6 +51,9 @@ class TVGuideService
     }
 
     async makeAccumulated(channel) {
+        if (typeof(channel.programs) === 'undefined') {
+            throw Error( JSON.stringify(channel).slice(0,200) );
+        }
         let n = channel.programs.length;
         let arr = new Array( channel.programs.length + 1);
         arr[0] = 0;
@@ -296,8 +303,10 @@ class TVGuideService
             }
         } else {
             for (let i = 0; i < channels.length; i++) {
+              if(! channels[i].stealth) {
                 let programs = await this.getChannelPrograms(t0, t1, channels[i] );
                 result[ channels[i].number ] = programs;
+              }
             }
         }
         return result;
