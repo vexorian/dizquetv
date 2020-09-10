@@ -139,6 +139,9 @@
                                 <h6>Sort Release Dates</h6>
                                 <p>Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.</p>
 
+                                <h6>Sort Release Dates</h6>
+                                <p>Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.</p>
+
                                 <h6>Balance Shows</h6>
                                 <p>Attempts to make the total amount of time each TV show appears in the programming as balanced as possible. This works by adding multiple copies of TV shows that have too little total time and by possibly removing duplicated episodes from TV shows that have too much total time. Note that in many situations it would be impossible to achieve perfect balance because channel duration is not infinite. Movies/Clips are treated as a single TV show. Note that this will most likely result in a larger channel and that having large channels makes some UI operations slower.</p>
 
@@ -159,6 +162,10 @@
 
                                 <h6>Reruns</h6>
                                 <p>Divides the programming in blocks of 6, 8 or 12 hours then repeats each of the blocks the specified number of times. For example,  you can make a channel that plays exactly the same channels in the morning and in the afternoon. </p>
+
+                                <h6>Save|Recover Episode Positions</h6>
+                                <p>The &quot;Save&quot; button saves the current episodes that are next to be played for each tv show. Then whenever you click the &quot;Recover Episode Popsitions&quot; button, episodes will be rearranged cyclically and they will start with the saved positions. So you can maintain episode sequences even after modifying the channel. If there are any new TV shows, they will start at their current positions. Movies and specials won&apos;t change positions.
+                                </p>
 
                                 <h6>Add Redirect</h6>
                                 <p>Adds a channel redirect. During this period of time, the channel will redirect to another channel.</p>
@@ -189,7 +196,7 @@
                                 <div class="col-md-6" style="padding: 5px;">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <input type="number" class="form-control form-control-sm" placeholder="Desired number of consecutive TV shows." min="1" max="10" ng-model="blockCount">
+                                            <input type="number" class="form-control form-control-sm" placeholder="Desired number of consecutive TV shows." min="1" max="10" ng-model="blockCount" style="width:5em">
                                         </div>
                                         <div class="input-group-prepend">
                                             <div class="input-group-text" style="padding: 0;">
@@ -225,6 +232,7 @@
                                     </button>
                                 </div>
                             </div>
+
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
                                     <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="equalizeShows()">
@@ -279,11 +287,11 @@
                                 <div class="col-md-6" style="padding: 5px;">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <select ng-model="breakAfter"
+                                            <select style="width:5em" ng-model="breakAfter"
                                             ng-options="o.id as o.description for o in breakAfterOptions" />
-                                            <select ng-model="minBreakSize"
+                                            <select style="width:5em" ng-model="minBreakSize"
                                             ng-options="o.id as o.description for o in minBreakSizeOptions" />
-                                            <select ng-model="maxBreakSize"
+                                            <select style="width:5em" ng-model="maxBreakSize"
                                             ng-options="o.id as o.description for o in maxBreakSizeOptions" />
                                         </div>
                                         <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breakAfter==-1 || minBreakSize==-1 || maxBreakSize==-1 || (minBreakSize > maxBreakSize)">
@@ -310,6 +318,22 @@
                                         <i class='far fa-clone'></i> Reruns
                                     </button>
                                 </div>
+
+                                <div class="input-group col-md-6" style="padding: 5px;">
+                                    <div class="input-group-prepend">
+                                        <button class="btn btn-sm btn-secondary form-control form-control-sm" type="button" ng-click="savePositions()">
+                                            <i class='fa fa-file-import'></i> Save
+                                        </button>
+                                    </div>
+
+                                   
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="recoverPositions()"  ng-disabled='cannotRecoverPositions()' >
+                                        <i class='fa fa-file-export'></i> Recover Episode Positions
+                                    </button>
+    
+                                    
+                                </div>
+    
                             </div>
 
 
