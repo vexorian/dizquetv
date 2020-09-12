@@ -14,7 +14,6 @@ module.exports = function ($timeout, $location, dizquetv) {
             scope.showHelp = false;
             scope._frequencyModified = false;
             scope._frequencyMessage = "";
-            scope.millisecondsOffset = 0;
             scope.minProgramIndex = 0;
             scope.episodeMemory = {
                 saved : false,
@@ -89,8 +88,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 if (typeof(scope.channel.disableFillerOverlay) === 'undefined') {
                     scope.channel.disableFillerOverlay = true;
                 }
-                scope.millisecondsOffset  = (t - offset) % 1000;
-                scope.channel.startTime = new Date(t - offset - scope.millisecondsOffset);
+                scope.channel.startTime = new Date(t - offset);
                 // move runningProgram to index 0
                 scope.channel.programs = scope.channel.programs.slice(runningProgram, this.length)
                     .concat(scope.channel.programs.slice(0, runningProgram) );
@@ -696,7 +694,6 @@ module.exports = function ($timeout, $location, dizquetv) {
                 let progs = [];
                 let t = scope.channel.startTime.getTime();
                 t = t - t  % mod;
-                scope.millisecondsOffset = 0;
                 scope.channel.startTime = new Date(t);
                 function addPad(force) {
                     let m = t % mod;
@@ -878,10 +875,14 @@ module.exports = function ($timeout, $location, dizquetv) {
                 max = Math.floor(max)
                 return Math.floor(Math.random() * (max - min + 1)) + min
             }
-            function shuffle(array) {
-                let currentIndex = array.length, temporaryValue, randomIndex
-                while (0 !== currentIndex) {
-                    randomIndex = Math.floor(Math.random() * currentIndex)
+            function shuffle(array, lo, hi ) {
+                if (typeof(lo) === 'undefined') {
+                    lo = 0;
+                    hi = array.length;
+                }
+                let currentIndex = hi, temporaryValue, randomIndex
+                while (lo !== currentIndex) {
+                    randomIndex = lo + Math.floor(Math.random() * (currentIndex -lo) );
                     currentIndex -= 1
                     temporaryValue = array[currentIndex]
                     array[currentIndex] = array[randomIndex]
@@ -937,6 +938,29 @@ module.exports = function ($timeout, $location, dizquetv) {
                     }
                 });
                 return progs;
+            }
+            scope.replicate = (t) => {
+                let arr = [];
+                for (let j = 0; j < t; j++) {
+                    for (let i = 0; i < scope.channel.programs.length; i++) {
+                        arr.push( JSON.parse( angular.toJson(scope.channel.programs[i]) ) );
+                        arr[i].$index = i;
+                    }
+                }
+                scope.channel.programs = arr;
+                updateChannelDuration();
+            }
+            scope.shuffleReplicate =(t) => {
+                shuffle( scope.channel.programs );
+                let n = scope.channel.programs.length;
+                let a = Math.floor(n / 2);
+                scope.replicate(t);
+                for (let i = 0; i < t; i++) {
+                    shuffle( scope.channel.programs, n*i, n*i + a);
+                    shuffle( scope.channel.programs, n*i + a, n*i + n);
+                }
+                updateChannelDuration();
+
             }
             function cyclicShuffle(array) {
                 let shows = {};
@@ -1025,6 +1049,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                         channelNumbers.push(scope.channels[i].number)
                     // validate
                     var now = new Date()
+                    scope.error.any = true;
                     if (typeof channel.number === "undefined" || channel.number === null || channel.number === "")
                         scope.error.number = "Select a channel number"
                     else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) // we need the parseInt for indexOf to work properly
@@ -1044,13 +1069,13 @@ module.exports = function ($timeout, $location, dizquetv) {
                     else if (channel.programs.length === 0)
                         scope.error.programs = "No programs have been selected. Select at least one program."
                     else {
-                        channel.startTime.setMilliseconds( scope.millisecondsOffset);
+                        scope.error.any = false;
                         for (let i = 0; i < scope.channel.programs.length; i++) {
                             delete scope.channel.programs[i].$index;
                         }
                         scope.onDone(JSON.parse(angular.toJson(channel)))
                     }
-                    $timeout(() => { scope.error = {} }, 3500)
+                    $timeout(() => { scope.error = {} }, 60000)
                 }
             }
 
@@ -1100,6 +1125,13 @@ module.exports = function ($timeout, $location, dizquetv) {
                     }
                 } else {
                     scope._selectedProgram = JSON.parse(angular.toJson(program));
+                }
+            }
+            scope.maxReplicas = () => {
+                if (scope.channel.programs.length == 0) {
+                    return 1;
+                } else {
+                    return Math.floor( 50000 / scope.channel.programs.length );
                 }
             }
             scope.removeItem = (x) => {

@@ -163,6 +163,13 @@
                                 <h6>Reruns</h6>
                                 <p>Divides the programming in blocks of 6, 8 or 12 hours then repeats each of the blocks the specified number of times. For example,  you can make a channel that plays exactly the same channels in the morning and in the afternoon. </p>
 
+                                <h6>Replicate</h6>
+                                <p>Makes multiple copies of the schedule and plays them in sequence. Normally this isn&apos;t necessary, because dizqueTV will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, there&apos;s a limit of 50000 programs to the size of the resulting channel when using this tool.</p>
+
+                                <h6>Replicate &amp; Shuffle</h6>
+                                <p>Like &quot;Replicate&quot;, it will make multiple copies of the programming. In addition it will shuffle the programs, but it will make sure not to have too small a distance between two identical programs.</p>
+
+
                                 <h6>Save|Recover Episode Positions</h6>
                                 <p>The &quot;Save&quot; button saves the current episodes that are next to be played for each tv show. Then whenever you click the &quot;Recover Episode Popsitions&quot; button, episodes will be rearranged cyclically and they will start with the saved positions. So you can maintain episode sequences even after modifying the channel. If there are any new TV shows, they will start at their current positions. Movies and specials won&apos;t change positions.
                                 </p>
@@ -336,6 +343,30 @@
     
                             </div>
 
+                            <div class="row">
+                                <div class="col-md-6" style="padding: 5px;">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="replicaCount" style="width:5em">
+                                        </div>
+                                        <button ng-disabled="!(replicaCount &gt;= 2)" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="replicate(replicaCount)">
+                                                <i class='fas fa-recycle'></i> Replicate
+                                            </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6" style="padding: 5px;">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="randomReplicaCount" style="width:5em">
+                                        </div>
+                                        <button ng-disabled="!(randomReplicaCount &gt;= 2)"  class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="shuffleReplicate(randomReplicaCount)">
+                                                <i class='fas fa-dice'></i> Replicate &amp; Shuffle
+                                            </button>
+                                    </div>
+                                </div>
+
+                            </div>
 
                             <div class="row">
                                 <div class="input-group col-md-6" style="padding: 5px;">
@@ -443,6 +474,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <span class="pull-right text-danger" ng-show="error.any"> <i class='fa fa-exclamation-triangle'></i> There were errors. Please review the form.</span>
                     <div class="text-right">
                         <button class="btn btn-sm btn-link" ng-click="_onDone()">
                             Cancel

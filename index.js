@@ -165,6 +165,14 @@ app.get('/version.js', (req, res) => {
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
+
+app.use('/favicon-16.png', express.static(
+    path.join(__dirname, 'resources/favicon-16.png')
+) );
+app.use('/favicon-32.png', express.static(
+    path.join(__dirname, 'resources/favicon-32.png')
+) );
+
 app.use(api.router(db, channelDB, xmltvInterval, guideService ))
 app.use(video.router( channelDB, db))
 app.use(hdhr.router)
