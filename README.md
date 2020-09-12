@@ -64,3 +64,8 @@ Live Development: (using `nodemon` and `watchify`)
 npm run dev-client
 npm run dev-server
 ```
+
+## Contribute
+
+* Pull requests welcome but please read the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Pull Request Template](pull_request_template.md) first.
+* Tip Jar: https://buymeacoffee.com/vexorian
