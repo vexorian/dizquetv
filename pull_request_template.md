@@ -5,7 +5,10 @@
 ### All Submissions:
 
 * [ ] I have read the code of conduct.
-* [ ] I am submitting to the correct base branch (Currently *ALL* PRs must go to `dev/0.0.x` )
+* [ ] I am submitting to the correct base branch
+
+   * Bug fixes must go to `dev/1.0.x`.
+   * New features must go to `dev/1.1.x`.
 
 ### Changes that modify the db structure
 
