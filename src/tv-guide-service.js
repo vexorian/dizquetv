@@ -167,6 +167,7 @@ class TVGuideService
         let x = await this.getChannelPlaying(channel, undefined, t0);
         if (x.program.duration == 0) throw Error("A " + channel.name + " " + JSON.stringify(x) );
 
+        let melded = 0;
 
         let push = async (x) => {
             await this._throttle();
@@ -181,18 +182,26 @@ class TVGuideService
                 //meld with previous
                 let y = clone( programs[ programs.length - 1] );
                 y.program.duration += x.program.duration;
-                programs[ programs.length - 1] = y;
-            } else if (isProgramFlex(x.program) ) {
-                if (programs.length > 0) {
-                    let y = programs[ programs.length - 1];
-                    let a = y.start;
-                    let b = a + y.program.duration;
-                    let a2 = x.start;
-                    if (b > a2) {
-                        throw Error( [  "darn0", b, a2,  JSON.stringify(y) , JSON.stringify(x) ] );
-                    }
+                melded += x.program.duration;
+                if (
+                    (melded > constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS)
+                    && !isProgramFlex(programs[ programs.length - 1].program)
+                ) {
+                    y.program.duration -= melded;
+                    programs[ programs.length - 1] = y;
+                    programs.push( {
+                        start: y.start + y.program.duration,
+                        program: {
+                            isOffline : true,
+                            duration: melded,
+                        },
+                    } );
+                    melded = 0;
+                } else {
+                    programs[ programs.length - 1] = y;
                 }
-
+            } else if (isProgramFlex(x.program) ) {
+                melded = 0;
                 programs.push( {
                     start: x.start,
                     program: {
@@ -201,15 +210,7 @@ class TVGuideService
                     },
                 } );
             } else {
-                if (programs.length > 0) {
-                    let y = programs[ programs.length - 1];
-                    let a = y.start;
-                    let b = a + y.program.duration;
-                    let a2 = x.start;
-                    if (b > a2) {
-                        throw Error( [  "darn", b, a2,  JSON.stringify(y) , JSON.stringify(x) ] );
-                    }
-                }
+                melded = 0;
                 programs.push(x);
             }
         };
@@ -249,18 +250,7 @@ class TVGuideService
                     result.programs.push( makeEntry(channel,x) );
                 }
             } else {
-                if (i > 0) {
-                    let y = programs[ i - 1];
-                    let x = programs[i];
-                    let a = y.start;
-                    let b = a + y.program.duration;
-                    let a2 = x.start;
-                    if (b > a2) {
-                        console.error( "darn2", b, a2 );
-                    }
-
-                }
-                result.programs.push( makeEntry(channel, programs[i] ) );
+                            result.programs.push( makeEntry(channel, programs[i] ) );
             }
         }
          
