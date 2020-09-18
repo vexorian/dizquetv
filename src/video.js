@@ -158,8 +158,8 @@ function video( channelDB , db) {
       if (isLoading) {
           lineupItem = {
              type: 'loading',
-             streamDuration: 1000,
-             duration: 1000,
+             streamDuration: 40,
+             duration: 40,
              start: 0,
           };
       } else if (lineupItem == null) {

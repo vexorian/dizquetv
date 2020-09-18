@@ -138,7 +138,7 @@
                         <div ng-show="program.filler.length === 0">
                             <p class="text-center text-info">Click the <span class="fa fa-plus"></span> to import filler content from your Plex server(s).</p>
                         </div>
-                        <div class="list-group list-group-root" dnd-list="program.filler">
+                        <div class="list-group list-group-root" dnd-list="program.filler" ng-if="showList()">
                             <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.filler" dnd-draggable="x" dnd-moved="program.filler.splice($index, 1)" dnd-effect-allowed="move">
                                 <div class="program-start" >
                                     {{durationString(x.duration)}}
