@@ -33,6 +33,9 @@ module.exports = function ($timeout) {
                 scope.onDone(JSON.parse(angular.toJson(prog)))
                 scope.program = null
             }
+            scope.showList = () => {
+                return ! scope.showPlexLibrary && ! scope.showFallbackPlexLibrary;
+            }
             scope.sortFillers = () => {
                 scope.program.filler.sort( (a,b) => { return a.duration - b.duration } );
             }
@@ -60,6 +63,7 @@ module.exports = function ($timeout) {
                     selectedPrograms[i].commercials = []
                 }
                 scope.program.filler = scope.program.filler.concat(selectedPrograms);
+                scope.showPlexLibrary = false;
             }
 
             scope.importFallback = (selectedPrograms) => {
@@ -70,6 +74,7 @@ module.exports = function ($timeout) {
                 if (selectedPrograms.length > 0) {
                     scope.program.fallback = [ selectedPrograms[0] ];
                 }
+                scope.showFallbackPlexLibrary = false;
             }
 
 
