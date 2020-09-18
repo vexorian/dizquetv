@@ -11,6 +11,7 @@ module.exports = function ($scope, $timeout, dizquetv) {
     $scope.enableBack = false;
     $scope.showNow = false;
     $scope.nowPosition = 0;
+    $scope.refreshHandle = null;
 
     const intl = new Intl.DateTimeFormat('default',
         {
@@ -146,7 +147,25 @@ module.exports = function ($scope, $timeout, dizquetv) {
         $scope.enableBack = false;
         $scope.enableNext = false;
         await Promise.all($scope.channelNumbers.map( $scope.loadChannel) );
+        setupTimer();
     };
+
+    let cancelTimerIfExists = () => {
+        if ($scope.refreshHandle != null) {
+            $timeout.cancel($scope.refreshHandle);
+        }
+    }
+
+    $scope.$on('$locationChangeStart', () => {
+        console.log("$locationChangeStart" );
+        cancelTimerIfExists();
+    } );
+    
+
+    let setupTimer = () => {
+        cancelTimerIfExists();
+        $scope.refreshHandle = $timeout( () =>  $scope.checkUpdates(), 60000 );
+    }
 
     $scope.adjustZoom = async() => {
         switch ($scope.zoomLevel) {
@@ -310,8 +329,6 @@ module.exports = function ($scope, $timeout, dizquetv) {
         }
         $scope.channels[number] = ch;
         $scope.applyLater();
-        $timeout( () =>  $scope.checkUpdates(), 60000 );
-
     }
 
 
@@ -327,12 +344,13 @@ module.exports = function ($scope, $timeout, dizquetv) {
 
     $scope.checkUpdates = async () => {
         try {
+            console.log("get status " + new Date() );
             let status = await dizquetv.getGuideStatus();
             let t = new Date(status.lastUpdate).getTime();
             if ( t > $scope.lastUpdate) {
                 $scope.refreshManaged();
             } else {
-                $timeout( () => $scope.checkUpdates(), 60000 );
+                setupTimer();
             }
         } catch(err) {
             console.error(err);
