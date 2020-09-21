@@ -245,6 +245,10 @@ table.tvguide {
   opacity: 0.5;
 }
 
+.flex-filler-percent {
+  text-align: right;
+}
+
 /* Safari */
 @-webkit-keyframes spin {
   0% { -webkit-transform: rotate(0deg); }

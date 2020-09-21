@@ -88,10 +88,10 @@
                             <div class="flex-container">
 
                                 <div class='programming-counter'>
-                                    <span class="small"><b>Programs:</b> {{channel.programs.length}}</span>
+                                    <span class="small"><b>Total:</b> {{channel.programs.length}}</span>
                                 </div>
                                 <div class='programming-counter' ng-show='hasFlex'>
-                                    <span class="small"><b>Filler:</b> {{channel.fillerContent.length}}</span>
+                                    <span class="small"><b>Filler Lists:</b> {{channel.fillerCollections.length}}</span>
                                 </div>
                                 <div class='programming-counter' ng-show='hasFlex'>
                                     <span class="small"><b>Fallback:</b> {{describeFallback()}}</span>
@@ -488,10 +488,10 @@
         </div>
     </div>
     <program-config program="_selectedProgram" on-done="finshedProgramEdit"></program-config>
-    <offline-config offline-title="Modify Flex Time" program="_selectedOffline" on-done="finishedOfflineEdit"></offline-config>
+    <flex-config offline-title="Modify Flex Time" program="_selectedOffline" on-done="finishedOfflineEdit"></flex-config>
     <frequency-tweak programs="_programFrequencies" message="_frequencyMessage" modified="_frequencyModified" on-done="tweakFrequencies"></frequency-tweak>
     <remove-shows program-titles="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
-    <offline-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></offline-config>
+    <flex-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></flex-config>
     <plex-library height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
     <channel-redirect visible="_displayRedirect" on-done="finishRedirect" form-title="_redirectTitle" program="_selectedRedirect" ></channel-redirect>
 </div>

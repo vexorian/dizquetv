@@ -15,6 +15,7 @@ const Plex = require('./src/plex');
 const channelCache = require('./src/channel-cache');
 const constants = require('./src/constants')
 const ChannelDB = require("./src/dao/channel-db");
+const FillerDB = require("./src/dao/filler-db");
 const TVGuideService = require("./src/tv-guide-service");
 
 console.log(
@@ -52,8 +53,13 @@ if(!fs.existsSync(path.join(process.env.DATABASE, 'images'))) {
 if(!fs.existsSync(path.join(process.env.DATABASE, 'channels'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'channels'))
 }
+if(!fs.existsSync(path.join(process.env.DATABASE, 'filler'))) {
+    fs.mkdirSync(path.join(process.env.DATABASE, 'filler'))
+}
+
 
 channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
+fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelDB, channelCache );
 
 db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id'])
 
@@ -173,8 +179,8 @@ app.use('/favicon-32.png', express.static(
     path.join(__dirname, 'resources/favicon-32.png')
 ) );
 
-app.use(api.router(db, channelDB, xmltvInterval, guideService ))
-app.use(video.router( channelDB, db))
+app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService ))
+app.use(video.router( channelDB, fillerDB, db))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)
