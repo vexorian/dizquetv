@@ -2,6 +2,7 @@ const SLACK = require('./constants').SLACK;
 
 let cache = {};
 let programPlayTimeCache = {};
+let fillerPlayTimeCache = {};
 let configCache = {};
 
 async function getChannelConfig(channelDB, channelId) {
@@ -65,6 +66,11 @@ function getKey(channelId, program) {
 
 }
 
+function getFillerKey(channelId, fillerId) {
+    return channelId + "|" + fillerId;
+}
+
+
 
 function recordProgramPlayTime(channelId, lineupItem, t0) {
     let remaining;
@@ -74,10 +80,22 @@ function recordProgramPlayTime(channelId, lineupItem, t0) {
         remaining = lineupItem.duration - lineupItem.start;
     }
     programPlayTimeCache[ getKey(channelId, lineupItem) ] = t0 + remaining;
+    if (typeof(lineupItem.fillerId) !== 'undefined') {
+        fillerPlayTimeCache[ getFillerKey(channelId, lineupItem.fillerId) ] = t0 + remaining;
+    }
 }
 
 function getProgramLastPlayTime(channelId, program) {
     let v = programPlayTimeCache[ getKey(channelId, program) ];
+    if (typeof(v) === 'undefined') {
+        return 0;
+    } else {
+        return v;
+    }
+}
+
+function getFillerLastPlayTime(channelId, fillerId) {
+    let v = fillerPlayTimeCache[ getFillerKey(channelId, fillerId) ];
     if (typeof(v) === 'undefined') {
         return 0;
     } else {
@@ -107,4 +125,5 @@ module.exports = {
     getProgramLastPlayTime: getProgramLastPlayTime,
     getChannelConfig: getChannelConfig,
     saveChannelConfig: saveChannelConfig,
+    getFillerLastPlayTime: getFillerLastPlayTime,
 }

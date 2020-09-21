@@ -16,7 +16,9 @@ app.directive('xmltvSettings',  require('./directives/xmltv-settings'))
 app.directive('hdhrSettings',   require('./directives/hdhr-settings'))
 app.directive('plexLibrary',    require('./directives/plex-library'))
 app.directive('programConfig',  require('./directives/program-config'))
-app.directive('offlineConfig',  require('./directives/offline-config'))
+app.directive('flexConfig',  require('./directives/flex-config'))
+app.directive('fillerConfig',  require('./directives/filler-config'))
+app.directive('deleteFiller',  require('./directives/delete-filler'))
 app.directive('frequencyTweak',  require('./directives/frequency-tweak'))
 app.directive('removeShows',  require('./directives/remove-shows'))
 app.directive('channelRedirect',  require('./directives/channel-redirect'))
@@ -27,6 +29,7 @@ app.controller('settingsCtrl',  require('./controllers/settings'))
 app.controller('channelsCtrl',  require('./controllers/channels'))
 app.controller('versionCtrl',  require('./controllers/version'))
 app.controller('guideCtrl',  require('./controllers/guide'))
+app.controller('fillerCtrl',  require('./controllers/filler'))
 
 app.config(function ($routeProvider) {
     $routeProvider
@@ -37,6 +40,10 @@ app.config(function ($routeProvider) {
     .when("/channels", {
         templateUrl: "views/channels.html",
         controller: 'channelsCtrl'
+    })
+    .when("/filler", {
+        templateUrl: "views/filler.html",
+        controller: 'fillerCtrl'
     })
     .when("/guide", {
         templateUrl: "views/guide.html",

@@ -167,6 +167,49 @@ module.exports = function ($http) {
             }).then((d) => { return d.data })
         },
 
+        /*======================================================================
+        * Filler stuff
+        */
+        getAllFillersInfo: async () => {
+            let f = await $http.get('/api/fillers');
+            return f.data;
+        },
+
+        getFiller: async (id) => {
+            let f = await $http.get(`/api/filler/${id}`);
+            return f.data;
+        },
+
+        updateFiller: async(id, filler) => {
+            return (await $http({
+                method: "POST",
+                url : `/api/filler/${id}`,
+                data: angular.toJson(filler),
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            }) ).data;
+        },
+
+        createFiller: async(filler) => {
+            return (await $http({
+                method: "PUT",
+                url : `/api/filler`,
+                data: angular.toJson(filler),
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            }) ).data;
+        },
+
+        deleteFiller: async(id) => {
+            return ( await $http({
+                method: "DELETE",
+                url : `/api/filler/${id}`,
+                data: {},
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            }) ).data;
+        },
+
+        getChannelsUsingFiller: async(fillerId)  => {
+            return (await $http.get( `/api/filler/${fillerId}/channels` )).data;
+        },
 
         /*======================================================================
         * TV Guide endpoints
