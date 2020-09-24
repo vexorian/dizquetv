@@ -82,18 +82,38 @@ class PlexPlayer {
             let emitter = new EventEmitter();
             //setTimeout( () => {
                 let ff = await ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, enableChannelIcon, lineupItem.type); // Spawn the ffmpeg process
-                ff.pipe(outStream);
+                ff.pipe(outStream,  {'end':false} );
             //}, 100);
             plexTranscoder.startUpdatingPlex();
 
-
+            
             ffmpeg.on('end', () => {
                 emitter.emit('end');
             });
             ffmpeg.on('close', () => {
                 emitter.emit('close');
             });
-            ffmpeg.on('error', (err) => {
+            ffmpeg.on('error', async (err) => {
+                console.log("Replacing failed stream with error streram");
+                ff.unpipe(outStream);
+                ffmpeg.removeAllListeners('data');
+                ffmpeg.removeAllListeners('end');
+                ffmpeg.removeAllListeners('error');
+                ffmpeg.removeAllListeners('close');
+                ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+                ffmpeg.on('close', () => {
+                    emitter.emit('close');
+                });
+                ffmpeg.on('end', () => {
+                    emitter.emit('end');
+                });
+                ffmpeg.on('error', (err) => {
+                    emitter.emit('error', err );
+                });
+
+                ff = await ffmpeg.spawnError('oops', 'oops', Math.min(streamStats.duration, 60000) );
+                ff.pipe(outStream);
+
                 emitter.emit('error', err);
             });
             return emitter;

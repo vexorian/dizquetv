@@ -32,10 +32,21 @@ function getCurrentLineupItem(channelId, t1) {
     let recorded = cache[channelId];
     let lineupItem =  JSON.parse( JSON.stringify(recorded.lineupItem) );
     let diff = t1 - recorded.t0;
-    if ( (diff <= SLACK) && (lineupItem.duration >= 2*SLACK) ) {
+    let rem = lineupItem.duration - lineupItem.start;
+    if (typeof(lineupItem.streamDuration) !== 'undefined') {
+        rem = Math.min(rem, lineupItem.streamDuration);
+    }
+    if ( (diff <= SLACK) && (diff + SLACK < rem) ) {
         //closed the stream and opened it again let's not lose seconds for
         //no reason
-        return lineupItem;
+        let originalT0 = recorded.lineupItem.originalT0;
+        if (typeof(originalT0) === 'undefined') {
+            originalT0 = recorded.t0;
+        }
+        if (t1 - originalT0 <= SLACK) {
+            lineupItem.originalT0 = originalT0;
+            return lineupItem;
+        }
     }
    
     lineupItem.start += diff;
