@@ -69,3 +69,8 @@ npm run dev-server
 
 * Pull requests welcome but please read the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Pull Request Template](pull_request_template.md) first.
 * Tip Jar: https://buymeacoffee.com/vexorian
+
+## License
+
+ * Original pseudotv-Plex code was released under [MIT license (c) 2020 Dan Ferguson](https://github.com/DEFENDORe/pseudotv/blob/665e71e24ee5e93d9c9c90545addb53fdc235ff6/LICENSE)
+ * dizqueTV's improvements are released under zlib license (c) 2020 Victor Hugo Soliz Kuncar
