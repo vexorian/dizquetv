@@ -1096,8 +1096,9 @@ module.exports = function ($timeout, $location, dizquetv) {
             }
 
             scope.importPrograms = (selectedPrograms) => {
-                for (let i = 0, l = selectedPrograms.length; i < l; i++)
-                    selectedPrograms[i].commercials = []
+                for (let i = 0, l = selectedPrograms.length; i < l; i++) {
+                    delete selectedPrograms[i].commercials;
+                }
                 scope.channel.programs = scope.channel.programs.concat(selectedPrograms)
                 updateChannelDuration()
                 setTimeout(

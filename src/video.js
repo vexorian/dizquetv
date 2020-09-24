@@ -6,8 +6,11 @@ const PlexTranscoder = require('./plexTranscoder')
 const fs = require('fs')
 const ProgramPlayer = require('./program-player');
 const channelCache  = require('./channel-cache')
+const wereThereTooManyAttempts = require('./throttler');
 
 module.exports = { router: video }
+
+let StreamCount = 0;
 
 function video( channelDB , fillerDB, db) {
     var router = express.Router()
@@ -107,7 +110,7 @@ function video( channelDB , fillerDB, db) {
 
         let channelNum = parseInt(req.query.channel, 10)
         let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}`);
-        ff.pipe(res);
+        ff.pipe(res );
     })
     // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
     router.get('/stream', async (req, res) => {
@@ -116,6 +119,7 @@ function video( channelDB , fillerDB, db) {
             res.status(400).send("No Channel Specified")
             return
         }
+        let session = parseInt(req.query.session);
         let m3u8 = (req.query.m3u8 === '1');
         let number = parseInt(req.query.channel);
         let channel = await channelCache.getChannelConfig(channelDB, number);
@@ -275,6 +279,14 @@ function video( channelDB , fillerDB, db) {
         if (! isLoading) {
             channelCache.recordPlayback(channel.number, t0, lineupItem);
         }
+        if (wereThereTooManyAttempts(session, lineupItem)) {
+            lineupItem = {
+                isOffline: true,
+                err: Error("Too many attempts, throttling.."),
+                duration : 60000,
+            };
+        }
+        
 
         let playerContext = {
             lineupItem : lineupItem,
@@ -330,6 +342,8 @@ function video( channelDB , fillerDB, db) {
 
 
     router.get('/m3u8',  async (req, res) => {
+        let sessionId = StreamCount++;
+
         //res.type('application/vnd.apple.mpegurl')
         res.type("application/x-mpegURL");
 
@@ -364,13 +378,13 @@ function video( channelDB , fillerDB, db) {
 
         if ( ffmpegSettings.enableFFMPEGTranscoding === true) {
             //data += `#EXTINF:${cur},\n`;
-            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=0&m3u8=1\n`;
+            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=0&m3u8=1&session=${sessionId}\n`;
         }
         //data += `#EXTINF:${cur},\n`;
-        data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=1&m3u8=1\n`
+        data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&first=1&m3u8=1&session=${sessionId}\n`
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
             //data += `#EXTINF:${cur},\n`;
-            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&m3u8=1\n`
+            data += `${req.protocol}://${req.get('host')}/stream?channel=${channelNum}&m3u8=1&session=${sessionId}\n`
         }
 
         res.send(data)
@@ -399,6 +413,8 @@ function video( channelDB , fillerDB, db) {
 
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
 
+        let sessionId = StreamCount++;
+
         if (
                (ffmpegSettings.enableFFMPEGTranscoding === true)
             && (ffmpegSettings.normalizeVideoCodec === true)
@@ -406,11 +422,11 @@ function video( channelDB , fillerDB, db) {
             && (ffmpegSettings.normalizeResolution === true)
             && (ffmpegSettings.normalizeAudio === true)
         ) {
-            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0'\n`;
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}'\n`;
         }
-        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1'\n`
+        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}'\n`
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
-            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}'\n`
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}'\n`
         }
 
         res.send(data)
