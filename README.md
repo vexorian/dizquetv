@@ -3,7 +3,7 @@
 
 Create live TV channel streams from media on your Plex servers.
 
-dizqueTV is a fork of the project previously-known as [pseudotv-plex](https://gitlab.com/DEFENDORe/pseudotv-plex) or [pseudotv](https://github.com/DEFENDORe/pseudotv). New repository because of lack of activity from the main repository and the name change is because projects with the old name already existed and were created long before this approach and it was causing confusion. You can migrate from pseudoTV 0.0.51 to dizqueTV by renaming the .pseudotv folder to .dizquetv and running the new executable (or doing a similar trick with the volumes used by the docker containers).
+**dizqueTV** ( *dis·keˈtiːˈvi* )  is a fork of the project previously-known as [pseudotv-plex](https://gitlab.com/DEFENDORe/pseudotv-plex) or [pseudotv](https://github.com/DEFENDORe/pseudotv). New repository because of lack of activity from the main repository and the name change is because projects with the old name already existed and were created long before this approach and it was causing confusion. You can migrate from pseudoTV 0.0.51 to dizqueTV by renaming the .pseudotv folder to .dizquetv and running the new executable (or doing a similar trick with the volumes used by the docker containers).
 
 <img src="./resources/dizquetv.png" width="200">
 

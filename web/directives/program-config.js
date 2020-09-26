@@ -9,13 +9,6 @@ module.exports = function ($timeout) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
-            scope.selectedCommercials = (items) => {
-                scope.program.commercials = scope.program.commercials.concat(items)
-                for (let i = 0, l = scope.program.commercials.length; i < l; i++) {
-                    if (typeof scope.program.commercials[i].commercialPosition === 'undefined')
-                        scope.program.commercials[i].commercialPosition = 0
-                }
-            }
             scope.finished = (prog) => {
                 if (prog.title === "")
                     scope.error = { title: 'You must set a program title.' }
@@ -37,9 +30,6 @@ module.exports = function ($timeout) {
                     return
                 }
 
-                prog.duration = prog.duration
-                for (let i = 0, l = prog.commercials.length; i < l; i++)
-                    prog.duration += prog.commercials[i].duration
                 scope.onDone(JSON.parse(angular.toJson(prog)))
                 scope.program = null
             }

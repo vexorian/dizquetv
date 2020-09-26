@@ -10,11 +10,14 @@ module.exports = function ($timeout, $location, dizquetv) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
+            scope.maxSize = 50000;
+    
             scope.hasFlex = false;
             scope.showHelp = false;
             scope._frequencyModified = false;
             scope._frequencyMessage = "";
             scope.minProgramIndex = 0;
+            scope.libraryLimit =  50000;
             scope.episodeMemory = {
                 saved : false,
             };
@@ -95,6 +98,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 updateChannelDuration();
                 setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
             }
+
             scope._selectedRedirect = {
                 isOffline : true,
                 type : "redirect",
@@ -1038,12 +1042,15 @@ module.exports = function ($timeout, $location, dizquetv) {
                         scope.hasFlex = true;
                     }
                 }
+                scope.maxSize = Math.max(scope.maxSize, scope.channel.programs.length);
+                scope.libraryLimit = Math.max(0, scope.maxSize - scope.channel.programs.length );
             }
             scope.error = {}
-            scope._onDone = (channel) => {
-                if (typeof channel === 'undefined')
-                    scope.onDone()
-                else {
+            scope._onDone = async (channel) => {
+                if (typeof channel === 'undefined') {
+                    await scope.onDone()
+                    $timeout();
+                } else {
                     channelNumbers = []
                     for (let i = 0, l = scope.channels.length; i < l; i++)
                         channelNumbers.push(scope.channels[i].number)
@@ -1056,8 +1063,8 @@ module.exports = function ($timeout, $location, dizquetv) {
                         scope.error.number = "Channel number already in use."
                     else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1)
                         scope.error.number = "Channel number already in use."
-                    else if (channel.number <= 0 || channel.number >= 2000)
-                        scope.error.name = "Enter a valid number (1-2000)"
+                    else if (channel.number < 0 || channel.number > 9999)
+                        scope.error.name = "Enter a valid number (0-9999)"
                     else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "")
                         scope.error.name = "Enter a channel name."
                     else if (channel.icon !== "" && !validURL(channel.icon))
@@ -1073,15 +1080,30 @@ module.exports = function ($timeout, $location, dizquetv) {
                         for (let i = 0; i < scope.channel.programs.length; i++) {
                             delete scope.channel.programs[i].$index;
                         }
-                        scope.onDone(JSON.parse(angular.toJson(channel)))
+                        try {
+                            let s = angular.toJson(channel);
+                            if (s.length > 50*1000*1000) {
+                                scope.error.any = true;
+                                scope.error.programs = "Channel is too large, can't save.";
+                            } else {
+                                await scope.onDone(JSON.parse(s))
+                                s = null;
+                            }
+                        } catch(err) {
+                            $timeout();
+                            console.error(err);
+                            scope.error.any = true;
+                            scope.error.programs = "Unable to save channel."
+                        }
                     }
                     $timeout(() => { scope.error = {} }, 60000)
                 }
             }
 
             scope.importPrograms = (selectedPrograms) => {
-                for (let i = 0, l = selectedPrograms.length; i < l; i++)
-                    selectedPrograms[i].commercials = []
+                for (let i = 0, l = selectedPrograms.length; i < l; i++) {
+                    delete selectedPrograms[i].commercials;
+                }
                 scope.channel.programs = scope.channel.programs.concat(selectedPrograms)
                 updateChannelDuration()
                 setTimeout(
@@ -1131,7 +1153,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 if (scope.channel.programs.length == 0) {
                     return 1;
                 } else {
-                    return Math.floor( 50000 / scope.channel.programs.length );
+                    return Math.floor( scope.maxSize / (scope.channel.programs.length) );
                 }
             }
             scope.removeItem = (x) => {
@@ -1164,6 +1186,9 @@ module.exports = function ($timeout, $location, dizquetv) {
             };
             scope.loadChannels();
 
+            scope.disablePadding = () => {
+                return (scope.paddingOption.id==-1) || (2*scope.channel.programs.length > scope.maxSize);
+            }
             scope.paddingOptions = [
                 { id: -1, description: "Allowed start times", allow5: false },
                 { id: 30, description: ":00, :30", allow5: false },
@@ -1177,6 +1202,14 @@ module.exports = function ($timeout, $location, dizquetv) {
 
             ]
             scope.paddingOption  = scope.paddingOptions[0];
+
+            scope.breaksDisabled = () => {
+                return scope.breakAfter==-1
+                    || scope.minBreakSize==-1 || scope.maxBreakSize==-1
+                    || (scope.minBreakSize > scope.maxBreakSize)
+                    || (2*scope.channel.programs.length > scope.maxSize);
+            }
+
             scope.breakAfterOptions = [
                 { id: -1, description: "After" },
                 { id: 5, description: "5 minutes" },
@@ -1228,6 +1261,11 @@ module.exports = function ($timeout, $location, dizquetv) {
                 { id: 3, description: "3" },
                 { id: 4, description: "4" },
             ];
+            scope.rerunsDisabled = () => {
+                return scope.rerunStart == -1 || scope.rerunBlockSize == -1 || scope.rerunRepeats == -1
+                   || (scope.channel.programs.length * scope.rerunRepeats > scope.maxSize)
+
+            }
 
 
             scope.nightStartHours = [ { id: -1, description: "Start" } ];
