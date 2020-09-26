@@ -53,6 +53,7 @@ class FillerDB {
                 let data = undefined;
                 try {
                     //id is determined by the file name, not the contents
+                    fixup(json);
                     delete json.id;
                     data = JSON.stringify(json);
                 } catch (err) {
@@ -72,6 +73,7 @@ class FillerDB {
 
     async createFiller(json) {
         let id = uuidv4();
+        fixup(json);
         await this.saveFiller(id, json);
         return id;
     }
@@ -187,6 +189,15 @@ class FillerDB {
     }
 
 
+}
+
+function fixup(json) {
+    if (typeof(json.fillerContent) === 'undefined') {
+        json.fillerContent = [];
+    }
+    if (typeof(json.name) === 'undefined') {
+        json.name = "Unnamed Filler";
+    }
 }
 
 module.exports = FillerDB;

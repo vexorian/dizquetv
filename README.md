@@ -1,9 +1,9 @@
-# dizqueTV 1.1.0
+# dizqueTV 1.1.1-prerelease
 ![Discord](https://img.shields.io/discord/711313431457693727?logo=discord&logoColor=fff&style=flat-square) ![GitHub top language](https://img.shields.io/github/languages/top/vexorian/dizquetv?logo=github&style=flat-square) ![Docker Pulls](https://img.shields.io/docker/pulls/vexorian/dizquetv?logo=docker&logoColor=fff&style=flat-square)
 
 Create live TV channel streams from media on your Plex servers.
 
-dizqueTV is a fork of the project previously-known as [pseudotv-plex](https://gitlab.com/DEFENDORe/pseudotv-plex) or [pseudotv](https://github.com/DEFENDORe/pseudotv). New repository because of lack of activity from the main repository and the name change is because projects with the old name already existed and were created long before this approach and it was causing confusion. You can migrate from pseudoTV 0.0.51 to dizqueTV by renaming the .pseudotv folder to .dizquetv and running the new executable (or doing a similar trick with the volumes used by the docker containers).
+**dizqueTV** ( *dis·keˈtiːˈvi* )  is a fork of the project previously-known as [pseudotv-plex](https://gitlab.com/DEFENDORe/pseudotv-plex) or [pseudotv](https://github.com/DEFENDORe/pseudotv). New repository because of lack of activity from the main repository and the name change is because projects with the old name already existed and were created long before this approach and it was causing confusion. You can migrate from pseudoTV 0.0.51 to dizqueTV by renaming the .pseudotv folder to .dizquetv and running the new executable (or doing a similar trick with the volumes used by the docker containers).
 
 <img src="./resources/dizquetv.png" width="200">
 
@@ -69,3 +69,8 @@ npm run dev-server
 
 * Pull requests welcome but please read the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Pull Request Template](pull_request_template.md) first.
 * Tip Jar: https://buymeacoffee.com/vexorian
+
+## License
+
+ * Original pseudotv-Plex code was released under [MIT license (c) 2020 Dan Ferguson](https://github.com/DEFENDORe/pseudotv/blob/665e71e24ee5e93d9c9c90545addb53fdc235ff6/LICENSE)
+ * dizqueTV's improvements are released under zlib license (c) 2020 Victor Hugo Soliz Kuncar
