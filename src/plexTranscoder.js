@@ -16,6 +16,7 @@ class PlexTranscoder {
         this.log("Debug logging enabled")
 
         this.key = lineupItem.key
+        this.metadataPath = `${server.uri}${lineupItem.key}?X-Plex-Token=${server.accessToken}`
         this.plexFile = `${server.uri}${lineupItem.plexFile}?X-Plex-Token=${server.accessToken}`
         if (typeof(lineupItem.file)!=='undefined') {
             this.file = lineupItem.file.replace(settings.pathReplace, settings.pathReplaceWith)
@@ -87,6 +88,8 @@ class PlexTranscoder {
             this.log("Decision: Direct stream. Audio is being transcoded")
             stream.separateVideoStream = (this.settings.streamPath === 'direct') ? this.file : this.plexFile;
             stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
+            this.directInfo = await this.getDirectInfo();
+            this.videoIsDirect = true;
         }
         stream.streamStats = this.getVideoStats();
 
@@ -207,10 +210,14 @@ lang=en`
             let streams = this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].Stream
 
             ret.duration = parseFloat( this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].duration );
-            streams.forEach(function (stream) {
+            streams.forEach(function (_stream, $index) {
                 // Video
+                let stream = _stream;
                 if (stream["streamType"] == "1") {
-                    ret.anamorphic = (stream.anamorphic === "1");
+                    if ( this.videoIsDirect === true && typeof(this.directInfo) !== 'undefined') {
+                        stream = this.directInfo.MediaContainer.Metadata[0].Media[0].Part[0].Stream[$index];
+                    }
+                    ret.anamorphic = ( (stream.anamorphic === "1") || (stream.anamorphic === true) );
                     if (ret.anamorphic) {
                         let parsed = parsePixelAspectRatio(stream.pixelAspectRatio);
                         if (isNaN(parsed.p) || isNaN(parsed.q) ) {
@@ -236,7 +243,7 @@ lang=en`
                     ret.audioCodec = stream["codec"];
                     ret.audioDecision = (typeof stream.decision === 'undefined') ? 'copy' : stream.decision;
                 }
-            })
+            }.bind(this) )
         } catch (e) {
             console.log("Error at decision:" + e);
         }
@@ -277,11 +284,15 @@ lang=en`
         return index
     }
 
+    async getDirectInfo() {
+        return (await axios.get(this.metadataPath) ).data;
+
+    }
+
     async getDecision(directPlay) {
-        await axios.get(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, {
+        let res = await axios.get(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, {
             headers: { Accept: 'application/json' }
         })
-        .then((res) => {
             this.decisionJson = res.data;
 
             this.log("Recieved transcode decision:")
@@ -294,7 +305,6 @@ lang=en`
                 console.log(`IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`)
                 console.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
             }
-        })
     }
 
     getStatusUrl() {
