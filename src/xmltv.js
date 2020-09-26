@@ -105,7 +105,7 @@ async function _writeProgramme(channel, program, xw) {
     }
     xw.endElement()
     // Rating
-    if (typeof program.rating !== 'undefined') {
+    if ( (program.rating != null) && (typeof program.rating !== 'undefined') ) {
         xw.startElement('rating')
         xw.writeAttribute('system', 'MPAA')
         xw.writeElement('value', program.rating)
