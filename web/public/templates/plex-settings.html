@@ -146,12 +146,14 @@
     <div class="col-sm-6">
         <h6 style="font-weight: bold">Miscellaneous Options</h6>
         <div class="form-group">
-            <label>Max Direct Stream Bitrate</label>
+            <label>Max Direct Stream Bitrate (Kbps)</label>
             <input type="text" class="form-control form-control-sm" ng-model="settings.directStreamBitrate" />
         </div>
         <div class="form-group">
-            <label>Max Transcode Bitrate</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeBitrate" />
+            <label>Max Transcode Bitrate (Kbps)</label>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeBitrate" aria-described-by="transcodebrhelp" />
+            <small id="transcodebrhelp" class='text-muted form-text'>Plex will decide to transcode or direct play based on these settings and if Plex transcodes, it will try to match the transcode bitrate.</small>
+
         </div>
         <div class="form-group">
             <label>Direct Stream Media Buffer Size</label>

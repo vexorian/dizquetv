@@ -268,8 +268,8 @@ function api(db, channelDB, xmltvInterval,  guideService ) {
         db['plex-settings'].update({ _id: req.body._id }, {
             streamPath: 'plex',
             debugLogging: true,
-            directStreamBitrate: '40000',
-            transcodeBitrate: '3000',
+            directStreamBitrate: '20000',
+            transcodeBitrate: '2000',
             mediaBufferSize: 1000,
             transcodeMediaBufferSize: 20000,
             maxPlayableResolution: "1920x1080",
