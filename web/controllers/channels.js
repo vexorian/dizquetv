@@ -39,13 +39,13 @@ module.exports = function ($scope, dizquetv) {
         }
     }
     $scope.onChannelConfigDone = async (channel) => {
-        $scope.showChannelConfig = false
         if ($scope.selectedChannelIndex != -1) {
             $scope.channels[ $scope.selectedChannelIndex ].pending = false;
         }
         if (typeof channel !== 'undefined') {
             if ($scope.selectedChannelIndex == -1) { // add new channel
                 await dizquetv.addChannel(channel);
+                $scope.showChannelConfig = false
                 $scope.refreshChannels();
             
             } else if (
@@ -56,14 +56,18 @@ module.exports = function ($scope, dizquetv) {
                 $scope.channels[ $scope.selectedChannelIndex ].pending = true;
                 await dizquetv.updateChannel(channel),
                 await dizquetv.removeChannel( { number: $scope.originalChannelNumber } )
+                $scope.showChannelConfig = false
                 $scope.$apply();
                 $scope.refreshChannels();
             } else { // update existing channel
                 $scope.channels[ $scope.selectedChannelIndex ].pending = true;
                 await dizquetv.updateChannel(channel);
+                $scope.showChannelConfig = false
                 $scope.$apply();
                 $scope.refreshChannels();
             }
+        } else {
+            $scope.showChannelConfig = false
         }
 
         
