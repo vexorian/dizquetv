@@ -152,20 +152,20 @@
                                 <p>The channel's regular programming between the specified hours. Flex time will fill up the remaining hours.</p>
 
                                 <h6>Pad Times</h6>
-                                <p>Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones.</p>
+                                <p>Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.</p>
 
                                 <h6>Add Breaks</h6>
-                                <p>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes.</p>
+                                <p>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes. This button might be disabled if the channel is already too large.</p>
 
                                 <h6>Reruns</h6>
-                                <p>Divides the programming in blocks of 6, 8 or 12 hours then repeats each of the blocks the specified number of times. For example,  you can make a channel that plays exactly the same channels in the morning and in the afternoon. </p>
+                                <p>Divides the programming in blocks of 6, 8 or 12 hours then repeats each of the blocks the specified number of times. For example,  you can make a channel that plays exactly the same channels in the morning and in the afternoon. This button might be disabled if the channel is already too large.</p>
 
                                 <h6>Save|Recover Episode Positions</h6>
                                 <p>The &quot;Save&quot; button saves the current episodes that are next to be played for each tv show. Then whenever you click the &quot;Recover Episode Popsitions&quot; button, episodes will be rearranged cyclically and they will start with the saved positions. So you can maintain episode sequences even after modifying the channel. If there are any new TV shows, they will start at their current positions. Movies and specials won&apos;t change positions.
                                 </p>
 
                                 <h6>Replicate</h6>
-                                <p>Makes multiple copies of the schedule and plays them in sequence. Normally this isn&apos;t necessary, because dizqueTV will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, there&apos;s a limit of 50000 programs to the size of the resulting channel when using this tool.</p>
+                                <p>Makes multiple copies of the schedule and plays them in sequence. Normally this isn&apos;t necessary, because dizqueTV will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels.</p>
 
                                 <h6>Replicate &amp; Shuffle</h6>
                                 <p>Like &quot;Replicate&quot;, it will make multiple copies of the programming. In addition it will shuffle the programs, but it will make sure not to have too small a distance between two identical programs.</p>
@@ -282,7 +282,7 @@
                                             ng-options="o as o.description for o in paddingOptions" />
 
                                         </div>
-                                        <button ng-disabled="paddingOption.id==-1" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)">
+                                        <button ng-disabled="disablePadding()" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)">
                                             <i class='far fa-clock'></i> Pad Times
                                         </button>
                                     </div>
@@ -298,7 +298,7 @@
                                             <select style="width:5em" ng-model="maxBreakSize"
                                             ng-options="o.id as o.description for o in maxBreakSizeOptions" />
                                         </div>
-                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breakAfter==-1 || minBreakSize==-1 || maxBreakSize==-1 || (minBreakSize > maxBreakSize)">
+                                        <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breaksDisabled()">
                                             <i class='fa fa-coffee'></i> Add Breaks
                                         </button>
                                     </div>
@@ -318,7 +318,7 @@
                                         ng-options="o.id as o.description for o in rerunRepeatOptions">
                                         </select>
                                     </div>
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="doReruns(rerunStart, rerunBlockSize, rerunRepeats)" ng-disabled="rerunStart == -1 || rerunBlockSize == -1 || rerunRepeats == -1" >
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="doReruns(rerunStart, rerunBlockSize, rerunRepeats)" ng-disabled="rerunsDisabled()" >
                                         <i class='far fa-clone'></i> Reruns
                                     </button>
                                 </div>
@@ -489,6 +489,6 @@
     <frequency-tweak programs="_programFrequencies" message="_frequencyMessage" modified="_frequencyModified" on-done="tweakFrequencies"></frequency-tweak>
     <remove-shows program-titles="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
     <offline-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></offline-config>
-    <plex-library height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
+    <plex-library limit="libraryLimit" height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
     <channel-redirect visible="_displayRedirect" on-done="finishRedirect" form-title="_redirectTitle" program="_selectedRedirect" ></channel-redirect>
 </div>
