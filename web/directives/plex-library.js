@@ -7,7 +7,7 @@ module.exports = function (plex, dizquetv, $timeout) {
             onFinish: "=onFinish",
             height: "=height",
             visible: "=visible",
-            limit: "@limit",
+            limit: "=limit",
         },
         link: function (scope, element, attrs) {
             scope.errors=[];
