@@ -15,11 +15,13 @@
     <div class="row">
         <div class="col-sm-6">
             <label>EPG Cache (hours)</label>
-            <input type="number" class="form-control form-control-sm" ng-model="settings.cache"/>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.cache" aria-describedby="cachehelp"/>
+            <small id="cachehelp" class="form-text text-muted">How many hours of programming to include in the xmltv file.</small>
         </div>
         <div class="col-sm-6">
             <label>Refresh Timer (hours)</label>
-            <input type="number" class="form-control form-control-sm" ng-model="settings.refresh"/>
+            <input type="number" class="form-control form-control-sm" ng-model="settings.refresh" aria-describedby="timerhelp"/>
+            <small id="timerhelp" class="form-text text-muted">How often should the xmltv file be updated.</small>
         </div>
     </div>
     
