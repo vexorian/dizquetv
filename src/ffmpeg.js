@@ -2,6 +2,7 @@ const spawn = require('child_process').spawn
 const events = require('events')
 
 const MAXIMUM_ERROR_DURATION_MS = 60000;
+const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE = 120;
 
 class FFMPEG extends events.EventEmitter {
     constructor(opts, channel) {
@@ -9,7 +10,7 @@ class FFMPEG extends events.EventEmitter {
         this.opts = opts;
         this.errorPicturePath = `http://localhost:${process.env.PORT}/images/generic-error-screen.png`;
         if (! this.opts.enableFFMPEGTranscoding) {
-            //this ensures transcoding is completely disabled even if 
+            //this ensures transcoding is completely disabled even if
             // some settings are true
             this.opts.normalizeAudio = false;
             this.opts.normalizeAudioCodec = false;
@@ -17,6 +18,7 @@ class FFMPEG extends events.EventEmitter {
             this.opts.errorScreen = 'kill';
             this.opts.normalizeResolution = false;
             this.opts.audioVolumePercent = 100;
+            this.opts.maxFPS = REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE;
         }
         this.channel = channel
         this.ffmpegPath = opts.ffmpegPath
@@ -128,6 +130,11 @@ class FFMPEG extends events.EventEmitter {
             //
             // When adding filters, make sure that
             // videoComplex always begins wiht ; and doesn't end with ;
+
+            if ( streamStats.videoFramerate >= this.opts.maxFPS + 0.000001 ) {
+                videoComplex += `;${currentVideo}fps=${this.opts.maxFPS}[fpchange]`;
+                currentVideo ="[fpchange]";
+            }
 
             // prepare input streams
             if ( typeof(streamUrl.errorTitle) !== 'undefined') {
@@ -263,7 +270,7 @@ class FFMPEG extends events.EventEmitter {
                     currentVideo = "blackpadded";
                 }
                 let name = "siz";
-                if (! this.ensureResolution) {
+                if (! this.ensureResolution && (beforeSizeChange != '[fpchange]') ) {
                     name = "minsiz";
                 }
                 videoComplex += `;[${currentVideo}]setsar=1[${name}]`;
