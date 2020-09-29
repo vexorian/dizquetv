@@ -303,6 +303,10 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       try {
         db['ffmpeg-settings'].update({ _id: req.body._id }, req.body)
         let ffmpeg = db['ffmpeg-settings'].find()[0]
+        let err = fixupFFMPEGSettings(ffmpeg);
+        if (typeof(err) !== 'undefined') {
+          return res.status(400).send(err);
+        }
         res.send(ffmpeg)
       } catch(err) {
         console.error(err);
@@ -322,6 +326,14 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       }
 
     })
+
+    function fixupFFMPEGSettings(ffmpeg) {
+      if (typeof(ffmpeg.maxFPS) === 'undefined') {
+        ffmpeg.maxFPS = 60;
+      } else if ( isNaN(ffmpeg.maxFPS) ) {
+        return "maxFPS should be a number";
+      }
+    }
 
     // PLEX SETTINGS
     router.get('/api/plex-settings', (req, res) => {

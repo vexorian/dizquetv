@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 600;
+const TARGET_VERSION = 601;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -31,6 +31,7 @@ const STEPS = [
     [    400,    500, (db,channels) => splitServersSingleChannels(db, channels) ],
     [    500,    501, (db) => fixCorruptedServer(db) ],
     [    501,    600, () => extractFillersFromChannels() ],
+    [    600,    601, (db) => addFPS(db) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -392,6 +393,7 @@ function ffmpeg() {
         normalizeAudioCodec: true,
         normalizeResolution: true,
         normalizeAudio: true,
+        maxFPS: 60,
     }
 }
 
@@ -660,6 +662,13 @@ function extractFillersFromChannels() {
     }
     console.log("Done extracting fillers from channels.");
    
+}
+
+function addFPS(db) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
+    ffmpegSettings.maxFPS = 60;
+    fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
 }
 
 module.exports = {

@@ -59,6 +59,17 @@
                 {value:"sine", description:"Beep"},
                 {value:"silent", description:"No Audio"},
             ]
+            scope.fpsOptions = [
+                {id: 23.976, description: "23.976 frames per second"},
+                {id: 24, description: "24 frames per second"},
+                {id: 25, description: "25 frames per second"},
+                {id: 29.97, description: "29.97 frames per second"},
+                {id: 30, description: "30 frames per second"},
+                {id: 50, description: "50 frames per second"},
+                {id: 59.94, description: "59.94 frames per second"},
+                {id: 60, description: "60 frames per second"},
+                {id: 120, description: "120 frames per second"},
+            ];
         }
     }
 }
