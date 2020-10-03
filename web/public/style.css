@@ -285,7 +285,7 @@ div.programming-panes div.programming-pane {
 div.programming-programs div.list-group-item {
   height: 1.5rem;
 }
-.channel-editor-modal {
+.channel-editor-modal-big {
   width:1200px;
   min-width: 98%;
 }
