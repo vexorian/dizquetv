@@ -29,8 +29,10 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope.channel = {}
                 scope.channel.programs = []
                 scope.channel.fillerCollections = []
+                scope.channel.guideFlexPlaceholder = "";
                 scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
                 scope.channel.fallback = [];
+                scope.channel.guideMinimumDurationSeconds = 5 * 60;
                 scope.isNewChannel = true
                 scope.channel.icon = `${$location.protocol()}://${location.host}/images/dizquetv.png`
                 scope.channel.disableFillerOverlay = true;
@@ -95,6 +97,12 @@ module.exports = function ($timeout, $location, dizquetv) {
                 if (typeof(scope.channel.disableFillerOverlay) === 'undefined') {
                     scope.channel.disableFillerOverlay = true;
                 }
+                if (
+                    (typeof(scope.channel.guideMinimumDurationSeconds) === 'undefined')
+                    || isNaN(scope.channel.guideMinimumDurationSeconds)
+                ) {
+                    scope.channel.guideMinimumDurationSeconds = 5 * 60;
+                }
                 scope.channel.startTime = new Date(t - offset);
                 // move runningProgram to index 0
                 scope.channel.programs = scope.channel.programs.slice(runningProgram, this.length)
@@ -121,6 +129,15 @@ module.exports = function ($timeout, $location, dizquetv) {
                 }
             }
 
+            scope.tabOptions = [
+                { name: "Properties", id: "basic" },
+                { name: "Programming", id: "programming" },
+                { name: "Flex", id: "flex" },
+                { name: "EPG", id: "epg" },
+            ];
+            scope.setTab = (tab) => {
+                scope.tab = tab;
+            }
 
             if (scope.isNewChannel) {
                 scope.tab = "basic";

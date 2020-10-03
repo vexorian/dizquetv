@@ -3,34 +3,14 @@
         <div ng-class="{'channel-editor-modal-big':showShuffleOptions, 'modal-dialog-scrollable': (tab !== 'programming') }" class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <ul class="nav nav-tabs">
-                        <li class="nav-item">
-                            <span class="nav-link btn btn-link {{ tab === 'basic' ? 'active' : ''}}" ng-click="tab = 'basic'">
-                                <span ng-if="error.tab==='basic'" class='text-danger'>
-                                    <i class='fas fa-exclamation-triangle' ></i> Properties
+                    <ul class="nav nav-tabs"  >
+                        <li class="nav-item" ng-repeat="x in tabOptions" >
+                            <span class="nav-link btn btn-link {{ tab === x.id ? 'active' : ''}}" ng-click="setTab(x.id)">
+                                <span ng-if="error.tab===x.id" class='text-danger'>
+                                    <i class='fas fa-exclamation-triangle' ></i> {{x.name}}
                                 </span>
-                                <span ng-if="error.tab!=='basic'">
-                                    Properties
-                                </span>
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <span class="nav-link btn btn-link {{ tab === 'programming' ? 'active' : ''}}" ng-click="tab = 'programming'">
-                                <span ng-if="error.tab==='programming'" class='text-danger'>
-                                    <i class='fas fa-exclamation-triangle' ></i> Programming
-                                </span>
-                                <span ng-if="error.tab!=='programming'">
-                                    Programming
-                                </span>
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <span class="nav-link btn btn-link {{ tab === 'flex' ? 'active' : ''}}" ng-click="tab = 'flex'">
-                                <span ng-if="error.tab==='flex'" class='text-danger'>
-                                    <i class='fas fa-exclamation-triangle' ></i> Flex
-                                </span>
-                                <span ng-if="error.tab!=='flex'">
-                                    Flex
+                                <span ng-if="error.tab!==x.id">
+                                    {{x.name}}
                                 </span>
                             </span>
                         </li>
@@ -39,6 +19,7 @@
                         {{ getTitle() }}
                     </h5>
                 </div>
+                <!-- ============= TAB: PROPERTIES ========================= -->
                 <div class="modal-body" ng-if="tab == 'basic'">
                     <div>
                         <span class="pull-right text-danger">{{error.number}}</span>
@@ -99,13 +80,10 @@
                             <hr/>
                         </div>
                     </div>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="stealth" aria-describedby="stealthHelp" ng-model='channel.stealth'>
-                        <label class="form-check-label" for="stealth">Stealth Mode</label>
-
-                        <span class='text-muted' id="stealthHelp">(This will hide the channel from TV guides, spoofed HDHR, m3u...)</span>
-                    </div>
                 </div>
+                <!--
+                    ============= TAB: PROGRAMMING =========================
+                                                                             -->
                 <div ng-if="tab == 'programming'" class='modal-semi-body'>
                     <div class='form-group form-row' >
                         <label for="channelStartTime" class="small col-form-label col-md-auto">Programming Start:</label>
@@ -462,6 +440,10 @@
                     </div>
                 </div>
 
+                <!--
+                    ============= TAB: FLEX =========================
+                                                                             -->
+
                 <div class="modal-body" ng-if="tab == 'flex'">
                     <div class='text-center text-info' ng-show='!hasFlex'>
                         <i class='fas fa-info-circle' ></i> Use programming tools like &quot;Add Padding&quot;, &quot;Add Breaks&quot; or &quot;Add Flex&quot; to add &quot;Flex&quot; time slots to the channel&apos;s programming.
@@ -596,6 +578,37 @@
                         </div>
                         
                     </div>
+
+                </div>
+
+                <!--
+                    ============= TAB: EPG =========================
+                                                                             -->
+
+                <div class="modal-body" ng-if="tab == 'epg'">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="stealth" aria-describedby="stealthHelp" ng-model='channel.stealth'>
+                        <label class="form-check-label" for="stealth">Stealth Mode</label>
+
+                        <span class='text-muted' id="stealthHelp">(This will hide the channel from TV guides, spoofed HDHR, m3u playlist... The channel can still be streamed directly or be used as a redirect target.)</span>
+                    </div>
+                    <br></br>
+                    <div class='form-group' ng-show='! channel.stealth'>
+                        <label class='form-label' >Placeholder program title:</label>
+                        <input type="text" class='form-control' ng-model="channel.guideFlexPlaceholder" placeholder="Leave empty so that it uses the channel&apos;s name" id='guideFlex'  aria-describedby="guideFlexHelp" />
+
+                        <small id='guideFlexHelp' class="text-muted" for='guideFlex'>This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide. E.g when a large Flex block is scheduled.</small>
+                    </div>
+
+                    <div class='form-group' ng-show='! channel.stealth'>
+                        <label class='form-label'>Minimum program duration to appear in the TV guide (seconds): </label>
+                        <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp" />
+                        <small id='guideFlexTimeHelp' class="text-muted" for='guideFlexTime'>Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the &quot;place holder program&quot; if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.</small>
+                    </div>
+
+
+
+
 
                 </div>
 
