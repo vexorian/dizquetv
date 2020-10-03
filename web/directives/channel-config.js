@@ -13,10 +13,11 @@ module.exports = function ($timeout, $location, dizquetv) {
             scope.maxSize = 50000;
 
             scope.blockCount = 1;
-            scope.showShuffleOptions = false;
+            scope.showShuffleOptions = (localStorage.getItem("channel-tools") === "on");
+            scope.reverseTools = (localStorage.getItem("channel-tools-position") === "left");
     
             scope.hasFlex = false;
-            scope.showHelp = false;
+            scope.showHelp = { check: false }
             scope._frequencyModified = false;
             scope._frequencyMessage = "";
             scope.minProgramIndex = 0;
@@ -1289,10 +1290,12 @@ module.exports = function ($timeout, $location, dizquetv) {
 
             scope.toggleTools = () => {
                 scope.showShuffleOptions = !scope.showShuffleOptions
+                localStorage.setItem("channel-tools", (scope.showShuffleOptions? 'on' :  'off') );
             }
 
-            scope.toggleToolHelp = () => {
-                scope.showHelp= !scope.showHelp
+            scope.toggleToolsDirection = () => {
+                scope.reverseTools = ! scope.reverseTools;
+                localStorage.setItem("channel-tools-position", (scope.reverseTools? 'left' :  'right') );
             }
 
             scope.disablePadding = () => {
