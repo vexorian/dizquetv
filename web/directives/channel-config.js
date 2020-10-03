@@ -102,6 +102,26 @@ module.exports = function ($timeout, $location, dizquetv) {
                 updateChannelDuration();
                 setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
             }
+            let addMinuteVersionsOfFields = () => {
+                //add the minutes versions of the cooldowns:
+                scope.channel.fillerRepeatCooldownMinutes = scope.channel.fillerRepeatCooldown / 1000 / 60;
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    scope.channel.fillerCollections[i].cooldownMinutes = scope.channel.fillerCollections[i].cooldown / 1000 / 60;
+
+                }
+            }
+            addMinuteVersionsOfFields();
+
+            let removeMinuteVersionsOfFields = (channel) => {
+                channel.fillerRepeatCooldown = channel.fillerRepeatCooldownMinutes * 60 * 1000;
+                delete channel.fillerRepeatCooldownMinutes;
+                for (let i = 0; i < channel.fillerCollections.length; i++) {
+                    channel.fillerCollections[i].cooldown = channel.fillerCollections[i].cooldownMinutes * 60 * 1000;
+                    delete channel.fillerCollections[i].cooldownMinutes;
+                }
+            }
+
+
             if (scope.isNewChannel) {
                 scope.tab = "basic";
             } else {
@@ -163,19 +183,9 @@ module.exports = function ($timeout, $location, dizquetv) {
                 };
             }
 
-            scope.updateChannelFromOfflineResult = (program) => {
-                scope.channel.offlineMode = program.channelOfflineMode;
-                scope.channel.offlinePicture = program.channelPicture;
-                scope.channel.offlineSoundtrack = program.channelSound;
-                scope.channel.fillerRepeatCooldown = program.repeatCooldown * 60000;
-                scope.channel.fillerCollections = JSON.parse( angular.toJson(program.filler.map(fixFillerCollection) ) );
-                scope.channel.fallback = JSON.parse( angular.toJson(program.fallback) );
-                scope.channel.disableFillerOverlay = program.disableOverlay;
-            }
             scope.finishedOfflineEdit = (program) => {
                 let editedProgram = scope.channel.programs[scope.selectedProgram];
                 let duration = program.durationSeconds * 1000;
-                scope.updateChannelFromOfflineResult(program);
                 editedProgram.duration = duration;
                 editedProgram.isOffline = true;
                 scope._selectedOffline = null
@@ -187,7 +197,6 @@ module.exports = function ($timeout, $location, dizquetv) {
                     duration: duration,
                     isOffline: true
                 }
-                scope.updateChannelFromOfflineResult(result);
                 scope.channel.programs.splice(scope.minProgramIndex, 0, program);
                 scope._selectedOffline = null
                 scope._addingOffline = null;
@@ -888,14 +897,7 @@ module.exports = function ($timeout, $location, dizquetv) {
             }
             scope.makeOfflineFromChannel = (duration) => {
                 return {
-                    channelOfflineMode: scope.channel.offlineMode,
-                    channelPicture: scope.channel.offlinePicture,
-                    channelSound: scope.channel.offlineSoundtrack,
-                    repeatCooldown : Math.floor(scope.channel.fillerRepeatCooldown / 60000),
-                    filler:  JSON.parse( angular.toJson(scope.channel.fillerCollections.map(unfixFillerCollection) ) ),
-                    fallback: JSON.parse( angular.toJson(scope.channel.fallback) ),
                     durationSeconds: duration,
-                    disableOverlay : scope.channel.disableFillerOverlay,
                 }
             }
             scope.addOffline = () => {
@@ -1098,6 +1100,8 @@ module.exports = function ($timeout, $location, dizquetv) {
                     // validate
                     var now = new Date()
                     scope.error.any = true;
+
+   
                     if (typeof channel.number === "undefined" || channel.number === null || channel.number === "") {
                         scope.error.number = "Select a channel number"
                         scope.error.tab = "basic";
@@ -1125,22 +1129,38 @@ module.exports = function ($timeout, $location, dizquetv) {
                     } else if (channel.programs.length === 0) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
                         scope.error.tab = "programming";
+                    } else if (
+                        channel.offlineMode != 'pic'
+                        && (channel.fallback.length == 0)
+                    ) {
+                        scope.error.fallback = 'Either add a fallback clip or change the fallback mode to Picture.';
+                        scope.error.tab = "flex";
                     } else {
                         scope.error.any = false;
                         for (let i = 0; i < scope.channel.programs.length; i++) {
                             delete scope.channel.programs[i].$index;
                         }
                         try {
+                            removeMinuteVersionsOfFields(channel);
                             let s = angular.toJson(channel);
+                            addMinuteVersionsOfFields();
                             if (s.length > 50*1000*1000) {
                                 scope.error.any = true;
                                 scope.error.programs = "Channel is too large, can't save.";
                                 scope.error.tab = "programming";
                             } else {
-                                await scope.onDone(JSON.parse(s))
+                                let cloned = JSON.parse(s);
+                                //clean up some stuff that's only used by the UI:
+                                cloned.fillerCollections = cloned.fillerCollections.filter( (f) => { return f.id != 'none'; } );
+                                cloned.fillerCollections.forEach( (c) => {
+                                    delete c.percentage;
+                                    delete c.options;
+                                } );
+                                await scope.onDone(cloned)
                                 s = null;
                             }
                         } catch(err) {
+                            addMinuteVersionsOfFields();
                             $timeout();
                             console.error(err);
                             scope.error.any = true;
@@ -1339,6 +1359,28 @@ module.exports = function ($timeout, $location, dizquetv) {
 
             }
 
+            scope.openFallbackLibrary = () => {
+                scope.showFallbackPlexLibrary = true
+            }
+
+            scope.importFallback = (selectedPrograms) => {
+                for (let i = 0, l = selectedPrograms.length; i < l && i < 1; i++) {
+                    selectedPrograms[i].commercials = []
+                }
+                scope.channel.fallback = [];
+                if (selectedPrograms.length > 0) {
+                    scope.channel.fallback = [ selectedPrograms[0] ];
+                }
+                scope.showFallbackPlexLibrary = false;
+            }
+
+            scope.fillerOptions = scope.channel.fillerCollections.map( (f) => {
+                return {
+                    id: f.id,
+                    name: `(${f.id})`,
+                }
+            });
+
 
             scope.nightStartHours = [ { id: -1, description: "Start" } ];
             scope.nightEndHours   = [ { id: -1, description: "End" } ];
@@ -1354,6 +1396,116 @@ module.exports = function ($timeout, $location, dizquetv) {
             }
             scope.rerunStartHours = scope.nightStartHours;
             scope.paddingMod = 30;
+
+            let fillerOptionsFor = (index) => {
+                let used = {};
+                let added = {};
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    if (scope.channel.fillerCollections[i].id != 'none' && i != index) {
+                        used[ scope.channel.fillerCollections[i].id ] = true;
+                    }
+                }
+                let options = [];
+                for (let i = 0; i < scope.fillerOptions.length; i++) {
+                    if ( used[scope.fillerOptions[i].id] !== true) {
+                        added[scope.fillerOptions[i].id] = true;
+                        options.push( scope.fillerOptions[i] );
+                    }
+                }
+                if (scope.channel.fillerCollections[index].id == 'none') {
+                    added['none'] = true;
+                    options.push( {
+                        id: 'none',
+                        name: 'Add a filler list...',
+                    } );
+                }
+                if ( added[scope.channel.fillerCollections[index].id] !== true ) {
+                    options.push( {
+                        id: scope.channel.fillerCollections[index].id,
+                        name: `[${f.id}]`,
+                    } );
+                }
+                return options;
+            }
+
+            scope.refreshFillerStuff = () => {
+                if (typeof(scope.channel.fillerCollections) === 'undefined') {
+                    return;
+                }
+                addAddFiller();
+                updatePercentages();
+                refreshIndividualOptions();
+            }
+
+            let updatePercentages = () => {
+                let w = 0;
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    if (scope.channel.fillerCollections[i].id !== 'none') {
+                        w += scope.channel.fillerCollections[i].weight;
+                    }
+                }
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    if (scope.channel.fillerCollections[i].id !== 'none') {
+                        scope.channel.fillerCollections[i].percentage = (scope.channel.fillerCollections[i].weight * 100 / w).toFixed(2) + "%";
+                    }
+                }
+
+            };
+            
+
+            let addAddFiller = () => {
+                if ( (scope.channel.fillerCollections.length == 0) || (scope.channel.fillerCollections[scope.channel.fillerCollections.length-1].id !== 'none') ) {
+                    scope.channel.fillerCollections.push ( {
+                        'id': 'none',
+                        'weight': 300,
+                        'cooldown': 0,
+                    } );
+                }
+            }
+
+
+            let refreshIndividualOptions = () => {
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    scope.channel.fillerCollections[i].options = fillerOptionsFor(i);
+                }
+            }
+
+            let refreshFillerOptions = async() => {
+
+                try {
+                    let r = await dizquetv.getAllFillersInfo();
+                    scope.fillerOptions = r.map( (f) => {
+                        return {
+                            id: f.id,
+                            name: f.name,
+                        };
+                    } );
+                    scope.refreshFillerStuff();
+                    scope.$apply();
+                } catch(err) {
+                    console.error("Unable to get filler info", err);
+                }
+            };
+            scope.refreshFillerStuff();
+            refreshFillerOptions();
+
+            scope.showList = () => {
+                return ! scope.showFallbackPlexLibrary;
+            }
+
+
+            scope.deleteFillerList =(index) => {
+                scope.channel.fillerCollections.splice(index, 1);
+                scope.refreshFillerStuff();
+            }
+
+
+
+            scope.durationString = (duration) => {
+                var date = new Date(0);
+                date.setSeconds( Math.floor(duration / 1000) ); // specify value for SECONDS here
+                return date.toISOString().substr(11, 8);
+            }
         }
     }
 }
