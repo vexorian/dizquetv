@@ -56,7 +56,7 @@
                                 <div class="col-md-3">
                                     <label for="channelIconPosition" class="small">Overlay Position</label>
                                     <div class="input-group mb-1">
-                                        <select class="form-control form-control-sm" id="channelIconPosition" ng-model="channel.iconPosition">
+                                        <select class="custom-select form-control form-control-sm" id="channelIconPosition" ng-model="channel.iconPosition">
                                             <option value="0">Top Left</option>
                                             <option value="1">Top Right</option>
                                             <option value="2">Bottom Left</option>
@@ -173,7 +173,7 @@
                                         </div>
                                         <div class="input-group-prepend">
                                             <div class="input-group-text" style="padding: 0;">
-                                                <label class="small" for="randomizeBlockShuffle" style="margin-bottom: 4px;">&nbsp;Randomize&nbsp;&nbsp;</label>
+                                                <label class="small" for="randomizeBlockShuffle" style="margin-bottom: 2px;">&nbsp;Randomize&nbsp;&nbsp;</label>
                                                 <input id="randomizeBlockShuffle" type="checkbox" ng-model="randomizeBlockShuffle"></input>
                                                 &nbsp;
                                             </div>
@@ -257,9 +257,9 @@
                                 <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
                                       <div class="input-group">
                                           <div class="input-group-prepend">
-                                              <select ng-model="nightStart"
+                                              <select class="custom-select" ng-model="nightStart"
                                               ng-options="o.id as o.description for o in nightStartHours" />
-                                              <select ng-model="nightEnd"
+                                              <select class="custom-select" ng-model="nightEnd"
                                               ng-options="o.id as o.description for o in nightEndHours" />
                                           </div>
                                           <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(nightStart, nightEnd)" ng-disabled="nightStart==-1 || nightEnd==-1">
@@ -273,7 +273,7 @@
                                 <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <select ng-model="paddingOption"
+                                            <select class="custom-select" ng-model="paddingOption"
                                             ng-options="o as o.description for o in paddingOptions" />
 
                                         </div>
@@ -287,11 +287,11 @@
                                 <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <select style="width:5em" ng-model="breakAfter"
+                                            <select class="custom-select" style="width:5em" ng-model="breakAfter"
                                             ng-options="o.id as o.description for o in breakAfterOptions" />
-                                            <select style="width:5em" ng-model="minBreakSize"
+                                            <select class="custom-select" style="width:5em" ng-model="minBreakSize"
                                             ng-options="o.id as o.description for o in minBreakSizeOptions" />
-                                            <select style="width:5em" ng-model="maxBreakSize"
+                                            <select class="custom-select" style="width:5em" ng-model="maxBreakSize"
                                             ng-options="o.id as o.description for o in maxBreakSizeOptions" />
                                         </div>
                                         <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breaksDisabled()">
@@ -304,13 +304,13 @@
                                 <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                       <div class="input-group-prepend">
-                                          <select ng-model="rerunStart"
+                                          <select class="custom-select" ng-model="rerunStart"
                                           ng-options="o.id as o.description for o in rerunStartHours">
                                           </select>
-                                          <select ng-model="rerunBlockSize"
+                                          <select class="custom-select" ng-model="rerunBlockSize"
                                           ng-options="o.id as o.description for o in rerunBlockSizes">
                                           </select>
-                                          <select ng-model="rerunRepeats"
+                                          <select class="custom-select" ng-model="rerunRepeats"
                                           ng-options="o.id as o.description for o in rerunRepeatOptions">
                                           </select>
                                       </div>
@@ -375,11 +375,11 @@
                                       <div class="input-group">
                                           <div class="input-group-prepend">
                                               <div class='loader' ng-hide='channelsDownloaded'></div>
-                                              <select  ng-show='channelsDownloaded' style='width:5em;' ng-model="atNightChannelNumber"
+                                              <select class="custom-select"  ng-show='channelsDownloaded' style='width:5em;' ng-model="atNightChannelNumber"
                                               ng-options="o.id as o.description for o in knownChannels" ></select>
-                                              <select ng-model="atNightStart"
+                                              <select class="custom-select" ng-model="atNightStart"
                                               ng-options="o.id as o.description for o in nightStartHours" ></select>
-                                              <select ng-model="atNightEnd"
+                                              <select class="custom-select" ng-model="atNightEnd"
                                               ng-options="o.id as o.description for o in nightEndHours" ></select>
                                           </div>
                                           <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(atNightEnd, atNightStart, atNightChannelNumber)" ng-disabled="atNightChannelNumber==-1 || atNightStart==-1 || atNightEnd==-1">
