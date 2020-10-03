@@ -1,5 +1,10 @@
 .pull-right { float: right; }
 
+.modal-semi-body {
+  padding: 1rem;
+  flex: 1 1 auto;
+}
+
 .commercials-panel {
   background-color: rgb(70, 70, 70);
   border-top: 1px solid #daa104;
@@ -249,6 +254,42 @@ table.tvguide {
   text-align: right;
 }
 
+div.channel-tools {
+  max-height: 20em;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-top: 1px solid #888;
+  border-bottom: 1px solid #888;
+}
+div.channel-tools p {
+  font-size: 0.5rem;
+  margin-top: 0.01rem;
+}
+
+div.programming-panes {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+div.programming-panes div.programming-pane {
+  max-height: 30rem;
+  overflow-y: auto;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+div.programming-programs div.list-group-item {
+  height: 1.5rem;
+}
+.channel-editor-modal {
+  width:1200px;
+  min-width: 98%;
+}
+
 /* Safari */
 @-webkit-keyframes spin {
   0% { -webkit-transform: rotate(0deg); }
@@ -260,3 +301,7 @@ table.tvguide {
   100% { transform: rotate(360deg); }
 }
 
+
+.program-row:nth-child(odd), .filler-row:nth-child(odd), .channel-row:nth-child(odd)  {
+  background-color: #eeeeee;
+}

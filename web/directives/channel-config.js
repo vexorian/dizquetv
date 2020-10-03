@@ -11,6 +11,9 @@ module.exports = function ($timeout, $location, dizquetv) {
         },
         link: function (scope, element, attrs) {
             scope.maxSize = 50000;
+
+            scope.blockCount = 1;
+            scope.showShuffleOptions = false;
     
             scope.hasFlex = false;
             scope.showHelp = false;
@@ -18,6 +21,7 @@ module.exports = function ($timeout, $location, dizquetv) {
             scope._frequencyMessage = "";
             scope.minProgramIndex = 0;
             scope.libraryLimit =  50000;
+            scope.displayPlexLibrary = false;
             scope.episodeMemory = {
                 saved : false,
             };
@@ -97,6 +101,27 @@ module.exports = function ($timeout, $location, dizquetv) {
                     .concat(scope.channel.programs.slice(0, runningProgram) );
                 updateChannelDuration();
                 setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
+            }
+            if (scope.isNewChannel) {
+                scope.tab = "basic";
+            } else {
+                scope.tab = "programming";
+            }
+
+            scope.getTitle = () => {
+                if (scope.isNewChannel) {
+                    return "Create Channel";
+                } else {
+                    let x = "?";
+                    if ( (scope.channel.number != null) && ( typeof(scope.channel.number) !== 'undefined') && (! isNaN(scope.channel.number) ) ) {
+                        x = "" + scope.channel.number;
+                    }
+                    let y = "Unnamed";
+                    if (typeof(scope.channel.name) !== 'undefined') {
+                        y = scope.channel.name;
+                    }
+                    return `${x} - ${y}`;
+                }
             }
 
             scope._selectedRedirect = {
@@ -1073,25 +1098,34 @@ module.exports = function ($timeout, $location, dizquetv) {
                     // validate
                     var now = new Date()
                     scope.error.any = true;
-                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "")
+                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "") {
                         scope.error.number = "Select a channel number"
-                    else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) // we need the parseInt for indexOf to work properly
+                        scope.error.tab = "basic";
+                    } else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) { // we need the parseInt for indexOf to work properly
                         scope.error.number = "Channel number already in use."
-                    else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1)
+                        scope.error.tab = "basic";
+                    } else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1) {
                         scope.error.number = "Channel number already in use."
-                    else if (channel.number < 0 || channel.number > 9999)
+                        scope.error.tab = "basic";
+                    } else if (channel.number < 0 || channel.number > 9999) {
                         scope.error.name = "Enter a valid number (0-9999)"
-                    else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "")
+                        scope.error.tab = "basic";
+                    } else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "") {
                         scope.error.name = "Enter a channel name."
-                    else if (channel.icon !== "" && !validURL(channel.icon))
+                        scope.error.tab = "basic";
+                    } else if (channel.icon !== "" && !validURL(channel.icon)) {
                         scope.error.icon = "Please enter a valid image URL. Or leave blank."
-                    else if (channel.overlayIcon && !validURL(channel.icon))
+                        scope.error.tab = "basic";
+                    } else if (channel.overlayIcon && !validURL(channel.icon)) {
                         scope.error.icon = "Please enter a valid image URL. Cant overlay an invalid image."
-                    else if (now < channel.startTime)
+                        scope.error.tab = "basic";
+                    } else if (now < channel.startTime) {
                         scope.error.startTime = "Start time must not be set in the future."
-                    else if (channel.programs.length === 0)
+                        scope.error.tab = "programming";
+                    } else if (channel.programs.length === 0) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
-                    else {
+                        scope.error.tab = "programming";
+                    } else {
                         scope.error.any = false;
                         for (let i = 0; i < scope.channel.programs.length; i++) {
                             delete scope.channel.programs[i].$index;
@@ -1101,6 +1135,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                             if (s.length > 50*1000*1000) {
                                 scope.error.any = true;
                                 scope.error.programs = "Channel is too large, can't save.";
+                                scope.error.tab = "programming";
                             } else {
                                 await scope.onDone(JSON.parse(s))
                                 s = null;
@@ -1110,6 +1145,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                             console.error(err);
                             scope.error.any = true;
                             scope.error.programs = "Unable to save channel."
+                            scope.error.tab = "programming";
                         }
                     }
                     $timeout(() => { scope.error = {} }, 60000)
@@ -1201,6 +1237,26 @@ module.exports = function ($timeout, $location, dizquetv) {
 
             };
             scope.loadChannels();
+
+            scope.setTool = (toolName) => {
+                scope.tool = toolName;
+            }
+
+            scope.hasPrograms = () => {
+                return scope.channel.programs.length > 0;
+            }
+
+            scope.showPlexLibrary = () => {
+                scope.displayPlexLibrary = true;
+            }
+
+            scope.toggleTools = () => {
+                scope.showShuffleOptions = !scope.showShuffleOptions
+            }
+
+            scope.toggleToolHelp = () => {
+                scope.showHelp= !scope.showHelp
+            }
 
             scope.disablePadding = () => {
                 return (scope.paddingOption.id==-1) || (2*scope.channel.programs.length > scope.maxSize);
