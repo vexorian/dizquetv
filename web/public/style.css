@@ -306,30 +306,28 @@ div.programming-programs div.list-group-item {
   background-color: #eeeeee;
 }
 
-.programming-pane button,
+.programming-pane button:not(.btn-danger),
 .programming-pane .input-group-text,
 .programming-pane select {
   border: 1px solid #999999 !important;
 }
-
 .programming-pane input,
 .programming-pane select {
   font-size: 14px;
 }
-
 .programming-pane select {
   text-align: center;
+  border-radius: 0;
+  padding: 0 16px 0 0;
+  height: initial;  
 }
-
-.programming-pane .input-group-prepend + button {
-  border-left: 0;
-}
-
-.programming-pane .form-control {
-  border-color: #999999;
-}
-
 .programming-pane select:first-of-type {
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
+}
+.programming-pane .input-group-prepend + button {
+  border-left: 0;
+}
+.programming-pane input.form-control {
+  border-color: #999999;
 }
