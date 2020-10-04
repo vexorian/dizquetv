@@ -218,6 +218,30 @@
                                     <p ng-show='showHelp.check'>Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately.</p>
                                 </div>
 
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="replicaCount" style="width:5em">
+                                        </div>
+                                        <button ng-disabled="!(replicaCount &gt;= 2)" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="replicate(replicaCount)"  title='Replicate' >
+                                                <i class='fas fa-recycle'></i> Replicate
+                                            </button>
+                                    </div>
+                                    <p ng-show='showHelp.check'>Makes multiple copies of the schedule and plays them in sequence. Normally this isn&apos;t necessary, because dizqueTV will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels.</p>
+                                </div>
+
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="randomReplicaCount" style="width:5em">
+                                        </div>
+                                        <button ng-disabled="!(randomReplicaCount &gt;= 2)"  class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="shuffleReplicate(randomReplicaCount)"  title='Replicate &amp; Shuffle' >
+                                                <i class='fas fa-dice'></i> Replicate &amp; Shuffle
+                                            </button>
+                                    </div>
+                                    <p ng-show='showHelp.check'>Like &quot;Replicate&quot;, it will make multiple copies of the programming. In addition it will shuffle the programs, but it will make sure not to have too small a distance between two identical programs.</p>
+                                </div>
+
                                 <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()" >
                                     <div class='input-group'>
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()" title='Sort TV Shows' >
@@ -237,7 +261,6 @@
                                     </div>
                                     <p ng-show='showHelp.check'>Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.</p>
                                 </div>
-
 
                                 <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()" >
                                     <div class="input-group">
@@ -350,30 +373,6 @@
                                     </p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="replicaCount" style="width:5em">
-                                        </div>
-                                        <button ng-disabled="!(replicaCount &gt;= 2)" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="replicate(replicaCount)"  title='Replicate' >
-                                                <i class='fas fa-recycle'></i> Replicate
-                                            </button>
-                                    </div>
-                                    <p ng-show='showHelp.check'>Makes multiple copies of the schedule and plays them in sequence. Normally this isn&apos;t necessary, because dizqueTV will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels.</p>
-                                </div>
-
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="randomReplicaCount" style="width:5em">
-                                        </div>
-                                        <button ng-disabled="!(randomReplicaCount &gt;= 2)"  class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="shuffleReplicate(randomReplicaCount)"  title='Replicate &amp; Shuffle' >
-                                                <i class='fas fa-dice'></i> Replicate &amp; Shuffle
-                                            </button>
-                                    </div>
-                                    <p ng-show='showHelp.check'>Like &quot;Replicate&quot;, it will make multiple copies of the programming. In addition it will shuffle the programs, but it will make sure not to have too small a distance between two identical programs.</p>
-                                </div>
-
                                 <div class="col-xl-6 col-lg-12" style="padding: 5px;" >
                                     <div class='input-group'>
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addRedirect()"  title='Add Redirect...'  >
@@ -400,6 +399,28 @@
                                       </div>
                                       <p ng-show='showHelp.check'>Will redirect to another channel while between the selected hours.</p>
                                 </div>
+
+                                <div class="col-xl-12 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <button class='btn btn-sm btn-warning form-control' ng-click="slideAllPrograms(-slide.value)"
+                                                ng-disabled="slide.value == -1"
+                                            >
+                                                <i class='fas fa-backward'></i> Rewind
+                                            </button>
+                                        </div>
+                                        <select class="custom-select" ng-model="slide.value"
+                                        ng-options="o.id as o.description for o in slide.options" ></select>
+                                        <div class="input-group-append">
+                                            <button class='btn btn-sm btn-warning form-control' ng-click="slideAllPrograms(slide.value)"
+                                                ng-disabled="slide.value == -1"
+                                            >
+                                                <i class='fas fa-forward'></i> Fast-Forward
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p ng-show='showHelp.check'>Slides the whole schedule. The &quot;Fast-Forward&quot; button will advance the stream by the specified amount of time. The &quot;Rewind&quot; button does the opposite.</p>
+                              </div>
 
                                 <div class="col-md-auto" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class='input-group'>
