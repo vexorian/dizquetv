@@ -60,24 +60,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope.showRotatedNote = false;
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
-                let t = Date.now();
-                let originalStart = scope.channel.startTime.getTime();
-                let n = scope.channel.programs.length;
-                let totalDuration = scope.channel.duration;
-                let m = (t - originalStart) % totalDuration;
-                let x = 0;
-                let runningProgram = -1;
-                let offset = 0;
-                for (let i = 0; i < n; i++) {
-                    let d = scope.channel.programs[i].duration;
-                    if (x + d > m) {
-                        runningProgram = i
-                        offset = m - x;
-                        break;
-                    } else {
-                        x += d;
-                    }
-                }
+
                 if (typeof(scope.channel.fillerRepeatCooldown) === 'undefined') {
                     scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
                 }
@@ -104,13 +87,40 @@ module.exports = function ($timeout, $location, dizquetv) {
                 ) {
                     scope.channel.guideMinimumDurationSeconds = 5 * 60;
                 }
-                scope.channel.startTime = new Date(t - offset);
-                // move runningProgram to index 0
-                scope.channel.programs = scope.channel.programs.slice(runningProgram, this.length)
-                    .concat(scope.channel.programs.slice(0, runningProgram) );
+                
+                adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
                 setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
             }
+
+            function adjustStartTimeToCurrentProgram() {
+                let t = Date.now();
+                let originalStart = scope.channel.startTime.getTime();
+                let n = scope.channel.programs.length;
+                let totalDuration = scope.channel.duration;
+                let m = (t - originalStart) % totalDuration;
+                let x = 0;
+                let runningProgram = -1;
+                let offset = 0;
+                for (let i = 0; i < n; i++) {
+                    let d = scope.channel.programs[i].duration;
+                    if (x + d > m) {
+                        runningProgram = i
+                        offset = m - x;
+                        break;
+                    } else {
+                        x += d;
+                    }
+                }
+                // move runningProgram to index 0
+                scope.channel.programs = scope.channel.programs.slice(runningProgram)
+                    .concat(scope.channel.programs.slice(0, runningProgram) );
+                    scope.channel.startTime = new Date(t - offset);
+
+            }
+
+
+
             let addMinuteVersionsOfFields = () => {
                 //add the minutes versions of the cooldowns:
                 scope.channel.fillerRepeatCooldownMinutes = scope.channel.fillerRepeatCooldown / 1000 / 60;
@@ -184,21 +194,6 @@ module.exports = function ($timeout, $location, dizquetv) {
                     scope.$apply();
                 }, 1);
                 return true;
-            }
-
-            let fixFillerCollection = (f) => {
-                return {
-                    id: f.id,
-                    weight: f.weight,
-                    cooldown: f.cooldown * 60000,
-                };
-            }
-            let unfixFillerCollection = (f) => {
-                return {
-                    id: f.id,
-                    weight: f.weight,
-                    cooldown: Math.floor(f.cooldown / 60000),
-                };
             }
 
             scope.finishedOfflineEdit = (program) => {
@@ -316,6 +311,19 @@ module.exports = function ($timeout, $location, dizquetv) {
                     }
                 });
                 updateChannelDuration()
+            }
+            scope.slideAllPrograms = (offset) => {
+                let t0 = scope.channel.startTime.getTime();
+                let t1 = t0 - offset;
+                let t = (new Date()).getTime();
+                let total = scope.channel.duration;
+                while(t1 > t) {
+                    //TODO: Replace with division
+                    t1 -= total;
+                }
+                scope.channel.startTime = new Date(t1);
+                adjustStartTimeToCurrentProgram();
+                updateChannelDuration();
             }
             scope.removeDuplicates = () => {
                 let tmpProgs = {}
@@ -1401,6 +1409,23 @@ module.exports = function ($timeout, $location, dizquetv) {
                 }
             });
 
+            scope.slide = {
+                value: -1,
+                options: [
+                    {id:-1, description: "Time Amount" },
+                    {id: 1 * 60 * 1000, description: "1 minute" },
+                    {id: 10 * 60 * 1000, description: "10 minutes" },
+                    {id: 15 * 60 * 1000, description: "15 minutes" },
+                    {id: 30 * 60 * 1000, description: "30 minutes" },
+                    {id: 60 * 60 * 1000, description: "1 hour" },
+                    {id: 2 * 60 * 60 * 1000, description: "2 hours" },
+                    {id: 4 * 60 * 60 * 1000, description: "4 hours" },
+                    {id: 8 * 60 * 60 * 1000, description: "8 hours" },
+                    {id:12 * 60 * 60 * 1000, description: "12 hours" },
+                    {id:24 * 60 * 60 * 1000, description: "1 day" },
+                    {id: 7 * 24 * 60 * 60 * 1000, description: "1 week" },
+                ]
+            }
 
             scope.nightStartHours = [ { id: -1, description: "Start" } ];
             scope.nightEndHours   = [ { id: -1, description: "End" } ];
