@@ -36,48 +36,11 @@
                         <label for="channelIcon" class="small">Channel Icon</label>
                         <div class="input-group mb-1">
                             <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon" />
-                            <div class="input-group-append">
-                                <div class="input-group-text" style="padding: 0">
-                                    <label class="small" for="overlayIcon" style="margin-bottom: 4px;">&nbsp;overlay over stream&nbsp;&nbsp;</label>
-                                    <input id="overlayIcon" type="checkbox" ng-model="channel.overlayIcon">&nbsp;
-                                </div>
-                            </div>
                         </div>
                         <div>
                             <h6>Channel Icon Preview</h6>
                             <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
                             <span ng-if="channel.icon === ''">{{channel.name}}</span>
-                        </div>
-                        <div ng-show="channel.overlayIcon">
-                            <h6>Icon Overlay Options
-                                <small>Not applicable to commercials.</small>
-                            </h6>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <label for="channelIconPosition" class="small">Overlay Position</label>
-                                    <div class="input-group mb-1">
-                                        <select class="custom-select form-control form-control-sm" id="channelIconPosition" ng-model="channel.iconPosition">
-                                            <option value="0">Top Left</option>
-                                            <option value="1">Top Right</option>
-                                            <option value="2">Bottom Left</option>
-                                            <option value="3">Bottom Right</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="channelIconWidth" class="small">Overlay Width (pixels)</label>
-                                <div class="input-group mb-1">
-                                    <input id="channelIconWidth" class="form-control form-control-sm" type="number" ng-model="channel.iconWidth"/>
-                                </div>
-                                </div>
-                                <div class="col-md-5">
-                                    <label for="channelIconDuration" class="small">Overlay Duration (seconds) (0 = permanent)</label>
-                                    <div class="input-group mb-1">
-                                        <input id="channelIconDuration" class="form-control form-control-sm" type="number" ng-model="channel.iconDuration" />
-                                    </div>
-                                </div>
-                            </div>
-                            <hr/>
                         </div>
                     </div>
                 </div>
@@ -554,7 +517,7 @@
                         </div>
                         <div>
                             <input id="overlayDiableIcon" type="checkbox" ng-model="channel.disableFillerOverlay">&nbsp;
-                            <label class="small" for="overlayDisableIcon" style="margin-bottom: 4px;">&nbsp;Disable overlay icon when playing filler&nbsp;&nbsp;</label>
+                            <label class="small" for="overlayDisableIcon" style="margin-bottom: 4px;">&nbsp;Disable channel watermark when playing filler&nbsp;&nbsp;</label>
                         </div>
                         <hr />
                         <h6>Filler Lists</h6>
@@ -638,12 +601,110 @@
                         <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp" />
                         <small id='guideFlexTimeHelp' class="text-muted" for='guideFlexTime'>Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the &quot;place holder program&quot; if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.</small>
                     </div>
+                </div>
+                <!--
+                    ============= TAB: ffmpeg =========================
+                                                                             -->
 
+                <div class="modal-body" ng-if="tab == 'ffmpeg'">
+                    <small class='text-info'>These features require ffmpeg transcoding to be enabled in FFmpeg settings</small>
+                    <hr />
+                    <h6>Channel Watermark</h6>
 
+                    <div class='form-check'>
+                        <input class="form-check-input" type="checkbox" ng-model="channel.watermark.enabled" id="overlayCheck"></input>
+                        <label class="form-check-label" for="overlayCheck">
+                            Enable Watermark
+                        </label>
+                        <small class='text-muted form-ext' >Renders a channel icon (also known as bug or Digital On-screen Graphic) on top of the channel&apos;s stream.</small>
+                    </div>
 
+                    <div ng-show="channel.watermark.enabled" class='row' >
 
+                        <div class='col-md-3 col-lg-4 col-xl-5'>
+                            <h7>Preview</h7>
+                            <div ng-style='getWatermarkPreviewOuter()' class='watermark-preview'>
+                                <div ng-style='getWatermarkPreviewRectangle(4,3)' class='alternate-aspect' ></div>
+                                <div ng-style='getWatermarkPreviewRectangle(16,9)' class='alternate-aspect' ></div>
+                                <img src='{{ getWatermarkSrc() }}' ng-style='getWatermarkPreviewInner()' />
+                            </div>
+                        </div>
+
+                        <div class='col'>
+                            <small class='text-danger' ng-show='error.watermark'>{{ error.watermark }}</small>
+
+                            <div class='form-group'>
+                                <label for="overlayURL">
+                                    Watermark Picture URL:
+                                </label>
+                                <input id='overlayURL' class='form-control' type='url' ng-model='channel.watermark.url' placeholder="Leave empty to use the channel&apos;s icon.">
+                                </input>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="watermarkPosition">Position:</label>
+                                <select class="form-control custom-select" id="watermarkPosition" ng-model="channel.watermark.position">
+                                    <option value="top-left">Top Left</option>
+                                    <option value="top-right">Top Right</option>
+                                    <option value="bottom-left">Bottom Left</option>
+                                    <option value="bottom-right">Bottom Right</option>
+                                </select>
+                            </div>
+
+                            <div class='form-row'>
+                                <div class='form-group col-sm-auto'>
+                                    <label for="watermarkWidth" >
+                                        Width %:
+                                    </label>
+                                    <input id='watermarkWidth' class='form-control' type='number' ng-model='channel.watermark.width' min="0" max="100" step="any" ng-disabled='channel.watermark.fixedSize' >
+                                    </input>
+                                </div>
+                                <div class='form-group col-sm-auto'>
+                                    <label for="watermarkHorizontal">
+                                        Horizontal Margin %:
+                                    </label>
+                                    <input id='watermarkHorizontal' class='form-control' type='number' ng-model='channel.watermark.horizontalMargin' min="0" max="100" step="any">
+                                    </input>
+                                </div>
+                                <div class='form-group col-sm-auto'>
+                                    <label for="watermarkVertical">
+                                        Vertical Margin %:
+                                    </label>
+                                    <input id='watermarkVertical' class='form-control' type='number' ng-model='channel.watermark.verticalMargin' min="0" max="100"  step="any" >
+                                    </input>
+                                </div>
+                            </div>
+                            <br>
+                            <div class='form-check col-sm-auto'>
+                                <input class="form-check-input" type="checkbox" ng-model="channel.watermark.fixedSize" id="overlayFixed"></input>
+                                <label class="form-check-label" for="overlayFixed">
+                                    Disable Image Scaling
+                                </label>
+                                <small class='text-muted form-ext' >The image will be rendered at its actual size without applying any scaling to it.</small>
+                            </div>
+                            <div class='form-check col-sm-auto'>
+                                <input class="form-check-input" type="checkbox" ng-model="channel.watermark.animated" id="overlayAnimated"></input>
+                                <label class="form-check-label" for="overlayAnimated">
+                                    Animated Image
+                                </label>
+                                <small class='text-muted form-ext' >Tick this if and only if the watermark is an animated GIF or PNG. It will make it loop or not loop according to the image&apos;s configuration. If the image is not animated, an error will be generated.</small>
+                            </div>
+
+                            <br>
+
+                            <div class='form-group'>
+                                <label for="overlayDuration">
+                                    Overlay Duration (seconds) (0 = permanent):
+                                </label>
+                                <input id='overlayDuration' class='form-control' type='number' ng-model='channel.watermark.duration' min=0>
+                                </input>
+                            </div>
+                        </div>
+
+                    </div>
 
                 </div>
+
 
                 <div class="modal-footer">
                     <span class="pull-right text-danger" ng-show="error.any"> <i class='fa fa-exclamation-triangle'></i> There were errors. Please review the form.</span>

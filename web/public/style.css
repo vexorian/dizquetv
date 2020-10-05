@@ -339,3 +339,10 @@ div.programming-programs div.list-group-item {
 .tools-pane input.form-control {
   border-color: #999999;
 }
+.watermark-preview {
+  background: linear-gradient(180deg, rgb(90, 90, 90) 0%, rgb(110, 110, 110) 35%, rgb(130, 130, 130) 100%, rgb(150, 150, 150) 100%);
+  border: 2px solid black;
+}
+.watermark-preview .alternate-aspect {
+  background : rgba(255,255,255, 0.1);
+}

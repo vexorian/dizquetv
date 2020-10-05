@@ -10,6 +10,9 @@ module.exports = function ($timeout, $location, dizquetv) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
+            scope.screenW = 1920;
+            scope.screenh = 1080;
+
             scope.maxSize = 50000;
 
             scope.blockCount = 1;
@@ -29,6 +32,7 @@ module.exports = function ($timeout, $location, dizquetv) {
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
+                scope.channel.watermark = defaultWatermark();
                 scope.channel.fillerCollections = []
                 scope.channel.guideFlexPlaceholder = "";
                 scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
@@ -61,6 +65,10 @@ module.exports = function ($timeout, $location, dizquetv) {
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
 
+                if (typeof(scope.channel.watermark) === 'undefined') {
+                    scope.channel.watermark = defaultWatermark();
+                }
+
                 if (typeof(scope.channel.fillerRepeatCooldown) === 'undefined') {
                     scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
                 }
@@ -91,6 +99,17 @@ module.exports = function ($timeout, $location, dizquetv) {
                 adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
                 setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
+            }
+
+            function defaultWatermark() {
+                return {
+                    enabled: false,
+                    position: "bottom-right",
+                    width: 10.00,
+                    verticalMargin: 0.00,
+                    horizontalMargin: 0.00,
+                    duration: 0,
+                }
             }
 
             function adjustStartTimeToCurrentProgram() {
@@ -145,6 +164,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 { name: "Programming", id: "programming" },
                 { name: "Flex", id: "flex" },
                 { name: "EPG", id: "epg" },
+                { name: "FFmpeg", id: "ffmpeg" },
             ];
             scope.setTab = (tab) => {
                 scope.tab = tab;
@@ -474,7 +494,7 @@ module.exports = function ($timeout, $location, dizquetv) {
 
                 }
                 let f = interpolate;
-                let w = 5.0;
+                let w = 15.0;
                 let t = 4*60*60*1000;
                 //let d = Math.log( Math.min(t, program.duration) ) / Math.log(2);
                 //let a = (d * Math.log(2) ) / Math.log(t);
@@ -1155,6 +1175,21 @@ module.exports = function ($timeout, $location, dizquetv) {
                     } else if (channel.programs.length === 0) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
                         scope.error.tab = "programming";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.width, 0.01,100)) {
+                        scope.error.watermark = "Please include a valid watermark width.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.verticalMargin, 0.00,100)) {
+                        scope.error.watermark = "Please include a valid watermark vertical margin.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.horizontalMargin, 0.00,100)) {
+                        scope.error.watermark = "Please include a valid watermark horizontal margin.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && (scope.channel.watermark.width + scope.channel.watermark.horizontalMargin > 100.0) ) {
+                        scope.error.watermark = "Horizontal margin + width should not exceed 100.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.duration, 0)) {
+                        scope.error.watermark = "Please include a valid watermark duration.";
+                        scope.error.tab = "ffmpeg";
                     } else if (
                         channel.offlineMode != 'pic'
                         && (channel.fallback.length == 0)
@@ -1534,6 +1569,40 @@ module.exports = function ($timeout, $location, dizquetv) {
             scope.refreshFillerStuff();
             refreshFillerOptions();
 
+            let refreshScreenResolution = async () => {
+
+                function parseResolutionString(s) {
+                    var i = s.indexOf('x');
+                    if (i == -1) {
+                        i = s.indexOf("×");
+                        if (i == -1) {
+                           return {w:1920, h:1080}
+                        }
+                    }
+                    return {
+                        w: parseInt( s.substring(0,i) , 10 ),
+                        h: parseInt( s.substring(i+1) , 10 ),
+                    }
+                }
+                
+                try {
+                    let ffmpegSettings = await dizquetv.getFfmpegSettings()
+                    if (
+                        (ffmpegSettings.targetResolution != null)
+                        && (typeof(ffmpegSettings.targetResolution) !== 'undefined')
+                        && (typeof(ffmpegSettings.targetResolution) !== '')
+                    ) {
+                        let p = parseResolutionString( ffmpegSettings.targetResolution );
+                        scope.screenW = p.w;
+                        scope.screenH = p.h;
+                        $timeout();
+                    }
+                } catch(err) {
+                    console.error("Could not fetch ffmpeg settings", err);
+                }
+            }
+            refreshScreenResolution();
+
             scope.showList = () => {
                 return ! scope.showFallbackPlexLibrary;
             }
@@ -1550,6 +1619,121 @@ module.exports = function ($timeout, $location, dizquetv) {
                 var date = new Date(0);
                 date.setSeconds( Math.floor(duration / 1000) ); // specify value for SECONDS here
                 return date.toISOString().substr(11, 8);
+            }
+
+            scope.getCurrentWH = () => {
+                return {
+                    w: scope.screenW,
+                    h: scope.screenH
+                }
+            }
+            scope.getWatermarkPreviewOuter = () => {
+                let tm = scope.getCurrentWH();
+                let resolutionW = tm.w;
+                let resolutionH = tm.h;
+                let width = 100;
+                let height = width / ( resolutionW / resolutionH );
+
+
+                return {
+                    width: `${width}%`,
+                    "overflow" : "hidden",
+                    "padding-top": 0,
+                    "padding-left": 0,
+                    "padding-right": 0,
+                    "padding-bottom": `${height}%`,
+                    position: "relative",
+                }
+            }
+
+            scope.getWatermarkPreviewRectangle = (p,q) => {
+                let s = scope.getCurrentWH();
+                if ( (s.w*q) == (s.h*p) ) {
+                    //not necessary, hide it
+                    return {
+                        position: "absolute",
+                        visibility: "hidden",
+                    }
+                } else {
+                    //assume width is equal
+                    // s.w / h2 = p / q
+                    let h2 = (s.w * q * 100) / (p * s.h);
+                    let w2 = 100;
+                    let left = undefined;
+                    let top = undefined;
+                    if (h2 > 100) {
+                        //wrong
+                        //the other way around
+                        w2 = (s.h / s.w) * p * 100 / q;
+                        left = (100 - w2) / 2;
+                    } else {
+                        top = (100 - h2) / 2;
+                    }
+                    let padding = (100 * q) / p;
+                    return {
+                        "width" : `${w2}%`,
+                        "padding-top": "0",
+                        "padding-left": "0",
+                        "padding-right": "0",
+                        "padding-bottom": `${padding}%`,
+                        "margin" : "0",
+                        "left": `${left}%`,
+                        "top" : `${top}%`,
+                        "position": "absolute",
+                    }
+                }
+
+            }
+
+            scope.getWatermarkSrc = () => {
+                let url = scope.channel.watermark.url;
+                if ( url == null || typeof(url) == 'undefined' || url == '') {
+                    url = scope.channel.icon;
+                }
+                return url;
+            }
+
+            scope.getWatermarkPreviewInner = () => {
+                let width = Math.max(Math.min(100, scope.channel.watermark.width), 0);
+                let res = {
+                    width: `${width}%`,
+                    margin: "0",
+                    position: "absolute",
+                }
+                if (scope.channel.watermark.fixedSize === true) {
+                    delete res.width;
+                }
+                let mH = scope.channel.watermark.horizontalMargin;
+                let mV = scope.channel.watermark.verticalMargin;
+                if (scope.channel.watermark.position == 'top-left') {
+                    res["top"] = `${mV}%`;
+                    res["left"] = `${mH}%`;
+                } else if (scope.channel.watermark.position == 'top-right') {
+                    res["top"] = `${mV}%`;
+                    res["right"] = `${mH}%`;
+                } else if (scope.channel.watermark.position == 'bottom-right') {
+                    res["bottom"] = `${mV}%`;
+                    res["right"] = `${mH}%`;
+                } else if (scope.channel.watermark.position == 'bottom-left') {
+                    res["bottom"] = `${mV}%`;
+                    res["left"] = `${mH}%`;
+                } else {
+                    console.log("huh? " + scope.channel.watermark.position );
+                }
+                return res;
+            }
+
+            function notValidNumber(x, lower, upper) {
+                if ( (x == null) || (typeof(x) === 'undefined') || isNaN(x) ) {
+                    return true;
+                }
+                if ( (typeof(lower) !== 'undefined') && (x < lower) ) {
+                    return true;
+                }
+                if ( (typeof(upper) !== 'undefined') && (x > upper) ) {
+                    return true;
+                }
+                return false;
             }
         }
     }
