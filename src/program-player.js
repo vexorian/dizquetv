@@ -51,7 +51,7 @@ class ProgramPlayer {
             /* plex */
             this.delegate = new PlexPlayer(context);
         }
-        this.context.enableChannelIcon = helperFuncs.isChannelIconEnabled( context.ffmpegSettings, context.channel, context.lineupItem.type);
+        this.context.watermark = helperFuncs.getWatermark( context.ffmpegSettings, context.channel, context.lineupItem.type);
     }
 
     cleanUp() {

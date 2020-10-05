@@ -6,6 +6,7 @@
         scope: {
         },
         link: function (scope, element, attrs) {
+            //add validations to ffmpeg settings, speciall commas in codec name
             dizquetv.getFfmpegSettings().then((settings) => {
                 scope.settings = settings
             })
