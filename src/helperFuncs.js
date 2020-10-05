@@ -272,6 +272,9 @@ function getWatermark(  ffmpegSettings, channel, type) {
         e = (watermark.enabled === true);
         icon = watermark.url;
     }
+    if (! e) {
+        return null;
+    }
     if ( (typeof(icon) === 'undefined') || (icon === '') ) {
         icon = channel.icon;
         if ( (typeof(icon) === 'undefined') || (icon === '') ) {
