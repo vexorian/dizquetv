@@ -1,4 +1,4 @@
-module.exports = function ($timeout, $location, dizquetv) {
+module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
     return {
         restrict: 'E',
         templateUrl: 'templates/channel-config.html',
@@ -62,6 +62,9 @@ module.exports = function ($timeout, $location, dizquetv) {
                     scope.channel.name = "Channel 1"
                 }
                 scope.showRotatedNote = false;
+                scope.channel.transcoding = {
+                    targetResolution: "",
+                }
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
 
@@ -95,6 +98,18 @@ module.exports = function ($timeout, $location, dizquetv) {
                 ) {
                     scope.channel.guideMinimumDurationSeconds = 5 * 60;
                 }
+
+                if (typeof(scope.channel.transcoding) ==='undefined') {
+                    scope.channel.transcoding = {};
+                }
+                if (
+                    (scope.channel.transcoding.targetResolution == null)
+                    || (typeof(scope.channel.transcoding.targetResolution) === 'undefined')
+                    || (scope.channel.transcoding.targetResolution === '')
+                ) {
+                    scope.channel.transcoding.targetResolution = "";
+                }
+
                 
                 adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
@@ -786,6 +801,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 updateChannelDuration();
             }
             scope.padTimes = (paddingMod, allow5) => {
+                console.log(paddingMod, allow5) ;
                 let mod = paddingMod * 60 * 1000;
                 if (mod == 0) {
                     mod = 60*60*1000;
@@ -1122,6 +1138,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope.showRotatedNote = false;
                 scope.channel.duration = 0
                 scope.hasFlex = false;
+
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     scope.channel.programs[i].start = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
                     scope.channel.programs[i].$index = i;
@@ -1133,6 +1150,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 }
                 scope.maxSize = Math.max(scope.maxSize, scope.channel.programs.length);
                 scope.libraryLimit = Math.max(0, scope.maxSize - scope.channel.programs.length );
+                scope.endTime = new Date( scope.channel.startTime.valueOf() + scope.channel.duration );
             }
             scope.error = {}
             scope._onDone = async (channel) => {
@@ -1462,6 +1480,14 @@ module.exports = function ($timeout, $location, dizquetv) {
                 ]
             }
 
+            scope.resolutionOptions = [
+                { id: "", description: "(Use global setting)" },
+            ];
+            resolutionOptions.get()
+                .forEach( (a) => {
+                    scope.resolutionOptions.push(a)
+                } );
+
             scope.nightStartHours = [ { id: -1, description: "Start" } ];
             scope.nightEndHours   = [ { id: -1, description: "End" } ];
             scope.nightStart = -1;
@@ -1569,22 +1595,26 @@ module.exports = function ($timeout, $location, dizquetv) {
             scope.refreshFillerStuff();
             refreshFillerOptions();
 
-            let refreshScreenResolution = async () => {
-
-                function parseResolutionString(s) {
-                    var i = s.indexOf('x');
+            function parseResolutionString(s) {
+                var i = s.indexOf('x');
+                if (i == -1) {
+                    i = s.indexOf("×");
                     if (i == -1) {
-                        i = s.indexOf("×");
-                        if (i == -1) {
-                           return {w:1920, h:1080}
-                        }
-                    }
-                    return {
-                        w: parseInt( s.substring(0,i) , 10 ),
-                        h: parseInt( s.substring(i+1) , 10 ),
+                       return {w:1920, h:1080}
                     }
                 }
-                
+                return {
+                    w: parseInt( s.substring(0,i) , 10 ),
+                    h: parseInt( s.substring(i+1) , 10 ),
+                }
+            }
+
+            scope.videoRateDefault = "(Use global setting)";
+            scope.videoBufSizeDefault = "(Use global setting)";
+
+            let refreshScreenResolution = async () => {
+
+               
                 try {
                     let ffmpegSettings = await dizquetv.getFfmpegSettings()
                     if (
@@ -1593,8 +1623,16 @@ module.exports = function ($timeout, $location, dizquetv) {
                         && (typeof(ffmpegSettings.targetResolution) !== '')
                     ) {
                         let p = parseResolutionString( ffmpegSettings.targetResolution );
+                        scope.resolutionOptions[0] = {
+                            id: "",
+                            description: `Use global setting (${ffmpegSettings.targetResolution})`,
+                        }
+                        ffmpegSettings.targetResolution
                         scope.screenW = p.w;
                         scope.screenH = p.h;
+                        scope.videoRateDefault = `global setting=${ffmpegSettings.videoBitrate}`;
+                        scope.videoBufSizeDefault = `global setting=${ffmpegSettings.videoBufSize}`;
+           
                         $timeout();
                     }
                 } catch(err) {
@@ -1622,6 +1660,9 @@ module.exports = function ($timeout, $location, dizquetv) {
             }
 
             scope.getCurrentWH = () => {
+                if (scope.channel.transcoding.targetResolution !== '') {
+                    return parseResolutionString( scope.channel.transcoding.targetResolution );
+                }
                 return {
                     w: scope.screenW,
                     h: scope.screenH
