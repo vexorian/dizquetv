@@ -47,13 +47,21 @@
                 <!--
                     ============= TAB: PROGRAMMING =========================
                                                                              -->
-                <div ng-if="tab == 'programming'" class='modal-semi-body'>
-                    <div class='form-group form-row' >
+                <div ng-show="tab == 'programming'" class='modal-semi-body'>
+                    <div class='form-group row' >
                         <label for="channelStartTime" class="small col-form-label col-md-auto">Programming Start:</label>
-                        <div class='col'>
+                        <div class='col-md-auto'>
                             <input id="channelStartTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="channel.startTime" aria-describedby="startTimeHelp" />
                             <small class="text-danger" id='startTimeHelp'>{{error.startTime}}</small>
                         </div>
+                        <label for="channelEndTime" class="small col-form-label col-md-auto">Programming End:</label>
+                        <div class='col-md-auto'>
+                            <input id="channelEndTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="endTime" ng-disabled="true" aria-describedby="endTimeHelp" />
+                        </div>
+                        <div class='col-md-auto'>
+                            <small class="text-muted form-text" id='endTimeHelp'>Programming will restart from the beginning.</small>
+                        </div>
+
                     </div>
                     <div>
                             <div class="flex-container">
@@ -109,9 +117,9 @@
                     </div>
                 </div>
                 
-                <div class="modal-body programming-panes" ng-if="tab == 'programming'">
+                <div class="modal-body programming-panes" ng-show="tab == 'programming'">
                     <div class='row' ng-class="{'reverse': reverseTools }" >
-                        <div vs-repeat="options" ng-class="{'programming-pane': true, 'col':true, 'd-block': showShuffleOptions, 'd-sm-none': showShuffleOptions, 'd-md-block' : showShuffleOptions, container: true, 'list-group': true, 'list-group-root': true, 'programming-programs': true}" ng-if="hasPrograms()">
+                        <div vs-repeat="options" ng-class="{'programming-pane': true, 'col':true, 'd-block': showShuffleOptions, 'd-sm-none': showShuffleOptions, 'd-md-block' : showShuffleOptions, container: true, 'list-group': true, 'list-group-root': true, 'programming-programs': true}" ng-show="hasPrograms()">
                             <div ng-repeat="x in channel.programs track by x.$index" ng-click="selectProgram(x.$index)" dnd-list="" dnd-drop="dropFunction(index , x.$index, item)"
                             class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice(x.$index, 1);" dnd-effect-allowed="move"
                             >
@@ -137,7 +145,7 @@
                             <small class='text-info'>There are no programs in the channel, use the <i class='fas fa-plus'></i> button to add programs from your media library or use the Tools to add Flex time or a Channel Redirect</small>
                         </div>
 
-                        <div class='col-md-4 col-sm-12 col-xl-6  col-lg-5 programming-pane tools-pane' ng-if="showShuffleOptions">
+                        <div class='col-md-4 col-sm-12 col-xl-6  col-lg-5 programming-pane tools-pane' ng-show="showShuffleOptions">
 
                             <div class="row">
                                 <div class="col-xl-6 col-md-12" style="padding: 5px;"  ng-show="hasPrograms()">
@@ -368,6 +376,7 @@
                                         <div class="input-group-prepend">
                                             <button class='btn btn-sm btn-warning form-control' ng-click="slideAllPrograms(-slide.value)"
                                                 ng-disabled="slide.value == -1"
+                                                title="Rewind"
                                             >
                                                 <i class='fas fa-backward'></i> Rewind
                                             </button>
@@ -377,6 +386,7 @@
                                         <div class="input-group-append">
                                             <button class='btn btn-sm btn-warning form-control' ng-click="slideAllPrograms(slide.value)"
                                                 ng-disabled="slide.value == -1"
+                                                title="Fast-Forward"
                                             >
                                                 <i class='fas fa-forward'></i> Fast-Forward
                                             </button>
@@ -680,14 +690,14 @@
                                 <label class="form-check-label" for="overlayFixed">
                                     Disable Image Scaling
                                 </label>
-                                <small class='text-muted form-ext' >The image will be rendered at its actual size without applying any scaling to it.</small>
+                                <small class='text-muted form-text' >The image will be rendered at its actual size without applying any scaling to it.</small>
                             </div>
                             <div class='form-check col-sm-auto'>
                                 <input class="form-check-input" type="checkbox" ng-model="channel.watermark.animated" id="overlayAnimated"></input>
                                 <label class="form-check-label" for="overlayAnimated">
                                     Animated Image
                                 </label>
-                                <small class='text-muted form-ext' >Tick this if and only if the watermark is an animated GIF or PNG. It will make it loop or not loop according to the image&apos;s configuration. If the image is not animated, an error will be generated.</small>
+                                <small class='text-muted form-text' >Tick this if and only if the watermark is an animated GIF or PNG. It will make it loop or not loop according to the image&apos;s configuration. If the image is not animated, an error will be generated.</small>
                             </div>
 
                             <br>
@@ -702,6 +712,37 @@
                         </div>
 
                     </div>
+
+                    <hr />
+                    <h6>Transcoding settings</h6>
+
+
+                    <div class='row'>
+                        <div class="form-group col-sm-auto">
+                            <label for="channelResolution">Channel Resolution:</label>
+                            <select class="form-control custom-select" id="channelResolution" ng-model="channel.transcoding.targetResolution"
+                                ng-options="o.id as o.description for o in resolutionOptions"
+                            >
+                            </select>
+                        </div>
+    
+
+                        <div class="form-group col-sm-auto">
+                            <label for="channelBitrate">Video Bitrate (k:</label>
+                            <input id='channelBitrate' class='form-control' type='number' ng-model='channel.transcoding.videoBitrate' min=0 placeholder='{{videoRateDefault}}'>
+                            </input>
+                            <small class='text-muted form-text'>Leave unassigned to use the global setting</small>
+                        </div>
+
+                        <div class="form-group" col-sm-auto>
+                            <label for="channelBufsize">Video Buffer Size (k):</label>
+                            <input id='channelBufsize' class='form-control' type='number' ng-model='channel.transcoding.videoBufSize' min=0 placeholder='{{videoBufSizeDefault}}'>
+                            </input>
+                            <small class='text-muted form-text'>Leave unassigned to use the global setting</small>
+                        </div>
+                    </div>
+
+
 
                 </div>
 

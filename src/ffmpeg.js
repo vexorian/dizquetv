@@ -23,7 +23,35 @@ class FFMPEG extends events.EventEmitter {
         this.channel = channel
         this.ffmpegPath = opts.ffmpegPath
 
-        var parsed = parseResolutionString(opts.targetResolution);
+        let resString = opts.targetResolution;
+        if (
+            (typeof(channel.transcoding) !== 'undefined')
+            && (channel.transcoding.targetResolution != null)
+            && (typeof(channel.transcoding.targetResolution) != 'undefined')
+            && (channel.transcoding.targetResolution != "")
+        ) {
+            resString = channel.transcoding.targetResolution;
+        }
+
+        if (
+            (typeof(channel.transcoding) !== 'undefined')
+            && (channel.transcoding.videoBitrate != null)
+            && (typeof(channel.transcoding.videoBitrate) != 'undefined')
+            && (channel.transcoding.videoBitrate != 0)
+        ) {
+            opts.videoBitrate = channel.transcoding.videoBitrate;
+        }
+
+        if (
+            (typeof(channel.transcoding.videoBufSize) !== 'undefined')
+            && (channel.transcoding.videoBufSize != null)
+            && (typeof(channel.transcoding.videoBufSize) != 'undefined')
+            && (channel.transcoding.videoBufSize != 0)
+        ) {
+            opts.videoBufSize = channel.transcoding.videoBufSize;
+        }
+
+        let parsed = parseResolutionString(resString);
         this.wantedW = parsed.w;
         this.wantedH = parsed.h;
 

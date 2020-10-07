@@ -9,6 +9,7 @@ var app = angular.module('myApp', ['ngRoute', 'vs-repeat', 'angularLazyImg', 'dn
 
 app.service('plex',             require('./services/plex'))
 app.service('dizquetv',         require('./services/dizquetv'))
+app.service('resolutionOptions', require('./services/resolution-options'))
 
 app.directive('plexSettings',   require('./directives/plex-settings'))
 app.directive('ffmpegSettings', require('./directives/ffmpeg-settings'))
