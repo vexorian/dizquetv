@@ -9,7 +9,9 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             channel: "=channel",
             onDone: "=onDone"
         },
-        link: function (scope, element, attrs) {
+        link: {
+
+          post: function (scope, element, attrs) {
             scope.screenW = 1920;
             scope.screenh = 1080;
 
@@ -801,7 +803,6 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 updateChannelDuration();
             }
             scope.padTimes = (paddingMod, allow5) => {
-                console.log(paddingMod, allow5) ;
                 let mod = paddingMod * 60 * 1000;
                 if (mod == 0) {
                     mod = 60*60*1000;
@@ -1776,6 +1777,41 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 }
                 return false;
             }
+
+            
+            scope.onTimeSlotsDone = (slotsResult) => {
+                scope.channel.programs = slotsResult.programs;
+
+                let t = (new Date()).getTime();
+                let t1 =new Date( (new Date( slotsResult.startTime ) ).getTime() );
+                let total = 0;
+                for (let i = 0; i < slotsResult.programs.length; i++) {
+                    total += slotsResult.programs[i].duration;
+                }
+                
+                scope.channel.scheduleBackup = slotsResult.schedule;
+
+                while(t1 > t) {
+                    //TODO: Replace with division
+                    t1 -= total;
+                }
+                scope.channel.startTime = new Date(t1);
+                adjustStartTimeToCurrentProgram();
+                updateChannelDuration();
+            }
+            scope.onTimeSlotsButtonClick = () => {
+                scope.timeSlots.startDialog(scope.channel.programs, scope.maxSize, scope.channel.scheduleBackup );
+            }
+
+          },
+
+          pre: function(scope) {
+            scope.timeSlots = null;
+            scope.registerTimeSlots = (timeSlots) => {
+                scope.timeSlots = timeSlots;
+            }
+          },
+
         }
     }
 }
