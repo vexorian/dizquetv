@@ -371,7 +371,7 @@
                                       <p ng-show='showHelp.check'>Will redirect to another channel while between the selected hours.</p>
                                 </div>
 
-                                <div class="col-xl-12 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <button class='btn btn-sm btn-warning form-control' ng-click="slideAllPrograms(-slide.value)"
@@ -393,7 +393,20 @@
                                         </div>
                                     </div>
                                     <p ng-show='showHelp.check'>Slides the whole schedule. The &quot;Fast-Forward&quot; button will advance the stream by the specified amount of time. The &quot;Rewind&quot; button does the opposite.</p>
-                              </div>
+                                </div>
+
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                    <div class="input-group">
+                                        <button class='btn btn-sm btn-warning form-control' ng-click="onTimeSlotsButtonClick()"
+                                                title="Time Slots..."
+                                            >
+                                                <i class='fas fa-blender'></i> Time Slots...
+                                        </button>
+                                    </div>
+                                    <p ng-show='showHelp.check'>A more advanced dialog wip description.</p>
+
+                                </div>
+
 
                                 <div class="col-md-auto" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class='input-group'>
@@ -734,7 +747,7 @@
                             <small class='text-muted form-text'>Leave unassigned to use the global setting</small>
                         </div>
 
-                        <div class="form-group" col-sm-auto>
+                        <div class="form-group col-sm-auto">
                             <label for="channelBufsize">Video Buffer Size (k):</label>
                             <input id='channelBufsize' class='form-control' type='number' ng-model='channel.transcoding.videoBufSize' min=0 placeholder='{{videoBufSizeDefault}}'>
                             </input>
@@ -770,4 +783,5 @@
     <plex-library limit="libraryLimit" height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
     <plex-library height="300" limit=1 visible="showFallbackPlexLibrary" on-finish="importFallback"></plex-library>
     <channel-redirect visible="_displayRedirect" on-done="finishRedirect" form-title="_redirectTitle" program="_selectedRedirect" ></channel-redirect>
+    <time-slots-schedule-editor linker="registerTimeSlots" on-done="onTimeSlotsDone"></time-slots-schedule-editor>
 </div>

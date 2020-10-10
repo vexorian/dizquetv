@@ -43,7 +43,7 @@ class FFMPEG extends events.EventEmitter {
         }
 
         if (
-            (typeof(channel.transcoding.videoBufSize) !== 'undefined')
+            (typeof(channel.transcoding) !== 'undefined')
             && (channel.transcoding.videoBufSize != null)
             && (typeof(channel.transcoding.videoBufSize) != 'undefined')
             && (channel.transcoding.videoBufSize != 0)

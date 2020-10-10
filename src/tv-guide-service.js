@@ -217,7 +217,9 @@ class TVGuideService
         while (x.start < t1) {
             await push(x);
             x = await this.getChannelPlaying(channel, x, x.start + x.program.duration);
-            if (x.program.duration == 0) throw Error("D");
+            if (x.program.duration == 0) {
+                console.error("There's a program with duration 0?");
+            }
         }
         result.programs = [];
         for (let i = 0; i < programs.length; i++) {
