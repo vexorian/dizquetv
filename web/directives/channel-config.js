@@ -24,7 +24,7 @@ module.exports = function ($timeout, $location, dizquetv) {
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
-                scope.channel.fillerContent = []
+                scope.channel.fillerCollections = []
                 scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
                 scope.channel.fallback = [];
                 scope.isNewChannel = true
@@ -78,8 +78,8 @@ module.exports = function ($timeout, $location, dizquetv) {
                     scope.channel.offlinePicture = `${$location.protocol()}://${location.host}/images/generic-offline-screen.png`
                     scope.channel.offlineSoundtrack = '';
                 }
-                if (typeof(scope.channel.fillerContent)==='undefined') {
-                    scope.channel.fillerContent = [];
+                if (typeof(scope.channel.fillerCollections)==='undefined') {
+                    scope.channel.fillerCollections = [];
                 }
                 if (typeof(scope.channel.fallback)==='undefined') {
                     scope.channel.fallback = [];
@@ -122,12 +122,28 @@ module.exports = function ($timeout, $location, dizquetv) {
                 }, 1);
                 return true;
             }
+
+            let fixFillerCollection = (f) => {
+                return {
+                    id: f.id,
+                    weight: f.weight,
+                    cooldown: f.cooldown * 60000,
+                };
+            }
+            let unfixFillerCollection = (f) => {
+                return {
+                    id: f.id,
+                    weight: f.weight,
+                    cooldown: Math.floor(f.cooldown / 60000),
+                };
+            }
+
             scope.updateChannelFromOfflineResult = (program) => {
                 scope.channel.offlineMode = program.channelOfflineMode;
                 scope.channel.offlinePicture = program.channelPicture;
                 scope.channel.offlineSoundtrack = program.channelSound;
                 scope.channel.fillerRepeatCooldown = program.repeatCooldown * 60000;
-                scope.channel.fillerContent = JSON.parse( angular.toJson(program.filler) );
+                scope.channel.fillerCollections = JSON.parse( angular.toJson(program.filler.map(fixFillerCollection) ) );
                 scope.channel.fallback = JSON.parse( angular.toJson(program.fallback) );
                 scope.channel.disableFillerOverlay = program.disableOverlay;
             }
@@ -851,7 +867,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                     channelPicture: scope.channel.offlinePicture,
                     channelSound: scope.channel.offlineSoundtrack,
                     repeatCooldown : Math.floor(scope.channel.fillerRepeatCooldown / 60000),
-                    filler:  JSON.parse( angular.toJson(scope.channel.fillerContent) ),
+                    filler:  JSON.parse( angular.toJson(scope.channel.fillerCollections.map(unfixFillerCollection) ) ),
                     fallback: JSON.parse( angular.toJson(scope.channel.fallback) ),
                     durationSeconds: duration,
                     disableOverlay : scope.channel.disableFillerOverlay,

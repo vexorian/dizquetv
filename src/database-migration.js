@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 501;
+const TARGET_VERSION = 600;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -30,6 +30,7 @@ const STEPS = [
     [    300,    400, (db) => createDeviceId(db) ],
     [    400,    500, (db,channels) => splitServersSingleChannels(db, channels) ],
     [    500,    501, (db) => fixCorruptedServer(db) ],
+    [    501,    600, () => extractFillersFromChannels() ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -602,6 +603,63 @@ function fixCorruptedServer(db) {
         let f = path.join(process.env.DATABASE, `plex-servers.json` );
         fs.writeFileSync( f, JSON.stringify(servers) );
     }
+}
+
+function extractFillersFromChannels() {
+    console.log("Extracting fillers from channels...");
+    let channels = path.join(process.env.DATABASE, 'channels');
+    let fillers = path.join(process.env.DATABASE, 'filler');
+    let channelFiles = fs.readdirSync(channels);
+    let usedNames = {};
+
+    let getName = (channelName) => {
+        let i = -1;
+        let x = channelName;
+        while ( typeof(usedNames[x]) !== 'undefined' ) {
+            x = channelName + (++i);Z
+        }
+        return x;
+    }
+
+    let saveFiller = (arr, channelName) => {
+        let id = uuidv4();
+        let name = getName(`Filler - ${channelName}`);
+        usedNames[name] = true;
+        let fillerPath = path.join( fillers, id + '.json' );
+        let filler = {
+            "name" : name,
+            "content" : arr,
+        };
+        fs.writeFileSync( fillerPath, JSON.stringify(filler), 'utf-8');
+        return id;
+    };
+
+    for (let i = 0; i < channelFiles.length; i++) {
+        if (path.extname( channelFiles[i] ) === '.json') {
+            console.log("Migrating filler in channel : " + channelFiles[i] +"..." );
+            let channelPath = path.join(channels, channelFiles[i]);
+            let channel = JSON.parse(fs.readFileSync(channelPath, 'utf-8'));
+            let fillerId = null;
+            if ( (typeof(channel.fillerContent) !== 'undefined') && channel.fillerContent.length != 0) {
+                fillerId = saveFiller(channel.fillerContent, channel.name);
+            }
+            delete channel.fillerContent;
+            if (fillerId != null) {
+                channel.fillerCollections = [
+                    {
+                        id: fillerId,
+                        weight: 600,
+                        cooldown: 0,
+                    }
+                ];
+            } else {
+                channel.fillerCollections = [];
+            }
+            fs.writeFileSync( channelPath, JSON.stringify(channel), 'utf-8');
+        }
+    }
+    console.log("Done extracting fillers from channels.");
+   
 }
 
 module.exports = {

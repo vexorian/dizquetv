@@ -69,7 +69,7 @@
                                 </div>
                                 <div class="flex-pull-right">
                                     <button class="btn btn-sm btn-link" ng-click="program.fallback.splice($index,1)">
-                                    <i class="text-danger fa fa-trash" ></i>
+                                    <i class="text-danger fa fa-trash-alt" ></i>
                                     </button>
                                 </div>
                             </div>
@@ -81,12 +81,10 @@
                     </div>
 
                     <div>
-                        <h6 style="margin-top: 10px;">Filler</h6>
-                        <p class="text-center text-info">Filler clips are played randomly during the Flex time as long as the clip is shorter than the remaining time. If no valid clips are found, fallback is played.</p>
-                        <br />
+                        <h5 style="margin-top: 10px;">Filler</h5>
                         <div>
                         <label>Minimum time before replaying a filler (Minutes): </label>
-                        <input type="number" class="form-control form-control-sm"  ng-model="program.repeatCooldown" ng-pattern="/^([1-9][0-9]*)$/"/>
+                        <input type="number" class="form-control form-control-sm"  ng-model="program.repeatCooldown" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='1440' />
 
                         <span class="text-danger pull-right">{{error.blockRepeats}}</span>
                         </div>
@@ -95,72 +93,67 @@
                             <label class="small" for="overlayDisableIcon" style="margin-bottom: 4px;">&nbsp;Disable overlay icon when playing filler&nbsp;&nbsp;</label>
                         </div>
                         <hr />
-                        <div class="flex-container">
-                            <div class="programming-counter small" ng-show="program.filler.length > 0">
-                                <span class="small"><b>Filler Clips:</b> {{program.filler.length}}</span>
-                            </div>
-                            <div class='flex-pull-right' />
-                            <div>
-                                <button class="btn btn-sm btn-secondary btn-programming-tools"
-                                ng-click="showTools = !showTools"
-                                ng-show="channel.programs.length !== 0">
-                                <span
-                                class="fa {{ showTools ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>&nbsp;&nbsp;Tools
-                                </button>
-                            </div>
-                            <div>
-                                <button class="btn btn-sm btn-primary" ng-click="showPlexLibrary = true">
-                                    <span class="fa fa-plus"></span>
-                                </button>
-                            </div>
-                        </div>
-                        <div ng-show="showTools">
-                            <div class="row">
-                                <div class="input-group col-md-3" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortFillers()">
-                                        <i class='fa fa-sort-amount-down-alt'></i> Sort Lengths
+                        <h6>Filler Lists</h6>
+                        <div id='fillerContainer'>
+                            <br />
+    
+                            <div class="form-row" ng-repeat = "x in program.filler" track-by = "$index">
+                                <div class='form-group col-md-5'>
+                                    <label ng-if="$index==0" for="fillerselect{{$index}}">List</label>
+                                    <select
+                                        id="fillerselect{{$index}}" class="custom-select form-control"
+                                        ng-model="x.id" ng-options="o.id as o.name for o in x.options"
+                                        ng-change="refreshFillerStuff()"
+                                        >
+                                    </select>
+                                </div>
+                                <div class='form-group col-md-2' ng-if="x.id !== &apos;none&apos; " >
+                                    <label ng-if="$index==0" for="cooldown{{$index}}">Cooldown (minutes)</label>
+                                    <input class='form-control' id="cooldown{{$index}}" type='number' ng-model='x.cooldown' ng-pattern="/^([0-9][0-9]*)$/"
+                                    min='0' max='1440'
+                                    data-toggle="tooltip" data-placement="bottom" title="The channel won&apos;t pick a video from this list if it played something from this list less than this amount of minutes ago."
+                                    > </input>
+                                </div>
+                                <div class='form-group col-md-2' ng-if="x.id === &apos;none&apos; " >
+                                </div>
+                                <div class='form-group col-md-3' ng-if="x.id !== &apos;none&apos;  &amp;&amp; program.filler.length &gt; 2 " >
+                                    <label ng-if="$index==0" for="fillerrange{{$index}}">Weight</label>
+                                    <input class='form-control-range custom-range' id="fillerrange{{$index}}" type='range' ng-model='x.weight' min=1 max=600
+                                    data-toggle="tooltip" data-placement="bottom" title="Lists with more weight will be picked more frequently."
+                                     ng-change="refreshFillerStuff()"
+                                    >
+                                    </input>
+                                </div>
+                                <div class='form-group col-md-4' ng-if="x.id === &apos;none&apos; || program.filler.length &lt;= 2 " >
+                                </div>
+                                <div class='form-group col-md-1' ng-if="x.id !== &apos;none&apos; &amp;&amp; program.filler.length &gt; 2" >
+                                    <label ng-if="$index==0" for="fillerp{{$index}}">%</label>
+                                    <input class='form-control flex-filler-percent' id="fillerp{{$index}}" type='text' ng-model='x.percentage'
+                                    data-toggle="tooltip" data-placement="bottom" title="This is the overall probability this list might be picked, assuming all lists are available." readonly
+                                    >
+                                    </input>
+                                </div>
+                                <div class='form-group col-md-1' ng-if="x.id !== &apos;none&apos;" >
+                                    <label ng-if="$index==0" for="delete{{$index}}">-</label>
+                                    <button id='delete{{$index}}' class='btn btn-link form-control' ng-click='deleteFillerList($index)' >
+                                        <i class='text-danger fa fa-trash-alt'></i>
                                     </button>
                                 </div>
-                                <div class="input-group col-md-3" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="fillerRemoveDuplicates()">
-                                        <i class='fa fa-trash-alt'></i> Remove Duplicates
-                                    </button>
-                                </div>
-                                <div class="input-group col-md-6" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="fillerRemoveAllFiller()">
-                                        <i class='fa fa-trash-alt'></i> Remove All Filler
-                                    </button>
-                                </div>
+        
                             </div>
-                        </div>
+                            <hr></hr >
+                            <p class="text-center text-info">Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time. Use the Filler tab at the top to define filler lists. If no videos are available, the fallback will be used instead.</p>
 
+                        </div>
                         
-                        <div ng-show="program.filler.length === 0">
-                            <p class="text-center text-info">Click the <span class="fa fa-plus"></span> to import filler content from your Plex server(s).</p>
-                        </div>
-                        <div class="list-group list-group-root" dnd-list="program.filler" ng-if="showList()">
-                            <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in program.filler" dnd-draggable="x" dnd-moved="program.filler.splice($index, 1)" dnd-effect-allowed="move">
-                                <div class="program-start" >
-                                    {{durationString(x.duration)}}
-                                </div>
-                                <div ng-style="programSquareStyle(x, false)" />
-                                <div style="margin-right: 5px;">
-                                    {{x.title}}
-                                </div>
-                                <div class="flex-pull-right">
-                                    <button class="btn btn-sm btn-link" ng-click="program.filler.splice($index,1)">
-                                    <i class="text-danger fa fa-trash-alt" ></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
+
 
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-link" ng-click="program = null">Cancel</button>
-                    <button type="button" class="btn btn-sm btn-primary" ng-click="finished(program);">Done</button>
+                    <button type="button" class="btn btn-sm btn-primary"   ng-click="finished(program);">Done</button>
                 </div>
             </div>
         </div>

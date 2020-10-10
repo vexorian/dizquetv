@@ -12,7 +12,7 @@ module.exports = { router: video }
 
 let StreamCount = 0;
 
-function video( channelDB , db) {
+function video( channelDB , fillerDB, db) {
     var router = express.Router()
 
     router.get('/setup', (req, res) => {
@@ -238,7 +238,8 @@ function video( channelDB , db) {
         if ( (prog == null) || (typeof(prog) === 'undefined') || (prog.program == null) || (typeof(prog.program) == "undefined") ) {
             throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted."
         }
-        let lineup = helperFuncs.createLineup(prog, brandChannel, isFirst)
+        let fillers = await fillerDB.getFillersFromChannel(brandChannel);
+        let lineup = helperFuncs.createLineup(prog, brandChannel, fillers, isFirst)
         lineupItem = lineup.shift()
       }
 

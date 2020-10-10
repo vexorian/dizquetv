@@ -7,9 +7,10 @@ const constants = require('./constants');
 const FFMPEGInfo = require('./ffmpeg-info');
 const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
+const FillerDB = require('./dao/filler-db');
 
 module.exports = { router: api }
-function api(db, channelDB, xmltvInterval,  guideService ) {
+function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     let router = express.Router()
     let plexServerDB = new PlexServerDB(channelDB, channelCache, db);
 
@@ -207,6 +208,86 @@ function api(db, channelDB, xmltvInterval,  guideService ) {
        res.status(500).send("error");
       }
     })
+
+    // Filler
+    router.get('/api/fillers', async (req, res) => {
+      try {
+        let fillers = await fillerDB.getAllFillersInfo();
+        res.send(fillers);
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.get('/api/filler/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        let filler = await fillerDB.getFiller(id);
+        if (filler == null) {
+            return res.status(404).send("Filler not found");
+        }
+        res.send(filler);
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.post('/api/filler/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        await fillerDB.saveFiller(id, req.body );
+        return res.status(204).send({});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.put('/api/filler', async (req, res) => {
+      try {
+        let uuid = await fillerDB.createFiller(req.body );
+        return res.status(201).send({id: uuid});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.delete('/api/filler/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        await fillerDB.deleteFiller(id);
+        return res.status(204).send({});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+
+    router.get('/api/filler/:id/channels', async(req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        let channels = await fillerDB.getFillerChannels(id);
+        if (channels == null) {
+            return res.status(404).send("Filler not found");
+        }
+        res.send(channels);
+      } catch(err) {
+        console.error(err);
+        res.status(500).send("error");
+      }
+    } );
+
 
     // FFMPEG SETTINGS
     router.get('/api/ffmpeg-settings', (req, res) => {
@@ -513,7 +594,8 @@ function api(db, channelDB, xmltvInterval,  guideService ) {
 
     function cleanUpChannel(channel) {
         channel.programs.forEach( cleanUpProgram );
-        channel.fillerContent.forEach( cleanUpProgram );
+        delete channel.fillerContent;
+        delete channel.filler;
         channel.fallback.forEach( cleanUpProgram );
     }
 
