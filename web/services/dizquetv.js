@@ -234,6 +234,22 @@ module.exports = function ($http) {
             return d.data;
         },
 
+        /*======================================================================
+        * Channel Tool Services
+        */
+        calculateTimeSlots: async( programs, schedule) => {
+            let d = await $http( {
+                method: "POST",
+                url : "/api/channel-tools/time-slots",
+                data: {
+                    programs: programs,
+                    schedule: schedule,
+                },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            } );
+            return d.data;
+        }
+
 
     }
 }

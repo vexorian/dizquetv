@@ -1,4 +1,4 @@
-module.exports = function ($timeout, $location, dizquetv) {
+module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
     return {
         restrict: 'E',
         templateUrl: 'templates/channel-config.html',
@@ -9,24 +9,37 @@ module.exports = function ($timeout, $location, dizquetv) {
             channel: "=channel",
             onDone: "=onDone"
         },
-        link: function (scope, element, attrs) {
+        link: {
+
+          post: function (scope, element, attrs) {
+            scope.screenW = 1920;
+            scope.screenh = 1080;
+
             scope.maxSize = 50000;
+
+            scope.blockCount = 1;
+            scope.showShuffleOptions = (localStorage.getItem("channel-tools") === "on");
+            scope.reverseTools = (localStorage.getItem("channel-tools-position") === "left");
     
             scope.hasFlex = false;
-            scope.showHelp = false;
+            scope.showHelp = { check: false }
             scope._frequencyModified = false;
             scope._frequencyMessage = "";
             scope.minProgramIndex = 0;
             scope.libraryLimit =  50000;
+            scope.displayPlexLibrary = false;
             scope.episodeMemory = {
                 saved : false,
             };
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
+                scope.channel.watermark = defaultWatermark();
                 scope.channel.fillerCollections = []
+                scope.channel.guideFlexPlaceholder = "";
                 scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
                 scope.channel.fallback = [];
+                scope.channel.guideMinimumDurationSeconds = 5 * 60;
                 scope.isNewChannel = true
                 scope.channel.icon = `${$location.protocol()}://${location.host}/images/dizquetv.png`
                 scope.channel.disableFillerOverlay = true;
@@ -51,26 +64,16 @@ module.exports = function ($timeout, $location, dizquetv) {
                     scope.channel.name = "Channel 1"
                 }
                 scope.showRotatedNote = false;
+                scope.channel.transcoding = {
+                    targetResolution: "",
+                }
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
-                let t = Date.now();
-                let originalStart = scope.channel.startTime.getTime();
-                let n = scope.channel.programs.length;
-                let totalDuration = scope.channel.duration;
-                let m = (t - originalStart) % totalDuration;
-                let x = 0;
-                let runningProgram = -1;
-                let offset = 0;
-                for (let i = 0; i < n; i++) {
-                    let d = scope.channel.programs[i].duration;
-                    if (x + d > m) {
-                        runningProgram = i
-                        offset = m - x;
-                        break;
-                    } else {
-                        x += d;
-                    }
+
+                if (typeof(scope.channel.watermark) === 'undefined') {
+                    scope.channel.watermark = defaultWatermark();
                 }
+
                 if (typeof(scope.channel.fillerRepeatCooldown) === 'undefined') {
                     scope.channel.fillerRepeatCooldown = 30 * 60 * 1000;
                 }
@@ -91,12 +94,119 @@ module.exports = function ($timeout, $location, dizquetv) {
                 if (typeof(scope.channel.disableFillerOverlay) === 'undefined') {
                     scope.channel.disableFillerOverlay = true;
                 }
-                scope.channel.startTime = new Date(t - offset);
-                // move runningProgram to index 0
-                scope.channel.programs = scope.channel.programs.slice(runningProgram, this.length)
-                    .concat(scope.channel.programs.slice(0, runningProgram) );
+                if (
+                    (typeof(scope.channel.guideMinimumDurationSeconds) === 'undefined')
+                    || isNaN(scope.channel.guideMinimumDurationSeconds)
+                ) {
+                    scope.channel.guideMinimumDurationSeconds = 5 * 60;
+                }
+
+                if (typeof(scope.channel.transcoding) ==='undefined') {
+                    scope.channel.transcoding = {};
+                }
+                if (
+                    (scope.channel.transcoding.targetResolution == null)
+                    || (typeof(scope.channel.transcoding.targetResolution) === 'undefined')
+                    || (scope.channel.transcoding.targetResolution === '')
+                ) {
+                    scope.channel.transcoding.targetResolution = "";
+                }
+
+                
+                adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
                 setTimeout( () => { scope.showRotatedNote = true }, 1, 'funky');
+            }
+
+            function defaultWatermark() {
+                return {
+                    enabled: false,
+                    position: "bottom-right",
+                    width: 10.00,
+                    verticalMargin: 0.00,
+                    horizontalMargin: 0.00,
+                    duration: 0,
+                }
+            }
+
+            function adjustStartTimeToCurrentProgram() {
+                let t = Date.now();
+                let originalStart = scope.channel.startTime.getTime();
+                let n = scope.channel.programs.length;
+                let totalDuration = scope.channel.duration;
+                let m = (t - originalStart) % totalDuration;
+                let x = 0;
+                let runningProgram = -1;
+                let offset = 0;
+                for (let i = 0; i < n; i++) {
+                    let d = scope.channel.programs[i].duration;
+                    if (x + d > m) {
+                        runningProgram = i
+                        offset = m - x;
+                        break;
+                    } else {
+                        x += d;
+                    }
+                }
+                // move runningProgram to index 0
+                scope.channel.programs = scope.channel.programs.slice(runningProgram)
+                    .concat(scope.channel.programs.slice(0, runningProgram) );
+                    scope.channel.startTime = new Date(t - offset);
+
+            }
+
+
+
+            let addMinuteVersionsOfFields = () => {
+                //add the minutes versions of the cooldowns:
+                scope.channel.fillerRepeatCooldownMinutes = scope.channel.fillerRepeatCooldown / 1000 / 60;
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    scope.channel.fillerCollections[i].cooldownMinutes = scope.channel.fillerCollections[i].cooldown / 1000 / 60;
+
+                }
+            }
+            addMinuteVersionsOfFields();
+
+            let removeMinuteVersionsOfFields = (channel) => {
+                channel.fillerRepeatCooldown = channel.fillerRepeatCooldownMinutes * 60 * 1000;
+                delete channel.fillerRepeatCooldownMinutes;
+                for (let i = 0; i < channel.fillerCollections.length; i++) {
+                    channel.fillerCollections[i].cooldown = channel.fillerCollections[i].cooldownMinutes * 60 * 1000;
+                    delete channel.fillerCollections[i].cooldownMinutes;
+                }
+            }
+
+            scope.tabOptions = [
+                { name: "Properties", id: "basic" },
+                { name: "Programming", id: "programming" },
+                { name: "Flex", id: "flex" },
+                { name: "EPG", id: "epg" },
+                { name: "FFmpeg", id: "ffmpeg" },
+            ];
+            scope.setTab = (tab) => {
+                scope.tab = tab;
+            }
+
+            if (scope.isNewChannel) {
+                scope.tab = "basic";
+            } else {
+                scope.tab = "programming";
+            }
+
+            scope.getTitle = () => {
+                if (scope.isNewChannel) {
+                    return "Create Channel";
+                } else {
+                    let x = "?";
+                    if ( (scope.channel.number != null) && ( typeof(scope.channel.number) !== 'undefined') && (! isNaN(scope.channel.number) ) ) {
+                        x = "" + scope.channel.number;
+                    }
+                    let y = "Unnamed";
+                    if (typeof(scope.channel.name) !== 'undefined') {
+                        y = scope.channel.name;
+                    }
+                    return `${x} - ${y}`;
+                }
             }
 
             scope._selectedRedirect = {
@@ -123,34 +233,9 @@ module.exports = function ($timeout, $location, dizquetv) {
                 return true;
             }
 
-            let fixFillerCollection = (f) => {
-                return {
-                    id: f.id,
-                    weight: f.weight,
-                    cooldown: f.cooldown * 60000,
-                };
-            }
-            let unfixFillerCollection = (f) => {
-                return {
-                    id: f.id,
-                    weight: f.weight,
-                    cooldown: Math.floor(f.cooldown / 60000),
-                };
-            }
-
-            scope.updateChannelFromOfflineResult = (program) => {
-                scope.channel.offlineMode = program.channelOfflineMode;
-                scope.channel.offlinePicture = program.channelPicture;
-                scope.channel.offlineSoundtrack = program.channelSound;
-                scope.channel.fillerRepeatCooldown = program.repeatCooldown * 60000;
-                scope.channel.fillerCollections = JSON.parse( angular.toJson(program.filler.map(fixFillerCollection) ) );
-                scope.channel.fallback = JSON.parse( angular.toJson(program.fallback) );
-                scope.channel.disableFillerOverlay = program.disableOverlay;
-            }
             scope.finishedOfflineEdit = (program) => {
                 let editedProgram = scope.channel.programs[scope.selectedProgram];
                 let duration = program.durationSeconds * 1000;
-                scope.updateChannelFromOfflineResult(program);
                 editedProgram.duration = duration;
                 editedProgram.isOffline = true;
                 scope._selectedOffline = null
@@ -162,7 +247,6 @@ module.exports = function ($timeout, $location, dizquetv) {
                     duration: duration,
                     isOffline: true
                 }
-                scope.updateChannelFromOfflineResult(result);
                 scope.channel.programs.splice(scope.minProgramIndex, 0, program);
                 scope._selectedOffline = null
                 scope._addingOffline = null;
@@ -264,6 +348,19 @@ module.exports = function ($timeout, $location, dizquetv) {
                     }
                 });
                 updateChannelDuration()
+            }
+            scope.slideAllPrograms = (offset) => {
+                let t0 = scope.channel.startTime.getTime();
+                let t1 = t0 - offset;
+                let t = (new Date()).getTime();
+                let total = scope.channel.duration;
+                while(t1 > t) {
+                    //TODO: Replace with division
+                    t1 -= total;
+                }
+                scope.channel.startTime = new Date(t1);
+                adjustStartTimeToCurrentProgram();
+                updateChannelDuration();
             }
             scope.removeDuplicates = () => {
                 let tmpProgs = {}
@@ -414,7 +511,7 @@ module.exports = function ($timeout, $location, dizquetv) {
 
                 }
                 let f = interpolate;
-                let w = 5.0;
+                let w = 15.0;
                 let t = 4*60*60*1000;
                 //let d = Math.log( Math.min(t, program.duration) ) / Math.log(2);
                 //let a = (d * Math.log(2) ) / Math.log(t);
@@ -863,14 +960,7 @@ module.exports = function ($timeout, $location, dizquetv) {
             }
             scope.makeOfflineFromChannel = (duration) => {
                 return {
-                    channelOfflineMode: scope.channel.offlineMode,
-                    channelPicture: scope.channel.offlinePicture,
-                    channelSound: scope.channel.offlineSoundtrack,
-                    repeatCooldown : Math.floor(scope.channel.fillerRepeatCooldown / 60000),
-                    filler:  JSON.parse( angular.toJson(scope.channel.fillerCollections.map(unfixFillerCollection) ) ),
-                    fallback: JSON.parse( angular.toJson(scope.channel.fallback) ),
                     durationSeconds: duration,
-                    disableOverlay : scope.channel.disableFillerOverlay,
                 }
             }
             scope.addOffline = () => {
@@ -1049,6 +1139,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope.showRotatedNote = false;
                 scope.channel.duration = 0
                 scope.hasFlex = false;
+
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
                     scope.channel.programs[i].start = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
                     scope.channel.programs[i].$index = i;
@@ -1060,6 +1151,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                 }
                 scope.maxSize = Math.max(scope.maxSize, scope.channel.programs.length);
                 scope.libraryLimit = Math.max(0, scope.maxSize - scope.channel.programs.length );
+                scope.endTime = new Date( scope.channel.startTime.valueOf() + scope.channel.duration );
             }
             scope.error = {}
             scope._onDone = async (channel) => {
@@ -1073,43 +1165,87 @@ module.exports = function ($timeout, $location, dizquetv) {
                     // validate
                     var now = new Date()
                     scope.error.any = true;
-                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "")
+
+   
+                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "") {
                         scope.error.number = "Select a channel number"
-                    else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) // we need the parseInt for indexOf to work properly
+                        scope.error.tab = "basic";
+                    } else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) { // we need the parseInt for indexOf to work properly
                         scope.error.number = "Channel number already in use."
-                    else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1)
+                        scope.error.tab = "basic";
+                    } else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1) {
                         scope.error.number = "Channel number already in use."
-                    else if (channel.number < 0 || channel.number > 9999)
+                        scope.error.tab = "basic";
+                    } else if (channel.number < 0 || channel.number > 9999) {
                         scope.error.name = "Enter a valid number (0-9999)"
-                    else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "")
+                        scope.error.tab = "basic";
+                    } else if (typeof channel.name === "undefined" || channel.name === null || channel.name === "") {
                         scope.error.name = "Enter a channel name."
-                    else if (channel.icon !== "" && !validURL(channel.icon))
+                        scope.error.tab = "basic";
+                    } else if (channel.icon !== "" && !validURL(channel.icon)) {
                         scope.error.icon = "Please enter a valid image URL. Or leave blank."
-                    else if (channel.overlayIcon && !validURL(channel.icon))
+                        scope.error.tab = "basic";
+                    } else if (channel.overlayIcon && !validURL(channel.icon)) {
                         scope.error.icon = "Please enter a valid image URL. Cant overlay an invalid image."
-                    else if (now < channel.startTime)
+                        scope.error.tab = "basic";
+                    } else if (now < channel.startTime) {
                         scope.error.startTime = "Start time must not be set in the future."
-                    else if (channel.programs.length === 0)
+                        scope.error.tab = "programming";
+                    } else if (channel.programs.length === 0) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
-                    else {
+                        scope.error.tab = "programming";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.width, 0.01,100)) {
+                        scope.error.watermark = "Please include a valid watermark width.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.verticalMargin, 0.00,100)) {
+                        scope.error.watermark = "Please include a valid watermark vertical margin.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.horizontalMargin, 0.00,100)) {
+                        scope.error.watermark = "Please include a valid watermark horizontal margin.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && (scope.channel.watermark.width + scope.channel.watermark.horizontalMargin > 100.0) ) {
+                        scope.error.watermark = "Horizontal margin + width should not exceed 100.";
+                        scope.error.tab = "ffmpeg";
+                    } else if ( channel.watermark.enabled && notValidNumber(scope.channel.watermark.duration, 0)) {
+                        scope.error.watermark = "Please include a valid watermark duration.";
+                        scope.error.tab = "ffmpeg";
+                    } else if (
+                        channel.offlineMode != 'pic'
+                        && (channel.fallback.length == 0)
+                    ) {
+                        scope.error.fallback = 'Either add a fallback clip or change the fallback mode to Picture.';
+                        scope.error.tab = "flex";
+                    } else {
                         scope.error.any = false;
                         for (let i = 0; i < scope.channel.programs.length; i++) {
                             delete scope.channel.programs[i].$index;
                         }
                         try {
+                            removeMinuteVersionsOfFields(channel);
                             let s = angular.toJson(channel);
+                            addMinuteVersionsOfFields();
                             if (s.length > 50*1000*1000) {
                                 scope.error.any = true;
                                 scope.error.programs = "Channel is too large, can't save.";
+                                scope.error.tab = "programming";
                             } else {
-                                await scope.onDone(JSON.parse(s))
+                                let cloned = JSON.parse(s);
+                                //clean up some stuff that's only used by the UI:
+                                cloned.fillerCollections = cloned.fillerCollections.filter( (f) => { return f.id != 'none'; } );
+                                cloned.fillerCollections.forEach( (c) => {
+                                    delete c.percentage;
+                                    delete c.options;
+                                } );
+                                await scope.onDone(cloned)
                                 s = null;
                             }
                         } catch(err) {
+                            addMinuteVersionsOfFields();
                             $timeout();
                             console.error(err);
                             scope.error.any = true;
                             scope.error.programs = "Unable to save channel."
+                            scope.error.tab = "programming";
                         }
                     }
                     $timeout(() => { scope.error = {} }, 60000)
@@ -1202,6 +1338,28 @@ module.exports = function ($timeout, $location, dizquetv) {
             };
             scope.loadChannels();
 
+            scope.setTool = (toolName) => {
+                scope.tool = toolName;
+            }
+
+            scope.hasPrograms = () => {
+                return scope.channel.programs.length > 0;
+            }
+
+            scope.showPlexLibrary = () => {
+                scope.displayPlexLibrary = true;
+            }
+
+            scope.toggleTools = () => {
+                scope.showShuffleOptions = !scope.showShuffleOptions
+                localStorage.setItem("channel-tools", (scope.showShuffleOptions? 'on' :  'off') );
+            }
+
+            scope.toggleToolsDirection = () => {
+                scope.reverseTools = ! scope.reverseTools;
+                localStorage.setItem("channel-tools-position", (scope.reverseTools? 'left' :  'right') );
+            }
+
             scope.disablePadding = () => {
                 return (scope.paddingOption.id==-1) || (2*scope.channel.programs.length > scope.maxSize);
             }
@@ -1283,6 +1441,53 @@ module.exports = function ($timeout, $location, dizquetv) {
 
             }
 
+            scope.openFallbackLibrary = () => {
+                scope.showFallbackPlexLibrary = true
+            }
+
+            scope.importFallback = (selectedPrograms) => {
+                for (let i = 0, l = selectedPrograms.length; i < l && i < 1; i++) {
+                    selectedPrograms[i].commercials = []
+                }
+                scope.channel.fallback = [];
+                if (selectedPrograms.length > 0) {
+                    scope.channel.fallback = [ selectedPrograms[0] ];
+                }
+                scope.showFallbackPlexLibrary = false;
+            }
+
+            scope.fillerOptions = scope.channel.fillerCollections.map( (f) => {
+                return {
+                    id: f.id,
+                    name: `(${f.id})`,
+                }
+            });
+
+            scope.slide = {
+                value: -1,
+                options: [
+                    {id:-1, description: "Time Amount" },
+                    {id: 1 * 60 * 1000, description: "1 minute" },
+                    {id: 10 * 60 * 1000, description: "10 minutes" },
+                    {id: 15 * 60 * 1000, description: "15 minutes" },
+                    {id: 30 * 60 * 1000, description: "30 minutes" },
+                    {id: 60 * 60 * 1000, description: "1 hour" },
+                    {id: 2 * 60 * 60 * 1000, description: "2 hours" },
+                    {id: 4 * 60 * 60 * 1000, description: "4 hours" },
+                    {id: 8 * 60 * 60 * 1000, description: "8 hours" },
+                    {id:12 * 60 * 60 * 1000, description: "12 hours" },
+                    {id:24 * 60 * 60 * 1000, description: "1 day" },
+                    {id: 7 * 24 * 60 * 60 * 1000, description: "1 week" },
+                ]
+            }
+
+            scope.resolutionOptions = [
+                { id: "", description: "(Use global setting)" },
+            ];
+            resolutionOptions.get()
+                .forEach( (a) => {
+                    scope.resolutionOptions.push(a)
+                } );
 
             scope.nightStartHours = [ { id: -1, description: "Start" } ];
             scope.nightEndHours   = [ { id: -1, description: "End" } ];
@@ -1298,6 +1503,315 @@ module.exports = function ($timeout, $location, dizquetv) {
             }
             scope.rerunStartHours = scope.nightStartHours;
             scope.paddingMod = 30;
+
+            let fillerOptionsFor = (index) => {
+                let used = {};
+                let added = {};
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    if (scope.channel.fillerCollections[i].id != 'none' && i != index) {
+                        used[ scope.channel.fillerCollections[i].id ] = true;
+                    }
+                }
+                let options = [];
+                for (let i = 0; i < scope.fillerOptions.length; i++) {
+                    if ( used[scope.fillerOptions[i].id] !== true) {
+                        added[scope.fillerOptions[i].id] = true;
+                        options.push( scope.fillerOptions[i] );
+                    }
+                }
+                if (scope.channel.fillerCollections[index].id == 'none') {
+                    added['none'] = true;
+                    options.push( {
+                        id: 'none',
+                        name: 'Add a filler list...',
+                    } );
+                }
+                if ( added[scope.channel.fillerCollections[index].id] !== true ) {
+                    options.push( {
+                        id: scope.channel.fillerCollections[index].id,
+                        name: `[${f.id}]`,
+                    } );
+                }
+                return options;
+            }
+
+            scope.refreshFillerStuff = () => {
+                if (typeof(scope.channel.fillerCollections) === 'undefined') {
+                    return;
+                }
+                addAddFiller();
+                updatePercentages();
+                refreshIndividualOptions();
+            }
+
+            let updatePercentages = () => {
+                let w = 0;
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    if (scope.channel.fillerCollections[i].id !== 'none') {
+                        w += scope.channel.fillerCollections[i].weight;
+                    }
+                }
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    if (scope.channel.fillerCollections[i].id !== 'none') {
+                        scope.channel.fillerCollections[i].percentage = (scope.channel.fillerCollections[i].weight * 100 / w).toFixed(2) + "%";
+                    }
+                }
+
+            };
+            
+
+            let addAddFiller = () => {
+                if ( (scope.channel.fillerCollections.length == 0) || (scope.channel.fillerCollections[scope.channel.fillerCollections.length-1].id !== 'none') ) {
+                    scope.channel.fillerCollections.push ( {
+                        'id': 'none',
+                        'weight': 300,
+                        'cooldown': 0,
+                    } );
+                }
+            }
+
+
+            let refreshIndividualOptions = () => {
+                for (let i = 0; i < scope.channel.fillerCollections.length; i++) {
+                    scope.channel.fillerCollections[i].options = fillerOptionsFor(i);
+                }
+            }
+
+            let refreshFillerOptions = async() => {
+
+                try {
+                    let r = await dizquetv.getAllFillersInfo();
+                    scope.fillerOptions = r.map( (f) => {
+                        return {
+                            id: f.id,
+                            name: f.name,
+                        };
+                    } );
+                    scope.refreshFillerStuff();
+                    scope.$apply();
+                } catch(err) {
+                    console.error("Unable to get filler info", err);
+                }
+            };
+            scope.refreshFillerStuff();
+            refreshFillerOptions();
+
+            function parseResolutionString(s) {
+                var i = s.indexOf('x');
+                if (i == -1) {
+                    i = s.indexOf("×");
+                    if (i == -1) {
+                       return {w:1920, h:1080}
+                    }
+                }
+                return {
+                    w: parseInt( s.substring(0,i) , 10 ),
+                    h: parseInt( s.substring(i+1) , 10 ),
+                }
+            }
+
+            scope.videoRateDefault = "(Use global setting)";
+            scope.videoBufSizeDefault = "(Use global setting)";
+
+            let refreshScreenResolution = async () => {
+
+               
+                try {
+                    let ffmpegSettings = await dizquetv.getFfmpegSettings()
+                    if (
+                        (ffmpegSettings.targetResolution != null)
+                        && (typeof(ffmpegSettings.targetResolution) !== 'undefined')
+                        && (typeof(ffmpegSettings.targetResolution) !== '')
+                    ) {
+                        let p = parseResolutionString( ffmpegSettings.targetResolution );
+                        scope.resolutionOptions[0] = {
+                            id: "",
+                            description: `Use global setting (${ffmpegSettings.targetResolution})`,
+                        }
+                        ffmpegSettings.targetResolution
+                        scope.screenW = p.w;
+                        scope.screenH = p.h;
+                        scope.videoRateDefault = `global setting=${ffmpegSettings.videoBitrate}`;
+                        scope.videoBufSizeDefault = `global setting=${ffmpegSettings.videoBufSize}`;
+           
+                        $timeout();
+                    }
+                } catch(err) {
+                    console.error("Could not fetch ffmpeg settings", err);
+                }
+            }
+            refreshScreenResolution();
+
+            scope.showList = () => {
+                return ! scope.showFallbackPlexLibrary;
+            }
+
+
+            scope.deleteFillerList =(index) => {
+                scope.channel.fillerCollections.splice(index, 1);
+                scope.refreshFillerStuff();
+            }
+
+
+
+            scope.durationString = (duration) => {
+                var date = new Date(0);
+                date.setSeconds( Math.floor(duration / 1000) ); // specify value for SECONDS here
+                return date.toISOString().substr(11, 8);
+            }
+
+            scope.getCurrentWH = () => {
+                if (scope.channel.transcoding.targetResolution !== '') {
+                    return parseResolutionString( scope.channel.transcoding.targetResolution );
+                }
+                return {
+                    w: scope.screenW,
+                    h: scope.screenH
+                }
+            }
+            scope.getWatermarkPreviewOuter = () => {
+                let tm = scope.getCurrentWH();
+                let resolutionW = tm.w;
+                let resolutionH = tm.h;
+                let width = 100;
+                let height = width / ( resolutionW / resolutionH );
+
+
+                return {
+                    width: `${width}%`,
+                    "overflow" : "hidden",
+                    "padding-top": 0,
+                    "padding-left": 0,
+                    "padding-right": 0,
+                    "padding-bottom": `${height}%`,
+                    position: "relative",
+                }
+            }
+
+            scope.getWatermarkPreviewRectangle = (p,q) => {
+                let s = scope.getCurrentWH();
+                if ( (s.w*q) == (s.h*p) ) {
+                    //not necessary, hide it
+                    return {
+                        position: "absolute",
+                        visibility: "hidden",
+                    }
+                } else {
+                    //assume width is equal
+                    // s.w / h2 = p / q
+                    let h2 = (s.w * q * 100) / (p * s.h);
+                    let w2 = 100;
+                    let left = undefined;
+                    let top = undefined;
+                    if (h2 > 100) {
+                        //wrong
+                        //the other way around
+                        w2 = (s.h / s.w) * p * 100 / q;
+                        left = (100 - w2) / 2;
+                    } else {
+                        top = (100 - h2) / 2;
+                    }
+                    let padding = (100 * q) / p;
+                    return {
+                        "width" : `${w2}%`,
+                        "padding-top": "0",
+                        "padding-left": "0",
+                        "padding-right": "0",
+                        "padding-bottom": `${padding}%`,
+                        "margin" : "0",
+                        "left": `${left}%`,
+                        "top" : `${top}%`,
+                        "position": "absolute",
+                    }
+                }
+
+            }
+
+            scope.getWatermarkSrc = () => {
+                let url = scope.channel.watermark.url;
+                if ( url == null || typeof(url) == 'undefined' || url == '') {
+                    url = scope.channel.icon;
+                }
+                return url;
+            }
+
+            scope.getWatermarkPreviewInner = () => {
+                let width = Math.max(Math.min(100, scope.channel.watermark.width), 0);
+                let res = {
+                    width: `${width}%`,
+                    margin: "0",
+                    position: "absolute",
+                }
+                if (scope.channel.watermark.fixedSize === true) {
+                    delete res.width;
+                }
+                let mH = scope.channel.watermark.horizontalMargin;
+                let mV = scope.channel.watermark.verticalMargin;
+                if (scope.channel.watermark.position == 'top-left') {
+                    res["top"] = `${mV}%`;
+                    res["left"] = `${mH}%`;
+                } else if (scope.channel.watermark.position == 'top-right') {
+                    res["top"] = `${mV}%`;
+                    res["right"] = `${mH}%`;
+                } else if (scope.channel.watermark.position == 'bottom-right') {
+                    res["bottom"] = `${mV}%`;
+                    res["right"] = `${mH}%`;
+                } else if (scope.channel.watermark.position == 'bottom-left') {
+                    res["bottom"] = `${mV}%`;
+                    res["left"] = `${mH}%`;
+                } else {
+                    console.log("huh? " + scope.channel.watermark.position );
+                }
+                return res;
+            }
+
+            function notValidNumber(x, lower, upper) {
+                if ( (x == null) || (typeof(x) === 'undefined') || isNaN(x) ) {
+                    return true;
+                }
+                if ( (typeof(lower) !== 'undefined') && (x < lower) ) {
+                    return true;
+                }
+                if ( (typeof(upper) !== 'undefined') && (x > upper) ) {
+                    return true;
+                }
+                return false;
+            }
+
+            
+            scope.onTimeSlotsDone = (slotsResult) => {
+                scope.channel.programs = slotsResult.programs;
+
+                let t = (new Date()).getTime();
+                let t1 =new Date( (new Date( slotsResult.startTime ) ).getTime() );
+                let total = 0;
+                for (let i = 0; i < slotsResult.programs.length; i++) {
+                    total += slotsResult.programs[i].duration;
+                }
+                
+                scope.channel.scheduleBackup = slotsResult.schedule;
+
+                while(t1 > t) {
+                    //TODO: Replace with division
+                    t1 -= total;
+                }
+                scope.channel.startTime = new Date(t1);
+                adjustStartTimeToCurrentProgram();
+                updateChannelDuration();
+            }
+            scope.onTimeSlotsButtonClick = () => {
+                scope.timeSlots.startDialog(scope.channel.programs, scope.maxSize, scope.channel.scheduleBackup );
+            }
+
+          },
+
+          pre: function(scope) {
+            scope.timeSlots = null;
+            scope.registerTimeSlots = (timeSlots) => {
+                scope.timeSlots = timeSlots;
+            }
+          },
+
         }
     }
 }

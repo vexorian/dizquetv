@@ -9,6 +9,7 @@ var app = angular.module('myApp', ['ngRoute', 'vs-repeat', 'angularLazyImg', 'dn
 
 app.service('plex',             require('./services/plex'))
 app.service('dizquetv',         require('./services/dizquetv'))
+app.service('resolutionOptions', require('./services/resolution-options'))
 
 app.directive('plexSettings',   require('./directives/plex-settings'))
 app.directive('ffmpegSettings', require('./directives/ffmpeg-settings'))
@@ -24,6 +25,7 @@ app.directive('removeShows',  require('./directives/remove-shows'))
 app.directive('channelRedirect',  require('./directives/channel-redirect'))
 app.directive('plexServerEdit',  require('./directives/plex-server-edit'))
 app.directive('channelConfig',  require('./directives/channel-config'))
+app.directive('timeSlotsScheduleEditor',  require('./directives/time-slots-schedule-editor'))
 
 app.controller('settingsCtrl',  require('./controllers/settings'))
 app.controller('channelsCtrl',  require('./controllers/channels'))
