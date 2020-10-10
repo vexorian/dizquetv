@@ -8,6 +8,7 @@ const FFMPEGInfo = require('./ffmpeg-info');
 const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 const FillerDB = require('./dao/filler-db');
+const timeSlotsService = require('./services/time-slots-service');
 
 module.exports = { router: api }
 function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
@@ -303,6 +304,10 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       try {
         db['ffmpeg-settings'].update({ _id: req.body._id }, req.body)
         let ffmpeg = db['ffmpeg-settings'].find()[0]
+        let err = fixupFFMPEGSettings(ffmpeg);
+        if (typeof(err) !== 'undefined') {
+          return res.status(400).send(err);
+        }
         res.send(ffmpeg)
       } catch(err) {
         console.error(err);
@@ -322,6 +327,14 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       }
 
     })
+
+    function fixupFFMPEGSettings(ffmpeg) {
+      if (typeof(ffmpeg.maxFPS) === 'undefined') {
+        ffmpeg.maxFPS = 60;
+      } else if ( isNaN(ffmpeg.maxFPS) ) {
+        return "maxFPS should be a number";
+      }
+    }
 
     // PLEX SETTINGS
     router.get('/api/plex-settings', (req, res) => {
@@ -527,6 +540,20 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       }
 
     })
+
+    //tool services
+    router.post('/api/channel-tools/time-slots', async (req, res) => {
+      try {
+        let toolRes = await timeSlotsService(req.body.programs, req.body.schedule);
+        if ( typeof(toolRes.userError) !=='undefined') {
+          return res.status(400).send(toolRes.userError);
+        }
+        res.status(200).send(toolRes);
+      } catch(err) {
+        console.error(err);
+        res.status(500).send("Internal error");
+      }
+    });
 
     // CHANNELS.M3U Download 
     router.get('/api/channels.m3u', async (req, res) => {
