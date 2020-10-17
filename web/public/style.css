@@ -254,6 +254,17 @@ table.tvguide {
   text-align: right;
 }
 
+.filler-list .list-group-item {
+  min-height: 1.5em;
+}
+
+.filler-list .list-group-item .title {
+  margin-right: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 div.channel-tools {
   max-height: 20em;
   overflow-y: scroll;
