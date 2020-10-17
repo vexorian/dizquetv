@@ -128,10 +128,10 @@
                                 </div>
                                 <div ng-style="programSquareStyle(x)" />
 
-                                <div style="margin-right: 5px;"  ng-hidden="x.isOffline">
+                                <div ng-hidden="x.isOffline" class='title' >
                                     {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
                                 </div>
-                                <div style="margin-right: 5px; font-weight:ligther"  ng-show="x.isOffline">
+                                <div style="font-weight:ligther"  ng-show="x.isOffline" class='title' >
                                     <i ng-if="x.type !== 'redirect' " >Flex</i>
                                     <span ng-if="x.type === 'redirect' " ><i>Redirect to channel:</i> <b>{{x.channel}}</b></span>
                                 </div>

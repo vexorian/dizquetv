@@ -254,11 +254,11 @@ table.tvguide {
   text-align: right;
 }
 
-.filler-list .list-group-item {
+.filler-list .list-group-item, .program-row {
   min-height: 1.5em;
 }
 
-.filler-list .list-group-item .title {
+.filler-list .list-group-item .title, .program-row .title {
   margin-right: 5px;
   white-space: nowrap;
   overflow: hidden;
