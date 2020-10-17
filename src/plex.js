@@ -2,8 +2,15 @@ const request = require('request')
 class Plex {
     constructor(opts) {
         this._accessToken = typeof opts.accessToken !== 'undefined' ? opts.accessToken : ''
+        let uri = "http://127.0.0.1:32400";
+        if ( (typeof opts.uri) !== 'undefined' ) {
+            uri = opts.uri;
+            if (uri.endsWith("/")) {
+                uri = uri.slice(0, uri.length - 1);
+            }
+        }
         this._server = {
-            uri: typeof opts.uri !== 'undefined' ? opts.uri : 'http://127.0.0.1:32400',
+            uri: uri,
             host: typeof opts.host !== 'undefined' ? opts.host : '127.0.0.1',
             port: typeof opts.port !== 'undefined' ? opts.port : '32400',
             protocol: typeof opts.protocol !== 'undefined' ? opts.protocol : 'http'
