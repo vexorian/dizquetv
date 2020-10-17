@@ -63,13 +63,14 @@
                 </div>
 
 
-                <div class="modal-body container list-group list-group-root" vs-repeat="options" dnd-list="content" ng-if="showList()">
+                <!--div class="modal-body container list-group list-group-root" vs-repeat="options" dnd-list="content" ng-if="showList()"-->
+                <div class="modal-body container list-group list-group-root filler-list" dnd-list="content" ng-if="showList()"  >
                     <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in content" dnd-draggable="x" dnd-moved="content.splice($index, 1)" dnd-effect-allowed="move">
                         <div class="program-start" >
                             {{durationString(x.duration)}}
                         </div>
                         <div ng-style="programSquareStyle(x, false)" />
-                        <div style="margin-right: 5px;">
+                        <div class="title" >
                             {{x.title}}
                         </div>
                         <div class="flex-pull-right">
