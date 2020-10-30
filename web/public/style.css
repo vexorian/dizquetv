@@ -249,6 +249,17 @@ table.tvguide {
   text-align: right;
 }
 
+.filler-list .list-group-item {
+  min-height: 1.5em;
+}
+
+.filler-list .list-group-item .title {
+  margin-right: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Safari */
 @-webkit-keyframes spin {
   0% { -webkit-transform: rotate(0deg); }

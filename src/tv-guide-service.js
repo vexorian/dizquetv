@@ -113,6 +113,7 @@ class TVGuideService
         let playing = {};
         if (
             (typeof(previousKnown) !== 'undefined')
+             && (previousKnown.index !== -1)
              && (previousKnown.program.duration == channel.programs[previousKnown.index].duration )
              && (previousKnown.start + previousKnown.program.duration == t)
         ) {
@@ -125,6 +126,17 @@ class TVGuideService
             }
         } else {
             playing = await this.getCurrentPlayingIndex(channel, t);
+        }
+        if ( (playing.program == null) || (typeof(playing) === 'undefined') ) {
+            console.log("There is a weird issue with the TV guide generation. A placeholder program is placed to prevent further issues. Please report this.");
+            playing = {
+                index: -1,
+                program: {
+                    isOffline: true,
+                    duration: 30*60*1000,
+                },
+                start: t
+            }
         }
         if ( playing.program.isOffline && playing.program.type === 'redirect') {
             let ch2 = playing.program.channel;
@@ -189,13 +201,15 @@ class TVGuideService
                 ) {
                     y.program.duration -= melded;
                     programs[ programs.length - 1] = y;
-                    programs.push( {
-                        start: y.start + y.program.duration,
-                        program: {
-                            isOffline : true,
-                            duration: melded,
-                        },
-                    } );
+                    if (y.start + y.program.duration < t1) {
+                        programs.push( {
+                            start: y.start + y.program.duration,
+                            program: {
+                                isOffline : true,
+                                duration: melded,
+                            },
+                        } );
+                    }
                     melded = 0;
                 } else {
                     programs[ programs.length - 1] = y;
@@ -216,7 +230,14 @@ class TVGuideService
         };
         while (x.start < t1) {
             await push(x);
-            x = await this.getChannelPlaying(channel, x, x.start + x.program.duration);
+            let t2 = x.start + x.program.duration;
+            x = await this.getChannelPlaying(channel, x, t2);
+            if (x.start < t2) {
+                let d = t2 - x.start;
+                x.start = t2;
+                x.program = clone(x.program);
+                x.program.duration -= d;
+            }
             if (x.program.duration == 0) throw Error("D");
         }
         result.programs = [];
