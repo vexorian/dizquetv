@@ -128,10 +128,10 @@
                                 </div>
                                 <div ng-style="programSquareStyle(x)" />
 
-                                <div style="margin-right: 5px;"  ng-hidden="x.isOffline">
+                                <div ng-hidden="x.isOffline" class='title' >
                                     {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
                                 </div>
-                                <div style="margin-right: 5px; font-weight:ligther"  ng-show="x.isOffline">
+                                <div style="font-weight:ligther"  ng-show="x.isOffline" class='title' >
                                     <i ng-if="x.type !== 'redirect' " >Flex</i>
                                     <span ng-if="x.type === 'redirect' " ><i>Redirect to channel:</i> <b>{{x.channel}}</b></span>
                                 </div>
@@ -621,7 +621,7 @@
 
                     <div class='form-group' ng-show='! channel.stealth'>
                         <label class='form-label'>Minimum program duration to appear in the TV guide (seconds): </label>
-                        <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp" />
+                        <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([0-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp" />
                         <small id='guideFlexTimeHelp' class="text-muted" for='guideFlexTime'>Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the &quot;place holder program&quot; if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.</small>
                     </div>
                 </div>

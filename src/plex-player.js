@@ -52,6 +52,9 @@ class PlexPlayer {
             throw Error(`Unable to find server "${lineupItem.serverKey}" specied by program.`);
         }
         server = server[0];
+        if (server.uri.endsWith("/")) {
+            server.uri = server.uri.slice(0, server.uri.length - 1);
+        }
 
         try {
             let plexSettings = db['plex-settings'].find()[0];
