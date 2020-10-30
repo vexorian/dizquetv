@@ -621,7 +621,7 @@
 
                     <div class='form-group' ng-show='! channel.stealth'>
                         <label class='form-label'>Minimum program duration to appear in the TV guide (seconds): </label>
-                        <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp" />
+                        <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([0-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp" />
                         <small id='guideFlexTimeHelp' class="text-muted" for='guideFlexTime'>Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the &quot;place holder program&quot; if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.</small>
                     </div>
                 </div>
