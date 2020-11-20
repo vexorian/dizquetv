@@ -119,9 +119,15 @@
                 
                 <div class="modal-body programming-panes" ng-show="tab == 'programming'">
                     <div class='row' ng-class="{'reverse': reverseTools }" >
-                        <div vs-repeat="options" ng-class="{'programming-pane': true, 'col':true, 'd-block': showShuffleOptions, 'd-sm-none': showShuffleOptions, 'd-md-block' : showShuffleOptions, container: true, 'list-group': true, 'list-group-root': true, 'programming-programs': true}" ng-show="hasPrograms()">
-                            <div ng-repeat="x in channel.programs track by x.$index" ng-click="selectProgram(x.$index)" dnd-list="" dnd-drop="dropFunction(index , x.$index, item)"
-                            class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice(x.$index, 1);" dnd-effect-allowed="move"
+                        <div vs-repeat="options" ng-class="{'programming-pane': true, 'col':true, 'd-block': showShuffleOptions, 'd-sm-none': showShuffleOptions, 'd-md-block' : showShuffleOptions, container: true, 'list-group': true, 'list-group-root': true, 'programming-programs': true}" ng-show="hasPrograms()"
+                            dnd-drop="dropFunction(index , item)"
+                            dnd-list=""
+                            ng-init="setUpWatcher()"
+                            ng-if="true"
+                        >
+                            <div ng-repeat="x in channel.programs track by x.$index"
+                                ng-click="selectProgram(x.$index)"
+                                class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="" dnd-effect-allowed="move"
                             >
                                 <div class="program-start">
                                     {{ dateForGuide(x.start) }}
