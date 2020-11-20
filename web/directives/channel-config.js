@@ -110,18 +110,23 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope._selectedProgram = null
                 updateChannelDuration()
             }
-            scope.dropFunction = (dropIndex, index, program) => {
-                if (scope.channel.programs[index].start == program.start) {
-                    return false;
+            scope.dropFunction = (dropIndex, program) => {
+                let y = program.$index;
+                let z = dropIndex + scope.currentStartIndex - 1;
+                scope.channel.programs.splice(y, 1);
+                if (z >= y) {
+                    z--;
                 }
-
-                setTimeout( () => {
-                    scope.channel.programs.splice(dropIndex + index, 0, program);
-                    updateChannelDuration()
-                    scope.$apply();
-                }, 1);
-                return true;
+                scope.channel.programs.splice(z, 0, program );
+                updateChannelDuration();
+                $timeout();
+                return false;
             }
+            scope.setUpWatcher = function setupWatchers() {
+                this.$watch('vsRepeat.startIndex', function(val) {
+                    scope.currentStartIndex = val;
+                });
+            };
 
             let fixFillerCollection = (f) => {
                 return {

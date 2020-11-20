@@ -26,16 +26,15 @@ module.exports = function ($timeout) {
             }
 
             scope.dropFunction = (dropIndex, program) => {
-                setTimeout( () => {
-                    if (program.$index < dropIndex) {
-                        scope.content.splice(scope.currentStartIndex + dropIndex-2, 0, program);
-                    } else {
-                        scope.content.splice(scope.currentStartIndex + dropIndex-1, 0, program);
-                    }
-                    refreshContentIndexes();
-                    scope.$apply();
-                }, 1);
-                return true;
+                let y = program.$index;
+                let z = dropIndex + scope.currentStartIndex - 1;
+                scope.content.splice(y, 1);
+                if (z >= y) {
+                    z--;
+                }
+                scope.content.splice(z, 0, program );
+                $timeout();
+                return false;
             }
             scope.setUpWatcher = function setupWatchers() {
                 this.$watch('vsRepeat.startIndex', function(val) {
@@ -44,7 +43,7 @@ module.exports = function ($timeout) {
             };
 
             scope.movedFunction = (index) => {
-                scope.content.splice(index, 1);
+                console.log("movedFunction(" + index + ")");
             }
 
 
