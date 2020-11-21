@@ -289,7 +289,11 @@ lang=en`
 
     }
 
-    async getDecision(directPlay) {
+    async getDecisionUnmanaged(directPlay) {
+        if (this.settings.streamPath === 'direct') {
+            console.log("Skip get transcode decision because direct path is enabled");
+            return;
+        }
         let res = await axios.get(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, {
             headers: { Accept: 'application/json' }
         })
@@ -305,6 +309,14 @@ lang=en`
                 console.log(`IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`)
                 console.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
             }
+    }
+
+    async getDecision(directPlay) {
+        try {
+            this.getDecisionUnmanaged(directPlay);
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     getStatusUrl() {
