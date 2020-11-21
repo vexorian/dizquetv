@@ -17,6 +17,24 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
 
             scope.maxSize = 50000;
 
+            scope.programming = {
+                maxHeight:  30,
+                step : 1,
+            }
+
+
+            try {
+                let h = parseFloat( localStorage.getItem("channel-programming-list-height" ) );
+                if (isNaN(h)) {
+                    h = 30;
+                }
+                h = Math.min(64, Math.max(1, h));
+                console.log("loaded=" + h);
+                scope.programming.maxHeight =  h;
+            } catch (e) {
+                console.error(e);
+            }
+
             scope.blockCount = 1;
             scope.showShuffleOptions = (localStorage.getItem("channel-tools") === "on");
             scope.reverseTools = (localStorage.getItem("channel-tools-position") === "left");
@@ -1538,6 +1556,28 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     } );
                 }
                 return options;
+            }
+
+            scope.programmingHeight = () => {
+                return scope.programming.maxHeight + "rem";
+            }
+            let setProgrammingHeight = (h) => {
+                scope.programming.step++;
+                $timeout( () => {
+                    scope.programming.step--;
+                }, 1000 )
+                scope.programming.maxHeight = h;
+                localStorage.setItem("channel-programming-list-height", "" + h );
+            };
+            scope.programmingZoomIn = () => {
+                let h = scope.programming.maxHeight;
+                h = Math.min( Math.ceil(h + scope.programming.step ), 64);
+                setProgrammingHeight(h);
+            }
+            scope.programmingZoomOut = () => {
+                let h = scope.programming.maxHeight;
+                h = Math.max( Math.floor(h - scope.programming.step ), 2 );
+                setProgrammingHeight(h);
             }
 
             scope.refreshFillerStuff = () => {
