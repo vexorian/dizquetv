@@ -89,12 +89,25 @@
                             aria-describedby="padHelp"
                             >
                         </select>
-                        <small id='latenessHelp' class='form-text text-muted'>
+                        <small id='padHelp' class='form-text text-muted'>
                             Ensures programs have a nice-looking start time, it will add Flex time to fill the gaps.
                         </small>
     
                     </div>
-    
+
+                    <div class='form-group'>
+                        <label for="pad">What to do with flex?</label>
+                        <select
+                            id="flexPreference" class="custom-select form-control"
+                            ng-model="schedule.flexPreference" ng-options="o.id as o.description for o in flexOptions"
+                            aria-describedby="flexPreferenceHelp"
+                            >
+                        </select>
+                        <small id='flexPreferenceHelp' class='form-text text-muted'>
+                            Usually slots need to add flex time to ensure that the next slot starts at the correct time. When there are multiple videos in the slot, you might prefer to distribute the flex time between the videos or to place most of the flex time at the end of the slot.
+                        </small>
+                    </div>
+                   
                     <div class='form-group'>
                         <label for="lateness">Maximum days to precalculate</label>
                         <input

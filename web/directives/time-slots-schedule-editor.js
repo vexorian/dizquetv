@@ -26,6 +26,7 @@ module.exports = function ($timeout, dizquetv) {
                 scope.schedule = {
                     lateness : 0,
                     maxDays: 365,
+                    flexPreference : "distribute",
                     slots : [],
                     pad: 1,
                     fake: { time: -1 },
@@ -52,6 +53,9 @@ module.exports = function ($timeout, dizquetv) {
                         slots[i].order = "shuffle";
                     }
                 }
+                if (typeof(scope.schedule.flexPreference) === 'undefined') {
+                    scope.schedule.flexPreference = "distribute";
+                }
                 scope.schedule.fake = {
                     time: -1,
                 }
@@ -71,13 +75,23 @@ module.exports = function ($timeout, dizquetv) {
                 { id: 10*60*1000 , description:  "10 minutes" },
                 { id: 15*60*1000 , description:  "15 minutes" },
                 { id: 1*60*60*1000 , description:  "1 hour" },
+                { id: 2*60*60*1000 , description:  "2 hours" },
+                { id: 3*60*60*1000 , description:  "3 hours" },
+                { id: 4*60*60*1000 , description:  "4 hours" },
+                { id: 8*60*60*1000 , description:  "8 hours" },
+                { id: 24*60*60*1000 , description:  "I don't care about lateness" },
             ];
+            scope.flexOptions = [
+                { id: "distribute", description: "Between videos" },
+                { id: "end", description: "End of the slot" },
+            ]
             scope.fakeTimeOptions = JSON.parse( JSON.stringify( scope.timeOptions ) );
             scope.fakeTimeOptions.push( {id: -1, description: "Add slot"} );
 
             scope.padOptions = [
                 {id: 1, description: "Do not pad" },
                 {id: 5*60*1000, description: "0:00, 0:05, 0:10, ..., 0:55" },
+                {id: 10*60*1000, description: "0:00, 0:10, 0:20, ..., 0:50" },
                 {id: 15*60*1000, description: "0:00, 0:15, 0:30, ..., 0:45" },
                 {id: 30*60*1000, description: "0:00, 0:30" },
                 {id: 1*60*60*1000, description: "0:00" },
@@ -137,6 +151,7 @@ module.exports = function ($timeout, dizquetv) {
             } );
 
             scope.finished = async (cancel) => {
+                scope.error = null;
                 if (!cancel) {
                     try {
                         scope.loading = true;
