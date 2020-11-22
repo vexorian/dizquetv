@@ -182,7 +182,7 @@ lang=en`
         try {
             return this.getVideoStats().videoDecision === "copy";
         } catch (e) {
-            console.log("Error at decision:" + e);
+            console.log("Error at decision:", e);
             return false;
         }
     }
@@ -199,7 +199,7 @@ lang=en`
         try {
             return this.getVideoStats().videoDecision === "copy" && this.getVideoStats().audioDecision === "copy";
         } catch (e) {
-            console.log("Error at decision:" + e);
+            console.log("Error at decision:" , e);
             return false;
         }
     }
@@ -245,7 +245,7 @@ lang=en`
                 }
             }.bind(this) )
         } catch (e) {
-            console.log("Error at decision:" + e);
+            console.log("Error at decision:" , e);
         }
 
         this.log("Current video stats:")
@@ -313,7 +313,7 @@ lang=en`
 
     async getDecision(directPlay) {
         try {
-            this.getDecisionUnmanaged(directPlay);
+            await this.getDecisionUnmanaged(directPlay);
         } catch (err) {
             console.error(err);
         }
