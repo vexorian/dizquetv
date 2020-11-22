@@ -5,6 +5,7 @@ const DAY = 24*60*MINUTE;
 const LIMIT = 40000;
 
 
+
 //This is a triplicate code, but maybe it doesn't have to be?
 function getShow(program) {
     //used for equalize and frequency tweak
@@ -208,6 +209,13 @@ module.exports = async( programs, schedule  ) => {
     if (typeof(schedule.maxDays) == 'undefined') {
         return { userError: "schedule.maxDays must be defined." };
     }
+    if (typeof(schedule.flexPreference) === 'undefined') {
+        schedule.flexPreference = "distribute";
+    }
+    if (schedule.flexPreference !== "distribute" && schedule.flexPreference !== "end") {
+        return { userError: `Invalid schedule.flexPreference value: "${schedule.flexPreference}"` };
+    }
+    let flexBetween = ( schedule.flexPreference !== "end" );
 
     // throttle so that the stream is not affected negatively
     let steps = 0;
@@ -222,6 +230,8 @@ module.exports = async( programs, schedule  ) => {
     let shows = [];
 
     function getNextForSlot(slot, remaining) {
+        //remaining doesn't restrict what next show is picked. It is only used
+        //for shows with flexible length (flex and redirects)
         if (slot.showId === "flex.") {
             return {
                 isOffline: true,
@@ -255,6 +265,21 @@ module.exports = async( programs, schedule  ) => {
         }
     }
 
+    function makePadded(item) {
+        let x = item.duration;
+        let m = x % schedule.pad;
+        let f = 0;
+        if ( (m > constants.SLACK) && (schedule.pad - m > constants.SLACK) ) {
+            f = schedule.pad - m;
+        }
+        return {
+            item: item,
+            pad: f,
+            totalDuration: item.duration + f,
+        }
+
+    }
+
     // load the programs
     for (let i = 0; i < programs.length; i++) {
         let p = programs[i];
@@ -282,7 +307,6 @@ module.exports = async( programs, schedule  ) => {
     let t0 = d.getTime();
     let p = [];
     let t = t0;
-    let previous = null;
     let hardLimit = t0 + schedule.maxDays * DAY;
 
     let pushFlex = (d) => {
@@ -299,11 +323,19 @@ module.exports = async( programs, schedule  ) => {
         }
     }
 
-    for (let i = 0; i < LIMIT; i++) {
+    while ( (t < hardLimit) && (p.length < LIMIT) ) {
         await throttle();
+        //ensure t is padded
+        let m = t % schedule.pad;
+        if ( (t % schedule.pad > constants.SLACK) && (schedule.pad - m > constants.SLACK) )  {
+            pushFlex( schedule.pad - m );
+            continue;
+        }
+
         let dayTime = t % DAY;
         let slot = null;
         let remaining = null;
+        let late = null;
         for (let i = 0; i < s.length; i++) {
             let endTime;
             if (i == s.length - 1) {
@@ -315,60 +347,93 @@ module.exports = async( programs, schedule  ) => {
             if ((s[i].time <= dayTime) && (dayTime < endTime)) {
                 slot = s[i];
                 remaining = endTime - dayTime;
+                late = dayTime - s[i].time;
                 break;
             }
             if ((s[i].time <= dayTime + DAY) && (dayTime + DAY < endTime)) {
                 slot = s[i];
                 dayTime += DAY;
                 remaining = endTime - dayTime;
+                late = dayTime + DAY - s[i].time;
                 break;
             }
         }
         if (slot == null) {
             throw Error("Unexpected. Unable to find slot for time of day " + t + " " + dayTime);
         }
-
-        let first = (previous !== slot.showId);
-        let skip = false; //skips to the next one
-        if (first) {
-            //check if it's too late
-            let d = dayTime  - slot.time;
-            if (d >= schedule.lateness + constants.SLACK) {
-                skip = true;
-            }
-        }
         let item = getNextForSlot(slot, remaining);
-        if ( (item.duration >= remaining + constants.SLACK) && !first) {
-            skip = true;
-        }
 
-        if (t + item.duration - constants.SLACK >= hardLimit) {
-            pushFlex( hardLimit - t );
-            break;
-        }
-        if (item.isOffline && item.type != 'redirect') {
-            //it's the same, really
-            skip = true;
-        }
-        if (skip) {
-            pushFlex(remaining);
-        } else {
-            previous = slot.showId;
-            let clone = JSON.parse( JSON.stringify(item) );
-            clone.$index = p.length;
-            p.push( clone );
-            t += clone.duration;
-
-            advanceSlot(slot);
-        }
-        let nt = t;
-        let m = t % schedule.pad;
-        if (m != 0) {
-            nt = t - m + schedule.pad;
-            let remaining = nt - t;
-            if (remaining >= constants.SLACK) {
-                pushFlex(remaining);
+        if (late >= schedule.lateness + constants.SLACK ) {
+            //it's late.
+            item = {
+                isOffline : true,
+                duration: remaining,
             }
+        }
+
+        if (item.isOffline) {
+            //flex or redirect. We can just use the whole duration
+            p.push(item);
+            t += remaining;
+            continue;
+        }
+        if (item.duration > remaining) {
+            // Slide
+            p.push(item);
+            t += item.duration;
+            advanceSlot(slot);
+            continue;
+        }
+
+        let padded = makePadded(item);
+        let total = padded.totalDuration;
+        advanceSlot(slot);
+        let pads = [ padded ];
+
+        while(true) {
+            let item2 = getNextForSlot(slot);
+            if (total + item2.duration > remaining) {
+                break;
+            }
+            let padded2 = makePadded(item2);
+            pads.push(padded2);
+            advanceSlot(slot);
+            total += padded2.totalDuration;
+        }
+        let rem = Math.max(0, remaining - total);
+
+        if (flexBetween) {
+            let div = Math.floor(rem / schedule.pad );
+            let mod = rem % schedule.pad;
+            // add mod to the latest item
+            pads[ pads.length - 1].pad += mod;
+            pads[ pads.length - 1].totalDuration += mod;
+
+            let sortedPads = pads.map( (p, $index) => {
+                return {
+                    pad: p.pad,
+                    index : $index,
+                }
+            });
+            sortedPads.sort( (a,b) => { return a.pad - b.pad; } );
+            for (let i = 0; i < pads.length; i++) {
+                let q = Math.floor( div / pads.length );
+                if (i < div % pads.length) {
+                    q++;
+                }
+                let j = sortedPads[i].index;
+                pads[j].pad += q * schedule.pad;
+            }
+        } else {
+            //also add div to the latest item
+            pads[ pads.length - 1].pad += rem;
+            pads[ pads.length - 1].totalDuration += rem;
+        }
+        // now unroll them all
+        for (let i = 0; i < pads.length; i++) {
+            p.push( pads[i].item );
+            t += pads[i].item.duration;
+            pushFlex( pads[i].pad );
         }
     }
 
