@@ -1423,6 +1423,8 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             scope.minBreakSize = -1;
             scope.maxBreakSize = -1;
             let breakSizeOptions = [
+                { id: 10, description: "10 seconds" },
+                { id: 15, description: "15 seconds" },
                 { id: 30, description: "30 seconds" },
                 { id: 45, description: "45 seconds" },
                 { id: 60, description: "60 seconds" },
@@ -1431,8 +1433,9 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 { id: 180, description: "3 minutes" },
                 { id: 300, description: "5 minutes" },
                 { id: 450, description: "7.5 minutes" },
-                { id: 600, description: "10 minutes" },
-                { id: 1200, description: "20 minutes" },
+                { id: 10*60, description: "10 minutes" },
+                { id: 20*60, description: "20 minutes" },
+                { id: 30*60, description: "30 minutes" },
             ]
             scope.minBreakSizeOptions = [
                 { id: -1, description: "Min Duration" },
