@@ -26,6 +26,7 @@
     "node-ssdp": "^4.0.0",
     "request": "^2.88.2",
     "uuid": "^8.0.0",
+    "node-graceful-shutdown" : "1.1.0",
     "xml-writer": "^1.7.0"
   },
   "bin": "dist/index.js",
