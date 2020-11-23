@@ -110,18 +110,23 @@ module.exports = function ($timeout, $location, dizquetv) {
                 scope._selectedProgram = null
                 updateChannelDuration()
             }
-            scope.dropFunction = (dropIndex, index, program) => {
-                if (scope.channel.programs[index].start == program.start) {
-                    return false;
+            scope.dropFunction = (dropIndex, program) => {
+                let y = program.$index;
+                let z = dropIndex + scope.currentStartIndex - 1;
+                scope.channel.programs.splice(y, 1);
+                if (z >= y) {
+                    z--;
                 }
-
-                setTimeout( () => {
-                    scope.channel.programs.splice(dropIndex + index, 0, program);
-                    updateChannelDuration()
-                    scope.$apply();
-                }, 1);
-                return true;
+                scope.channel.programs.splice(z, 0, program );
+                updateChannelDuration();
+                $timeout();
+                return false;
             }
+            scope.setUpWatcher = function setupWatchers() {
+                this.$watch('vsRepeat.startIndex', function(val) {
+                    scope.currentStartIndex = val;
+                });
+            };
 
             let fixFillerCollection = (f) => {
                 return {
@@ -283,6 +288,7 @@ module.exports = function ($timeout, $location, dizquetv) {
                     newProgs.push(tmpProgs[keys[i]])
                 }
                 scope.channel.programs = newProgs
+                updateChannelDuration(); //oops someone forgot to add this
             }
             scope.removeOffline = () => {
                 let tmpProgs = []
@@ -1242,6 +1248,8 @@ module.exports = function ($timeout, $location, dizquetv) {
             scope.minBreakSize = -1;
             scope.maxBreakSize = -1;
             let breakSizeOptions = [
+                { id: 10, description: "10 seconds" },
+                { id: 15, description: "15 seconds" },
                 { id: 30, description: "30 seconds" },
                 { id: 45, description: "45 seconds" },
                 { id: 60, description: "60 seconds" },
@@ -1250,8 +1258,9 @@ module.exports = function ($timeout, $location, dizquetv) {
                 { id: 180, description: "3 minutes" },
                 { id: 300, description: "5 minutes" },
                 { id: 450, description: "7.5 minutes" },
-                { id: 600, description: "10 minutes" },
-                { id: 1200, description: "20 minutes" },
+                { id: 10*60, description: "10 minutes" },
+                { id: 20*60, description: "20 minutes" },
+                { id: 30*60, description: "30 minutes" },
             ]
             scope.minBreakSizeOptions = [
                 { id: -1, description: "Min Duration" },

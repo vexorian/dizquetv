@@ -432,11 +432,12 @@
 
                         </div>
                         <div class="list-group list-group-root">
-                          <div vs-repeat="options" style='max-height: 30em; overflow-y: auto;'>
-                            <div ng-repeat="x in channel.programs track by x.$index" ng-click="selectProgram(x.$index)" dnd-list="" dnd-drop="dropFunction(index , x.$index, item)" style="height: 1.5em; overflow:hidden">
+                          <div vs-repeat style='max-height: 30em; overflow-y: auto;' ng-init="setUpWatcher()" dnd-list="" dnd-drop="dropFunction(index , item)" ng-if="true" >
+                            <div ng-repeat="x in channel.programs track by x.$index" ng-click="selectProgram(x.$index)" style="height: 1.5em; overflow:hidden"
+                                dnd-draggable="x" dnd-moved="" dnd-effect-allowed="move"
+                            >
                                                         
-                              <div class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice(x.$index, 1);" dnd-effect-allowed="move"
-                              >
+                              <div class="list-group-item flex-container program-row" >
                                 
                                 <div class="program-start">
                                     {{ dateForGuide(x.start) }}

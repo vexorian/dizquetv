@@ -23,7 +23,7 @@
                             <div>
                                 <button class="btn btn-sm btn-secondary btn-programming-tools"
                                 ng-click="showTools = !showTools"
-                                ng-show="channel.programs.length !== 0">
+                                ng-show="content.length !== 0">
                                 <span
                                 class="fa {{ showTools ? 'fa-chevron-down' : 'fa-chevron-right'}}"></span>&nbsp;&nbsp;Tools
                                 </button>
@@ -61,9 +61,19 @@
     
                     </div>
                 </div>
+                <div vs-repeat class="modal-body container list-group list-group-root filler-list" 
+                 dnd-list="content" ng-if="showList()"
+                    vs-repeat-reinitialized="vsReinitialized(event, startIndex, endIndex)"
+                    ng-init="setUpWatcher()"
+                    dnd-drop="dropFunction(index , item)"
+                    dnd-list=""
 
-                <div class="modal-body container list-group list-group-root filler-list" vs-repeat="options" dnd-list="content" ng-if="showList()">
-                    <div class="list-group-item flex-container"  style="cursor: default;" ng-repeat="x in content" dnd-draggable="x" dnd-moved="content.splice($index, 1)" dnd-effect-allowed="move">
+                >
+                    <div class="list-group-item flex-container"  style="cursor: default; height:1.1em; overflow:hidden" ng-repeat="x in content" track-by="x.$index"  dnd-draggable="x" 
+                        "
+                        dnd-effect-allowed="move"
+                        dnd-moved="movedFunction(x.$index)"
+                        >
                         <div class="program-start" >
                             {{durationString(x.duration)}}
                         </div>
@@ -72,7 +82,7 @@
                             {{x.title}}
                         </div>
                         <div class="flex-pull-right">
-                            <button class="btn btn-sm btn-link" ng-click="content.splice($index,1)">
+                            <button class="btn btn-sm btn-link" ng-click="contentSplice(x.$index,1)">
                             <i class="text-danger fa fa-trash-alt" ></i>
                             </button>
                         </div>
