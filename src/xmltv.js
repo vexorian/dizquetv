@@ -1,11 +1,29 @@
 const XMLWriter = require('xml-writer')
 const fs = require('fs')
-const helperFuncs = require('./helperFuncs')
-const constants = require('./constants')
 
-module.exports = { WriteXMLTV: WriteXMLTV }
+module.exports = { WriteXMLTV: WriteXMLTV, shutdown: shutdown }
 
-function WriteXMLTV(json, xmlSettings, throttle ) {
+let isShutdown = false;
+let isWorking = false;
+
+async function WriteXMLTV(json, xmlSettings, throttle ) {
+    if (isShutdown) {
+        return;
+    }
+    if (isWorking) {
+        console.log("Concurrent xmltv write attempt detected, skipping");
+        return;
+    }
+    isWorking = true;
+    try {
+        await writePromise(json, xmlSettings, throttle);
+    } catch (err) {
+        console.error("Error writing xmltv", err);
+    }
+    isWorking = false;
+}
+
+function writePromise(json, xmlSettings, throttle) {
     return new Promise((resolve, reject) => {
         let ws = fs.createWriteStream(xmlSettings.file)
         let xw = new XMLWriter(true, (str, enc) => ws.write(str, enc))
@@ -59,7 +77,9 @@ function _writeChannels(xw, channels) {
 
 async function _writePrograms(xw, channel, programs, throttle) {
     for (let i = 0; i < programs.length; i++) {
-        await throttle();
+        if (! isShutdown) {
+            await throttle();
+        }
         await _writeProgramme(channel, programs[i], xw);
     }
 }
@@ -117,8 +137,25 @@ async function _writeProgramme(channel, program, xw) {
 function _createXMLTVDate(d) {
     return d.substring(0,19).replace(/[-T:]/g,"") + " +0000";
 }
-function _throttle() {
+function wait(x) {
     return new Promise((resolve) => {
-      setTimeout(resolve, 0);
+      setTimeout(resolve, x);
     });
 }
+
+async function shutdown() {
+    isShutdown = true;
+    console.log("Shutting down xmltv writer.");
+    if (isWorking) {
+        let s = "Wait for xmltv writer...";
+        while (isWorking) {
+            console.log(s);
+            await wait(100);
+            s = "Still waiting for xmltv writer...";
+        }
+        console.log("Write finished.");
+    } else {
+        console.log("xmltv writer had no pending jobs.");
+    }
+}
+

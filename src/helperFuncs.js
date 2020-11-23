@@ -6,6 +6,11 @@ module.exports = {
 
 let channelCache = require('./channel-cache');
 const SLACK = require('./constants').SLACK;
+const randomJS = require("random-js");
+const Random = randomJS.Random;
+const random = new Random( randomJS.MersenneTwister19937.autoSeed() );
+
+module.exports.random = random;
 
 function getCurrentProgramAndTimeElapsed(date, channel) {
     let channelStartTime = (new Date(channel.startTime)).getTime();
@@ -102,7 +107,7 @@ function createLineup(obj, channel, fillers, isFirst) {
                 //it's boring and odd to tune into a channel and it's always
                 //the start of a commercial.
                 let more = Math.max(0, filler.duration - fillerstart - 15000 - SLACK);
-                fillerstart += Math.floor(more * Math.random() );
+                fillerstart +=  random.integer(0, more);
             }
             lineup.push({   // just add the video, starting at 0, playing the entire duration
                 type: 'commercial',
@@ -152,12 +157,7 @@ function createLineup(obj, channel, fillers, isFirst) {
 }
 
 function weighedPick(a, total) {
-    if (a==total) {
-        return true;
-    } else {
-        let ran = Math.random();
-        return ran * total < a;
-    }
+    return random.bool(a, total);
 }
 
 function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
@@ -293,3 +293,4 @@ function getWatermark(  ffmpegSettings, channel, type) {
     }
     return result;
 }
+
