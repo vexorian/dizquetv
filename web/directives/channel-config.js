@@ -403,6 +403,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     newProgs.push(tmpProgs[keys[i]])
                 }
                 scope.channel.programs = newProgs
+                updateChannelDuration(); //oops someone forgot to add this
             }
             scope.removeOffline = () => {
                 let tmpProgs = []
