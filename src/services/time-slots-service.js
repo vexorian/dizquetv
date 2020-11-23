@@ -1,5 +1,7 @@
 const constants = require("../constants");
 
+const random = require('../helperFuncs').random;
+
 const MINUTE = 60*1000;
 const DAY = 24*60*MINUTE;
 const LIMIT = 40000;
@@ -40,7 +42,7 @@ function shuffle(array, lo, hi ) {
     }
     let currentIndex = hi, temporaryValue, randomIndex
     while (lo !== currentIndex) {
-        randomIndex = lo + Math.floor(Math.random() * (currentIndex -lo) );
+        randomIndex =  random.integer(lo, currentIndex-1);
         currentIndex -= 1
         temporaryValue = array[currentIndex]
         array[currentIndex] = array[randomIndex]
@@ -307,6 +309,7 @@ module.exports = async( programs, schedule  ) => {
     let t0 = d.getTime();
     let p = [];
     let t = t0;
+    let wantedFinish = t % DAY;
     let hardLimit = t0 + schedule.maxDays * DAY;
 
     let pushFlex = (d) => {
@@ -436,6 +439,20 @@ module.exports = async( programs, schedule  ) => {
             pushFlex( pads[i].pad );
         }
     }
+    while ( (t > hardLimit) || (p.length >= LIMIT) ) {
+        t -= p.pop().duration;
+    }
+    let m = t % DAY;
+    let rem = 0;
+    if (m > wantedFinish) {
+        rem = DAY + wantedFinish - m;
+    } else if (m < wantedFinish) {
+        rem = wantedFinish - m;
+    }
+    if (rem > constants.SLACK) {
+        pushFlex(rem);
+    }
+
 
     return {
         programs: p,

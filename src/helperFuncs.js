@@ -10,6 +10,8 @@ const randomJS = require("random-js");
 const Random = randomJS.Random;
 const random = new Random( randomJS.MersenneTwister19937.autoSeed() );
 
+module.exports.random = random;
+
 function getCurrentProgramAndTimeElapsed(date, channel) {
     let channelStartTime = (new Date(channel.startTime)).getTime();
     if (channelStartTime > date) {
@@ -291,3 +293,4 @@ function getWatermark(  ffmpegSettings, channel, type) {
     }
     return result;
 }
+
