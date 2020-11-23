@@ -17,6 +17,24 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
 
             scope.maxSize = 50000;
 
+            scope.programming = {
+                maxHeight:  30,
+                step : 1,
+            }
+
+
+            try {
+                let h = parseFloat( localStorage.getItem("channel-programming-list-height" ) );
+                if (isNaN(h)) {
+                    h = 30;
+                }
+                h = Math.min(64, Math.max(1, h));
+                console.log("loaded=" + h);
+                scope.programming.maxHeight =  h;
+            } catch (e) {
+                console.error(e);
+            }
+
             scope.blockCount = 1;
             scope.showShuffleOptions = (localStorage.getItem("channel-tools") === "on");
             scope.reverseTools = (localStorage.getItem("channel-tools-position") === "left");
@@ -220,18 +238,23 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 scope._selectedProgram = null
                 updateChannelDuration()
             }
-            scope.dropFunction = (dropIndex, index, program) => {
-                if (scope.channel.programs[index].start == program.start) {
-                    return false;
+            scope.dropFunction = (dropIndex, program) => {
+                let y = program.$index;
+                let z = dropIndex + scope.currentStartIndex - 1;
+                scope.channel.programs.splice(y, 1);
+                if (z >= y) {
+                    z--;
                 }
-
-                setTimeout( () => {
-                    scope.channel.programs.splice(dropIndex + index, 0, program);
-                    updateChannelDuration()
-                    scope.$apply();
-                }, 1);
-                return true;
+                scope.channel.programs.splice(z, 0, program );
+                updateChannelDuration();
+                $timeout();
+                return false;
             }
+            scope.setUpWatcher = function setupWatchers() {
+                this.$watch('vsRepeat.startIndex', function(val) {
+                    scope.currentStartIndex = val;
+                });
+            };
 
             scope.finishedOfflineEdit = (program) => {
                 let editedProgram = scope.channel.programs[scope.selectedProgram];
@@ -380,6 +403,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     newProgs.push(tmpProgs[keys[i]])
                 }
                 scope.channel.programs = newProgs
+                updateChannelDuration(); //oops someone forgot to add this
             }
             scope.removeOffline = () => {
                 let tmpProgs = []
@@ -1400,6 +1424,8 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             scope.minBreakSize = -1;
             scope.maxBreakSize = -1;
             let breakSizeOptions = [
+                { id: 10, description: "10 seconds" },
+                { id: 15, description: "15 seconds" },
                 { id: 30, description: "30 seconds" },
                 { id: 45, description: "45 seconds" },
                 { id: 60, description: "60 seconds" },
@@ -1408,8 +1434,9 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 { id: 180, description: "3 minutes" },
                 { id: 300, description: "5 minutes" },
                 { id: 450, description: "7.5 minutes" },
-                { id: 600, description: "10 minutes" },
-                { id: 1200, description: "20 minutes" },
+                { id: 10*60, description: "10 minutes" },
+                { id: 20*60, description: "20 minutes" },
+                { id: 30*60, description: "30 minutes" },
             ]
             scope.minBreakSizeOptions = [
                 { id: -1, description: "Min Duration" },
@@ -1533,6 +1560,28 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     } );
                 }
                 return options;
+            }
+
+            scope.programmingHeight = () => {
+                return scope.programming.maxHeight + "rem";
+            }
+            let setProgrammingHeight = (h) => {
+                scope.programming.step++;
+                $timeout( () => {
+                    scope.programming.step--;
+                }, 1000 )
+                scope.programming.maxHeight = h;
+                localStorage.setItem("channel-programming-list-height", "" + h );
+            };
+            scope.programmingZoomIn = () => {
+                let h = scope.programming.maxHeight;
+                h = Math.min( Math.ceil(h + scope.programming.step ), 64);
+                setProgrammingHeight(h);
+            }
+            scope.programmingZoomOut = () => {
+                let h = scope.programming.maxHeight;
+                h = Math.max( Math.floor(h - scope.programming.step ), 2 );
+                setProgrammingHeight(h);
             }
 
             scope.refreshFillerStuff = () => {

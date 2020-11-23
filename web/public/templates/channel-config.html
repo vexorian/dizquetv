@@ -87,6 +87,25 @@
                                     </label>
                                 </div>
 
+                                <div ng-style="{order: (reverseTools?1:4) }" >
+                                    <button class="btn btn-sm btn-outline-info btn-programming-tools"
+                                    ng-click="programmingZoomIn()"
+                                    title="Higher"
+                                    >
+                                        <span class="fa fa-arrow-circle-down"></span>
+                                    </button>
+                                </div>
+
+                                <div ng-style="{order: (reverseTools?1:4) }" >
+                                    <button class="btn btn-sm btn-outline-info btn-programming-tools"
+                                    ng-click="programmingZoomOut()"
+                                    title="Shorter"
+                                    >
+                                        <span class="fa fa-arrow-circle-up"></span>
+                                    </button>
+                                </div>
+
+
                                 <div ng-show='showShuffleOptions' ng-style="{order: (reverseTools?1:4) }" >
                                     <button class="btn btn-sm btn-outline-info btn-programming-tools"
                                     ng-click="toggleToolsDirection()"
@@ -117,11 +136,20 @@
                     </div>
                 </div>
                 
-                <div class="modal-body programming-panes" ng-show="tab == 'programming'">
+                <div class="modal-body programming-panes" ng-show="tab == 'programming'"
+                     ng-style="{'max-height':programmingHeight()}"
+                >
                     <div class='row' ng-class="{'reverse': reverseTools }" >
-                        <div vs-repeat="options" ng-class="{'programming-pane': true, 'col':true, 'd-block': showShuffleOptions, 'd-sm-none': showShuffleOptions, 'd-md-block' : showShuffleOptions, container: true, 'list-group': true, 'list-group-root': true, 'programming-programs': true}" ng-show="hasPrograms()">
-                            <div ng-repeat="x in channel.programs track by x.$index" ng-click="selectProgram(x.$index)" dnd-list="" dnd-drop="dropFunction(index , x.$index, item)"
-                            class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="channel.programs.splice(x.$index, 1);" dnd-effect-allowed="move"
+                        <div vs-repeat="options" ng-class="{'programming-pane': true, 'col':true, 'd-block': showShuffleOptions, 'd-sm-none': showShuffleOptions, 'd-md-block' : showShuffleOptions, container: true, 'list-group': true, 'list-group-root': true, 'programming-programs': true}" ng-show="hasPrograms()"
+                            dnd-drop="dropFunction(index , item)"
+                            dnd-list=""
+                            ng-init="setUpWatcher()"
+                            ng-if="true"
+                            ng-style="{'max-height':programmingHeight()}"
+                        >
+                            <div ng-repeat="x in channel.programs track by x.$index"
+                                ng-click="selectProgram(x.$index)"
+                                class="list-group-item flex-container program-row" dnd-draggable="x" dnd-moved="" dnd-effect-allowed="move"
                             >
                                 <div class="program-start">
                                     {{ dateForGuide(x.start) }}
@@ -145,7 +173,9 @@
                             <small class='text-info'>There are no programs in the channel, use the <i class='fas fa-plus'></i> button to add programs from your media library or use the Tools to add Flex time or a Channel Redirect</small>
                         </div>
 
-                        <div class='col-md-4 col-sm-12 col-xl-6  col-lg-5 programming-pane tools-pane' ng-show="showShuffleOptions">
+                        <div class='col-md-4 col-sm-12 col-xl-6  col-lg-5 programming-pane tools-pane' ng-show="showShuffleOptions"
+                            ng-style="{'max-height':programmingHeight()}"
+                        >
 
                             <div class="row">
                                 <div class="col-xl-6 col-md-12" style="padding: 5px;"  ng-show="hasPrograms()">

@@ -14,6 +14,40 @@ module.exports = function ($timeout) {
             scope.visible = false;
             scope.error = undefined;
 
+            function refreshContentIndexes() {
+                for (let i = 0; i < scope.content.length; i++) {
+                    scope.content[i].$index = i;
+                }
+            }
+
+            scope.contentSplice = (a,b) => {
+                scope.content.splice(a,b)
+                refreshContentIndexes();
+            }
+
+            scope.dropFunction = (dropIndex, program) => {
+                let y = program.$index;
+                let z = dropIndex + scope.currentStartIndex - 1;
+                scope.content.splice(y, 1);
+                if (z >= y) {
+                    z--;
+                }
+                scope.content.splice(z, 0, program );
+                $timeout();
+                return false;
+            }
+            scope.setUpWatcher = function setupWatchers() {
+                this.$watch('vsRepeat.startIndex', function(val) {
+                    scope.currentStartIndex = val;
+                });
+            };
+
+            scope.movedFunction = (index) => {
+                console.log("movedFunction(" + index + ")");
+            }
+
+
+
             scope.linker( (filler) => {
                 if ( typeof(filler) === 'undefined') {
                     scope.name = "";
@@ -26,6 +60,7 @@ module.exports = function ($timeout) {
                     scope.id = filler.id;
                     scope.title = "Edit Filler List";
                 }
+                refreshContentIndexes();
                 scope.visible = true;
             } );
 
@@ -49,7 +84,10 @@ module.exports = function ($timeout) {
                 scope.visible = false;
                 scope.onDone( {
                     name: scope.name,
-                    content: scope.content,
+                    content: scope.content.map( (c) => {
+                        delete c.$index
+                        return c;
+                    } ),
                     id: scope.id,
                 } );
             }
@@ -58,9 +96,11 @@ module.exports = function ($timeout) {
             }
             scope.sortFillers = () => {
                 scope.content.sort( (a,b) => { return a.duration - b.duration } );
+                refreshContentIndexes();
             }
             scope.fillerRemoveAllFiller = () => {
                 scope.content = [];
+                refreshContentIndexes();
             }
             scope.fillerRemoveDuplicates = () => {
                 function getKey(p) {
@@ -77,12 +117,14 @@ module.exports = function ($timeout) {
                     }
                 }
                 scope.content = newFiller;
+                refreshContentIndexes();
             }
             scope.importPrograms = (selectedPrograms) => {
                 for (let i = 0, l = selectedPrograms.length; i < l; i++) {
                     selectedPrograms[i].commercials = []
                 }
                 scope.content = scope.content.concat(selectedPrograms);
+                refreshContentIndexes();
                 scope.showPlexLibrary = false;
             }
 

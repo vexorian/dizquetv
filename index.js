@@ -17,6 +17,7 @@ const constants = require('./src/constants')
 const ChannelDB = require("./src/dao/channel-db");
 const FillerDB = require("./src/dao/filler-db");
 const TVGuideService = require("./src/tv-guide-service");
+const onShutdown = require("node-graceful-shutdown").onShutdown;
 
 console.log(
 `         \\
@@ -209,3 +210,11 @@ function initDB(db, channelDB) {
     }
 
 }
+
+onShutdown("log" , [],  async() => {
+    console.log("Received exit signal, attempting graceful shutdonw...");
+});
+onShutdown("xmltv-writer" , [],  async() => {
+    await xmltv.shutdown();
+} );
+
