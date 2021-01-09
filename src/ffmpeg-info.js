@@ -15,7 +15,7 @@ class FFMPEGInfo {
                     }
                 });
             });
-            var m = s.match( /version\s+([^\s]+)\s+[^\s].*Copyright/ )
+            var m = s.match( /version\s+([^\s]+)\s+.*Copyright/ )
             if (m == null) {
                 console.error("ffmpeg -version command output not in the expected format: " + s);
                 return s;
