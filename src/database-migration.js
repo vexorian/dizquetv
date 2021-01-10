@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 600;
+const TARGET_VERSION = 701;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -31,6 +31,9 @@ const STEPS = [
     [    400,    500, (db,channels) => splitServersSingleChannels(db, channels) ],
     [    500,    501, (db) => fixCorruptedServer(db) ],
     [    501,    600, () => extractFillersFromChannels() ],
+    [    600,    601, (db) => addFPS(db) ],
+    [    601,    700, (db) => migrateWatermark(db) ],
+    [    700,    701, (db) => addScalingAlgorithm(db) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -392,6 +395,8 @@ function ffmpeg() {
         normalizeAudioCodec: true,
         normalizeResolution: true,
         normalizeAudio: true,
+        maxFPS: 60,
+        scalingAlgorithm: "bicubic",
     }
 }
 
@@ -661,6 +666,95 @@ function extractFillersFromChannels() {
     console.log("Done extracting fillers from channels.");
    
 }
+
+function addFPS(db) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
+    ffmpegSettings.maxFPS = 60;
+    fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
+}
+
+function migrateWatermark(db, channelDB) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let w = 1920;
+    let h = 1080;
+
+    function parseResolutionString(s) {
+        var i = s.indexOf('x');
+        if (i == -1) {
+            i = s.indexOf("×");
+            if (i == -1) {
+               return {w:1920, h:1080}
+            }
+        }
+        return {
+            w: parseInt( s.substring(0,i) , 10 ),
+            h: parseInt( s.substring(i+1) , 10 ),
+        }
+    }
+    
+    if (
+        (ffmpegSettings.targetResolution != null)
+        && (typeof(ffmpegSettings.targetResolution) !== 'undefined')
+        && (typeof(ffmpegSettings.targetResolution) !== '')
+    ) {
+        let p = parseResolutionString( ffmpegSettings.targetResolution );
+        w = p.w;
+        h = p.h;
+    }
+    console.log(`Using ${w}x${h} as resolution to migrate new watermark settings.`);
+    function migrateChannel(channel) {
+        if (channel.overlayIcon === true) {
+            channel.watermark = {
+                enabled: true,
+                width: Math.max(0.001, Math.min(100, (channel.iconWidth*100) / w ) ),
+                verticalMargin: Math.max(0.000, Math.min(100, 2000 / h ) ),
+                horizontalMargin: Math.max(0.000, Math.min(100, 2000 / w ) ),
+                duration: channel.iconDuration,
+                fixedSize: false,
+                position: [
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                ][ channel.iconPosition ],
+                url: '', //same as channel icon
+                animated: false,
+            }
+        } else {
+            channel.watermark = {
+                enabled: false,
+            }
+        }
+        delete channel.overlayIcon;
+        delete channel.iconDuration;
+        delete channel.iconPosition;
+        delete channel.iconWidth;
+        return channel;
+    }
+
+    console.log("Extracting fillers from channels...");
+    let channels = path.join(process.env.DATABASE, 'channels');
+    let channelFiles = fs.readdirSync(channels);
+    for (let i = 0; i < channelFiles.length; i++) {
+        if (path.extname( channelFiles[i] ) === '.json') {
+            console.log("Migrating watermark in channel : " + channelFiles[i] +"..." );
+            let channelPath = path.join(channels, channelFiles[i]);
+            let channel = JSON.parse(fs.readFileSync(channelPath, 'utf-8'));
+            channel = migrateChannel(channel);
+            fs.writeFileSync( channelPath, JSON.stringify(channel), 'utf-8');
+        }
+    }
+    console.log("Done migrating watermarks in channels.");
+}
+
+function addScalingAlgorithm(db) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
+    ffmpegSettings.scalingAlgorithm = "bicubic";
+    fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
+}
+
 
 module.exports = {
     initDB: initDB,

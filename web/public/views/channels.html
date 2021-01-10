@@ -19,7 +19,7 @@
                 <p class="text-center text-danger">No channels found. Click the <span class="fa fa-plus"></span> to create a channel.</p>
             </td>
         </tr>
-        <tr ng-repeat="x in channels" ng-click="selectChannel($index)" style="cursor: pointer; height: 3em" ng-class="{'stealth-channel':(x.stealth===true)}" >
+        <tr ng-repeat="x in channels" ng-click="selectChannel($index)" style="cursor: pointer; height: 3em" ng-class="{'stealth-channel':(x.stealth===true), 'channel-row' : true }" >
             <td style='height: 3em'>
                 <div class="loader" ng-if="x.pending"></div>
                 <span ng-show="!x.pending">{{x.number}}</span>

@@ -91,6 +91,18 @@
             <br />
             <label>Video Buffer Size (k)</label>
             <input type="number" class="form-control form-control-sm" ng-model="settings.videoBufSize"/>
+            <br />
+            <label>Max Frame Rate</label>
+            <select class='form-control custom-select'  ng-model="settings.maxFPS" ria-describedby="fpsHelp"
+            ng-options="o.id as o.description for o in fpsOptions" ></select>
+            <small id='fpsHelp' class='form-text text-muted'>Will transcode videos that have FPS higher than this.</small>
+
+            <br />
+            <label>Scaling Algorithm</label>
+            <select class='form-control custom-select'  ng-model="settings.scalingAlgorithm" ria-describedby="scalingHelp"
+            ng-options="o.id as o.description for o in scalingOptions" ></select>
+            <small id='scalingHelp' class='form-text text-muted'>Scaling algorithm to use when the transcoder needs to change the video size.</small>
+
         </div>
 
         <div class="form-group">
@@ -172,8 +184,8 @@
             <div class="col-sm-9">
                 <div class="form-group">
                     <input id="disableOverlay" type="checkbox" ng-model="settings.disableChannelOverlay" ng-disabled="isTranscodingNotNeeded()" />
-                    <label for="disableOverlay">Disable Channel Overlay Globally</label>
-                    <small class="form-text text-muted">Toggling this option will disable channel overlays regardless of channel settings.
+                    <label for="disableOverlay">Disable Channel Watermark Globally</label>
+                    <small class="form-text text-muted">Toggling this option will disable channel watermarks regardless of channel settings.
                     </small>
                 </div>
             </div>

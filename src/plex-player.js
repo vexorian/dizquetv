@@ -60,7 +60,7 @@ class PlexPlayer {
             let plexSettings = db['plex-settings'].find()[0];
             let plexTranscoder = new PlexTranscoder(this.clientId, server, plexSettings, channel, lineupItem);
             this.plexTranscoder = plexTranscoder;
-            let enableChannelIcon = this.context.enableChannelIcon;
+            let watermark = this.context.watermark;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
             this.ffmpeg = ffmpeg;
             let streamDuration;
@@ -84,7 +84,7 @@ class PlexPlayer {
 
             let emitter = new EventEmitter();
             //setTimeout( () => {
-                let ff = await ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, enableChannelIcon, lineupItem.type); // Spawn the ffmpeg process
+                let ff = await ffmpeg.spawnStream(stream.streamUrl, stream.streamStats, streamStart, streamDuration, watermark, lineupItem.type); // Spawn the ffmpeg process
                 ff.pipe(outStream,  {'end':false} );
             //}, 100);
             plexTranscoder.startUpdatingPlex();

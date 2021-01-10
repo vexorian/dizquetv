@@ -1,5 +1,10 @@
 .pull-right { float: right; }
 
+.modal-semi-body {
+  padding: 1rem;
+  flex: 1 1 auto;
+}
+
 .commercials-panel {
   background-color: rgb(70, 70, 70);
   border-top: 1px solid #daa104;
@@ -249,15 +254,53 @@ table.tvguide {
   text-align: right;
 }
 
-.filler-list .list-group-item {
+.filler-list .list-group-item, .program-row {
   min-height: 1.5em;
 }
 
-.filler-list .list-group-item .title {
+.filler-list .list-group-item .title, .program-row .title {
   margin-right: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+div.channel-tools {
+  max-height: 20em;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-top: 1px solid #888;
+  border-bottom: 1px solid #888;
+}
+div.channel-tools p {
+  font-size: 0.5rem;
+  margin-top: 0.01rem;
+}
+
+div.programming-panes {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+div.programming-panes div.reverse {
+  flex-direction: row-reverse;
+}
+div.programming-panes div.programming-pane {
+  overflow-y: auto;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+div.programming-programs div.list-group-item {
+  height: 1.5rem;
+}
+.channel-editor-modal-big {
+  width:1200px;
+  min-width: 98%;
 }
 
 /* Safari */
@@ -271,3 +314,45 @@ table.tvguide {
   100% { transform: rotate(360deg); }
 }
 
+
+.program-row:nth-child(odd), .filler-row:nth-child(odd), .channel-row:nth-child(odd)  {
+  background-color: #eeeeee;
+}
+
+.tools-pane button {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.tools-pane button:not(.btn-danger),
+.tools-pane .input-group-text,
+.tools-pane select {
+  border: 1px solid #999999 !important;
+}
+.tools-pane input,
+.tools-pane select {
+  font-size: 14px;
+}
+.tools-pane select {
+  text-align: center;
+  border-radius: 0;
+  padding: 0 16px 0 0;
+  height: initial;  
+}
+.tools-pane select:first-of-type {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+.tools-pane .input-group-prepend + button {
+  border-left: 0;
+}
+.tools-pane input.form-control {
+  border-color: #999999;
+}
+.watermark-preview {
+  background: linear-gradient(180deg, rgb(90, 90, 90) 0%, rgb(110, 110, 110) 35%, rgb(130, 130, 130) 100%, rgb(150, 150, 150) 100%);
+  border: 2px solid black;
+}
+.watermark-preview .alternate-aspect {
+  background : rgba(255,255,255, 0.1);
+}

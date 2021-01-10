@@ -1,7 +1,7 @@
 module.exports = {
     getCurrentProgramAndTimeElapsed: getCurrentProgramAndTimeElapsed,
     createLineup: createLineup,
-    isChannelIconEnabled: isChannelIconEnabled,
+    getWatermark: getWatermark,
 }
 
 let channelCache = require('./channel-cache');
@@ -9,6 +9,8 @@ const SLACK = require('./constants').SLACK;
 const randomJS = require("random-js");
 const Random = randomJS.Random;
 const random = new Random( randomJS.MersenneTwister19937.autoSeed() );
+
+module.exports.random = random;
 
 function getCurrentProgramAndTimeElapsed(date, channel) {
     let channelStartTime = (new Date(channel.startTime)).getTime();
@@ -251,19 +253,44 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
     }
 }
 
-function isChannelIconEnabled(  ffmpegSettings, channel, type) {
+function getWatermark(  ffmpegSettings, channel, type) {
     if (! ffmpegSettings.enableFFMPEGTranscoding || ffmpegSettings.disableChannelOverlay ) {
-        return false;
+        return null;
     }
     let d = channel.disableFillerOverlay;
     if (typeof(d) === 'undefined') {
         d = true;
     }
     if ( (typeof type !== `undefined`) && (type == 'commercial') && d ) {
-        return false;
+        return null;
     }
-    if (channel.icon === '' || !channel.overlayIcon) {
-        return false;
+    let e = false;
+    let icon = undefined;
+    let watermark = {};
+    if (typeof(channel.watermark) !== 'undefined') {
+        watermark = channel.watermark;
+        e = (watermark.enabled === true);
+        icon = watermark.url;
     }
-    return true;
+    if (! e) {
+        return null;
+    }
+    if ( (typeof(icon) === 'undefined') || (icon === '') ) {
+        icon = channel.icon;
+        if ( (typeof(icon) === 'undefined') || (icon === '') ) {
+            return null;
+        }
+    }
+    let result = {
+        url: icon,
+        width: watermark.width,
+        verticalMargin: watermark.verticalMargin,
+        horizontalMargin: watermark.horizontalMargin,
+        duration: watermark.duration,
+        position: watermark.position,
+        fixedSize: (watermark.fixedSize === true),
+        animated: (watermark.animated === true),
+    }
+    return result;
 }
+
