@@ -185,10 +185,10 @@ class TVGuideService
             await this._throttle();
             if (
                 (programs.length > 0)
-                && isProgramFlex(x.program)
+                && isProgramFlex(x.program, channel)
                 && (
                     (x.program.duration <= constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS)
-                    || isProgramFlex(programs[ programs.length - 1].program)
+                    || isProgramFlex(programs[ programs.length - 1].program, channel)
                 )
             ) {
                 //meld with previous
@@ -197,7 +197,7 @@ class TVGuideService
                 melded += x.program.duration;
                 if (
                     (melded > constants.TVGUIDE_MAXIMUM_PADDING_LENGTH_MS)
-                    && !isProgramFlex(programs[ programs.length - 1].program)
+                    && !isProgramFlex(programs[ programs.length - 1].program, channel)
                 ) {
                     y.program.duration -= melded;
                     programs[ programs.length - 1] = y;
@@ -214,7 +214,7 @@ class TVGuideService
                 } else {
                     programs[ programs.length - 1] = y;
                 }
-            } else if (isProgramFlex(x.program) ) {
+            } else if (isProgramFlex(x.program, channel) ) {
                 melded = 0;
                 programs.push( {
                     start: x.start,
@@ -238,12 +238,14 @@ class TVGuideService
                 x.program = clone(x.program);
                 x.program.duration -= d;
             }
-            if (x.program.duration == 0) throw Error("D");
+            if (x.program.duration == 0) {
+                console.error("There's a program with duration 0?");
+            }
         }
         result.programs = [];
         for (let i = 0; i < programs.length; i++) {
             await this._throttle();
-            if (isProgramFlex( programs[i].program) ) {
+            if (isProgramFlex( programs[i].program, channel) ) {
                 let start = programs[i].start;
                 let duration = programs[i].program.duration;
                 if (start <= t0) {
@@ -412,10 +414,21 @@ function _wait(t) {
 }
 
 
+function getChannelStealthDuration(channel) {
+    if (
+        (typeof(channel.guideMinimumDurationSeconds) !== 'undefined')
+        &&
+        ! isNaN(channel.guideMinimumDurationSeconds)
+    ) {
+        return channel.guideMinimumDurationSeconds * 1000;
+    } else {
+        return constants.DEFAULT_GUIDE_STEALTH_DURATION;
+    }
+    
+}
 
-
-function isProgramFlex(program) {
-    return program.isOffline || program.duration <= constants.STEALTH_DURATION
+function isProgramFlex(program, channel) {
+    return program.isOffline || program.duration <= getChannelStealthDuration(channel)
 }
 
 function clone(o) {
@@ -434,8 +447,13 @@ function makeEntry(channel, x) {
     let title = undefined;
     let icon = undefined;
     let sub = undefined;
-    if (isProgramFlex(x.program)) {
-        title = channel.name;
+    if (isProgramFlex(x.program, channel)) {
+        if ( (typeof(channel.guideFlexPlaceholder) === 'string')
+         && channel.guideFlexPlaceholder !== "") {
+            title = channel.guideFlexPlaceholder;
+        } else {
+            title = channel.name;
+        }
         icon = channel.icon;
     } else {
         title = x.program.showTitle;

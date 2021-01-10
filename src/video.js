@@ -287,11 +287,13 @@ function video( channelDB , fillerDB, db) {
             };
         }
         
+        let combinedChannel = JSON.parse( JSON.stringify(brandChannel) );
+        combinedChannel.transcoding = channel.transcoding;
 
         let playerContext = {
             lineupItem : lineupItem,
             ffmpegSettings : ffmpegSettings,
-            channel: brandChannel,
+            channel: combinedChannel,
             db: db,
             m3u8: m3u8,
         }
