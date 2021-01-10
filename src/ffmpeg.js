@@ -322,10 +322,10 @@ class FFMPEG extends events.EventEmitter {
                 var vert = Math.round( mpVert * iH / 100.0 );
 
                 let posAry = {
-                    'top-left': `${horz}:${vert}`,
-                    'top-right': `W-w-${horz}:${vert}`,
-                    'bottom-left': `${horz}:H-h-${vert}`,
-                    'bottom-right':  `W-w-${horz}:H-h-${vert}`,
+                    'top-left': `x=${horz}:y=${vert}`,
+                    'top-right': `x=W-w-${horz}:y=${vert}`,
+                    'bottom-left': `x=${horz}:y=H-h-${vert}`,
+                    'bottom-right':  `x=W-w-${horz}:y=H-h-${vert}`,
                 }
                 let icnDur = ''
                 if (watermark.duration > 0) {
@@ -340,7 +340,11 @@ class FFMPEG extends events.EventEmitter {
                 if (typeof(p) === 'undefined') {
                     throw Error("Invalid watermark position: " + watermark.position);
                 }
-                videoComplex += `;${currentVideo}${waterVideo}overlay=${p}${icnDur}[comb]`
+                let overlayShortest = "";
+                if (watermark.animated) {
+                    overlayShortest = "shortest=1:";
+                }
+                videoComplex += `;${currentVideo}${waterVideo}overlay=${overlayShortest}${p}${icnDur}[comb]`
                 currentVideo = '[comb]';
             }
 
