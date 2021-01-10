@@ -17,7 +17,21 @@ module.exports = function ($http, $window, $interval) {
                     url: 'https://plex.tv/api/v2/pins?strong=true',
                     headers: headers
                 }).then((res) => {
-                    $window.open('https://app.plex.tv/auth/#!?clientID=rg14zekk3pa5zp4safjwaa8z&context[device][version]=Plex OAuth&context[device][model]=Plex OAuth&code=' + res.data.code + '&context[device][product]=Plex Web')
+                    const plexWindowSizes = {
+                        width: 800,
+                        height: 700
+                    }
+
+                    const plexWindowPosition = {
+                        width: window.innerWidth / 2 + plexWindowSizes.width,
+                        height: window.innerHeight / 2 - plexWindowSizes.height
+                    }
+
+                    const authModal = $window.open(
+                        `https://app.plex.tv/auth/#!?clientID=rg14zekk3pa5zp4safjwaa8z&context[device][version]=Plex OAuth&context[device][model]=Plex OAuth&code=${res.data.code}&context[device][product]=Plex Web`, 
+                        "_blank", 
+                        `height=${plexWindowSizes.height}, width=${plexWindowSizes.width}, top=${plexWindowPosition.height}, left=${plexWindowPosition.width}`
+                    );
                     let limit = 120000 // 2 minute time out limit
                     let poll = 2000 // check every 2 seconds for token
                     let interval = $interval(() => {
@@ -29,11 +43,17 @@ module.exports = function ($http, $window, $interval) {
                             limit -= poll
                             if (limit <= 0) {
                                 $interval.cancel(interval)
+                                if(authModal) {
+                                    authModal.close();
+                                }
                                 reject('Timed Out. Failed to sign in a timely manner (2 mins)')
                             }
                             if (r2.data.authToken !== null) {
                                 $interval.cancel(interval)
-
+                                if(authModal) {
+                                    authModal.close();
+                                }
+                                
                                 headers['X-Plex-Token'] = r2.data.authToken
 
                                 $http({
@@ -63,6 +83,9 @@ module.exports = function ($http, $window, $interval) {
                             }
                         }, (err) => {
                             $interval.cancel(interval)
+                            if(authModal) {
+                                authModal.close();
+                            }
                             reject(err)
                         })
                         
