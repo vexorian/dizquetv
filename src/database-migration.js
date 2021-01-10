@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 700;
+const TARGET_VERSION = 701;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -33,6 +33,7 @@ const STEPS = [
     [    501,    600, () => extractFillersFromChannels() ],
     [    600,    601, (db) => addFPS(db) ],
     [    601,    700, (db) => migrateWatermark(db) ],
+    [    700,    701, (db) => addScalingAlgorithm(db) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -395,6 +396,7 @@ function ffmpeg() {
         normalizeResolution: true,
         normalizeAudio: true,
         maxFPS: 60,
+        scalingAlgorithm: "bicubic",
     }
 }
 
@@ -745,6 +747,14 @@ function migrateWatermark(db, channelDB) {
     }
     console.log("Done migrating watermarks in channels.");
 }
+
+function addScalingAlgorithm(db) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
+    ffmpegSettings.scalingAlgorithm = "bicubic";
+    fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
+}
+
 
 module.exports = {
     initDB: initDB,
