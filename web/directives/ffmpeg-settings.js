@@ -60,6 +60,13 @@ module.exports = function (dizquetv, resolutionOptions) {
                 {id: 60, description: "60 frames per second"},
                 {id: 120, description: "120 frames per second"},
             ];
+            scope.scalingOptions = [
+                {id: "bicubic", description: "bicubic (default)"},
+                {id: "fast_bilinear", description: "fast_bilinear"},
+                {id: "lanczos", description: "lanczos"},
+                {id: "spline", description: "spline"},
+            ];
+
         }
     }
 }
