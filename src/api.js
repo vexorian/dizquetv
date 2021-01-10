@@ -565,7 +565,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         var data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
         for (var i = 0; i < channels.length; i++) {
           if (channels[i].stealth!==true) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-chno="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
+            data += `#EXTINF:0 tvg-id="${channels[i].number}" CUID="${channels[i].number}" tvg-chno="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
             data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
           }
         }

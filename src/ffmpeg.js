@@ -9,6 +9,7 @@ class FFMPEG extends events.EventEmitter {
         super()
         this.opts = opts;
         this.errorPicturePath = `http://localhost:${process.env.PORT}/images/generic-error-screen.png`;
+        this.ffmpegName = "unnamed ffmpeg";
         if (! this.opts.enableFFMPEGTranscoding) {
             //this ensures transcoding is completely disabled even if
             // some settings are true
@@ -255,7 +256,7 @@ class FFMPEG extends events.EventEmitter {
 
             // Resolution fix: Add scale filter, current stream becomes [siz]
             let beforeSizeChange = currentVideo;
-            let algo = "fast_bilinear";
+            let algo =  this.opts.scalingAlgorithm;
             let resizeMsg = "";
             if (
                   (this.ensureResolution && ( streamStats.anamorphic || (iW != this.wantedW || iH != this.wantedH) ) )
@@ -321,10 +322,10 @@ class FFMPEG extends events.EventEmitter {
                 var vert = Math.round( mpVert * iH / 100.0 );
 
                 let posAry = {
-                    'top-left': `${horz}:${vert}`,
-                    'top-right': `W-w-${horz}:${vert}`,
-                    'bottom-left': `${horz}:H-h-${vert}`,
-                    'bottom-right':  `W-w-${horz}:H-h-${vert}`,
+                    'top-left': `x=${horz}:y=${vert}`,
+                    'top-right': `x=W-w-${horz}:y=${vert}`,
+                    'bottom-left': `x=${horz}:y=H-h-${vert}`,
+                    'bottom-right':  `x=W-w-${horz}:y=H-h-${vert}`,
                 }
                 let icnDur = ''
                 if (watermark.duration > 0) {
@@ -339,7 +340,11 @@ class FFMPEG extends events.EventEmitter {
                 if (typeof(p) === 'undefined') {
                     throw Error("Invalid watermark position: " + watermark.position);
                 }
-                videoComplex += `;${currentVideo}${waterVideo}overlay=${p}${icnDur}[comb]`
+                let overlayShortest = "";
+                if (watermark.animated) {
+                    overlayShortest = "shortest=1:";
+                }
+                videoComplex += `;${currentVideo}${waterVideo}overlay=${overlayShortest}${p}${icnDur}[comb]`
                 currentVideo = '[comb]';
             }
 
@@ -464,30 +469,45 @@ class FFMPEG extends events.EventEmitter {
         ffmpegArgs.push(`pipe:1`)
 
         let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
+        if (this.hasBeenKilled) {
+            return ;
+        }
         this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
+        if (this.hasBeenKilled) {
+            this.ffmpeg.kill("SIGKILL");
+            return;
+        }
 
-        let ffmpegName = (isConcatPlaylist ? "Concat FFMPEG":  "Stream FFMPEG");
 
+        this.ffmpegName = (isConcatPlaylist ? "Concat FFMPEG":  "Stream FFMPEG");
+
+        this.ffmpeg.on('error', (code, signal) => {
+            console.log( `${this.ffmpegName} received error event: ${code}, ${signal}` );
+         });
         this.ffmpeg.on('exit', (code, signal) => {
             if (code === null) {
-                console.log( `${ffmpegName} exited due to signal: ${signal}` );
+                if (!this.hasBeenKilled) {
+                    console.log( `${this.ffmpegName} exited due to signal: ${signal}` );
+                } else {
+                    console.log( `${this.ffmpegName} exited due to signal: ${signal} as expected.`);
+                }
                 this.emit('close', code)
             } else if (code === 0) {
-                console.log( `${ffmpegName} exited normally.` );
+                console.log( `${this.ffmpegName} exited normally.` );
                 this.emit('end')
             } else if (code === 255) {
                 if (this.hasBeenKilled) {
-                    console.log( `${ffmpegName} finished with code 255.` );
+                    console.log( `${this.ffmpegName} finished with code 255.` );
                     this.emit('close', code)
                     return;
                 }
                 if (! this.sentData) {
                     this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}` })
                 }
-                console.log( `${ffmpegName} exited with code 255.` );
+                console.log( `${this.ffmpegName} exited with code 255.` );
                 this.emit('close', code)
             } else {
-                console.log( `${ffmpegName} exited with code ${code}.` );
+                console.log( `${this.ffmpegName} exited with code ${code}.` );
                 this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}` })
             }
         });
@@ -495,9 +515,11 @@ class FFMPEG extends events.EventEmitter {
         return this.ffmpeg.stdout;
     }
     kill() {
-        if (typeof this.ffmpeg != "undefined") {
-            this.hasBeenKilled = true;
-            this.ffmpeg.kill()
+        console.log(`${this.ffmpegName} RECEIVED kill() command`);
+        this.hasBeenKilled = true;
+        if (typeof(this.ffmpeg) != "undefined") {
+            console.log(`${this.ffmpegName} this.ffmpeg.kill()`);
+            this.ffmpeg.kill("SIGKILL")
         }
     }
 }
