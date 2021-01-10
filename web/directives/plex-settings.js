@@ -18,14 +18,16 @@ module.exports = function (plex, dizquetv, $timeout) {
                 let servers = await dizquetv.getPlexServers();
                 scope.serversPending = false;
                 scope.servers = servers;
-                for (let i = 0; i < scope.servers.length; i++) {
-                    scope.servers[i].uiStatus = 0;
-                    scope.servers[i].backendStatus = 0;
-                    let t = (new Date()).getTime();
-                    scope.servers[i].uiPending = t;
-                    scope.servers[i].backendPending = t;
-                    scope.refreshUIStatus(t, i);
-                    scope.refreshBackendStatus(t, i);
+                if(servers) {
+                    for (let i = 0; i < scope.servers.length; i++) {
+                        scope.servers[i].uiStatus = 0;
+                        scope.servers[i].backendStatus = 0;
+                        let t = (new Date()).getTime();
+                        scope.servers[i].uiPending = t;
+                        scope.servers[i].backendPending = t;
+                        scope.refreshUIStatus(t, i);
+                        scope.refreshBackendStatus(t, i);
+                    }
                 }
                 setTimeout( () => { scope.$apply() }, 31000 );
                 scope.$apply();
@@ -51,13 +53,15 @@ module.exports = function (plex, dizquetv, $timeout) {
 
             scope.isAnyUIBad = () => {
                 let t = (new Date()).getTime();
-                for (let i = 0; i < scope.servers.length; i++) {
-                    let s = scope.servers[i];
-                    if (
-                        (s.uiStatus == -1)
-                        || ( (s.uiStatus == 0) && (s.uiPending + 30000 < t) )
-                    ) {
-                        return true;
+                if(scope.servers) {
+                    for (let i = 0; i < scope.servers.length; i++) {
+                        let s = scope.servers[i];
+                        if (
+                            (s.uiStatus == -1)
+                            || ( (s.uiStatus == 0) && (s.uiPending + 30000 < t) )
+                        ) {
+                            return true;
+                        }
                     }
                 }
                 return false;
@@ -65,13 +69,15 @@ module.exports = function (plex, dizquetv, $timeout) {
 
             scope.isAnyBackendBad = () => {
                 let t = (new Date()).getTime();
-                for (let i = 0; i < scope.servers.length; i++) {
-                    let s = scope.servers[i];
-                    if (
-                        (s.backendStatus == -1)
-                        || ( (s.backendStatus == 0) && (s.backendPending + 30000 < t) )
-                    ) {
-                        return true;
+                if(scope.servers) {
+                    for (let i = 0; i < scope.servers.length; i++) {
+                        let s = scope.servers[i];
+                        if (
+                            (s.backendStatus == -1)
+                            || ( (s.backendStatus == 0) && (s.backendPending + 30000 < t) )
+                        ) {
+                            return true;
+                        }
                     }
                 }
                 return false;
@@ -146,7 +152,7 @@ module.exports = function (plex, dizquetv, $timeout) {
             }
 
             scope.shouldDisableSubtitles = () => {
-                return scope.settings.forceDirectPlay || (scope.settings.streamPath === "direct" );
+                return scope.settings && (scope.settings.forceDirectPlay || (scope.settings.streamPath === "direct" ));
             }
 
             scope.addPlexServer = async () => {
@@ -216,10 +222,10 @@ module.exports = function (plex, dizquetv, $timeout) {
                 {id:"direct",description:"Direct"}
             ];
             scope.hideIfNotPlexPath = () => {
-                return scope.settings.streamPath != 'plex'
+                return scope.settings && scope.settings.streamPath != 'plex'
             };
             scope.hideIfNotDirectPath = () => {
-                return scope.settings.streamPath != 'direct'
+                return scope.settings && scope.settings.streamPath != 'direct'
             };
             scope.maxAudioChannelsOptions=[
                 {id:"1",description:"1.0"},
