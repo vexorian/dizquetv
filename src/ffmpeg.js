@@ -256,7 +256,7 @@ class FFMPEG extends events.EventEmitter {
 
             // Resolution fix: Add scale filter, current stream becomes [siz]
             let beforeSizeChange = currentVideo;
-            let algo = "fast_bilinear";
+            let algo =  this.opts.scalingAlgorithm;
             let resizeMsg = "";
             if (
                   (this.ensureResolution && ( streamStats.anamorphic || (iW != this.wantedW || iH != this.wantedH) ) )
