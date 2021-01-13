@@ -158,7 +158,7 @@ class FFMPEG extends events.EventEmitter {
             // new currentVideo value.
             //
             // When adding filters, make sure that
-            // videoComplex always begins wiht ; and doesn't end with ;
+            // videoComplex always begins with ; and doesn't end with ;
 
             if ( streamStats.videoFramerate >= this.opts.maxFPS + 0.000001 ) {
                 videoComplex += `;${currentVideo}fps=${this.opts.maxFPS}[fpchange]`;
