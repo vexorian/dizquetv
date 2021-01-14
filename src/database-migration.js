@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 701;
+const TARGET_VERSION = 702;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -34,6 +34,7 @@ const STEPS = [
     [    600,    601, (db) => addFPS(db) ],
     [    601,    700, (db) => migrateWatermark(db) ],
     [    700,    701, (db) => addScalingAlgorithm(db) ],
+    [    701,    702, (db) => addDeinterlaceFilter(db) ]
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -397,6 +398,7 @@ function ffmpeg() {
         normalizeAudio: true,
         maxFPS: 60,
         scalingAlgorithm: "bicubic",
+        deinterlaceFilter: "none"
     }
 }
 
@@ -755,6 +757,12 @@ function addScalingAlgorithm(db) {
     fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
 }
 
+function addDeinterlaceFilter(db) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
+    ffmpegSettings.deinterlaceFilter = "none";
+    fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
+}
 
 module.exports = {
     initDB: initDB,

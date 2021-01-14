@@ -236,6 +236,7 @@ lang=en`
                     // Rounding framerate avoids scenarios where
                     // 29.9999999 & 30 don't match.
                     ret.videoDecision = (typeof stream.decision === 'undefined') ? 'copy' : stream.decision;
+                    ret.videoScanType = stream.scanType;
                 }
                 // Audio. Only look at stream being used
                 if (stream["streamType"] == "2" && stream["selected"] == "1") {
