@@ -165,6 +165,12 @@ class FFMPEG extends events.EventEmitter {
                 currentVideo ="[fpchange]";
             }
 
+            // deinterlace if desired
+            if (streamStats.videoScanType == 'interlaced' && this.opts.deinterlaceFilter != 'none') {
+                videoComplex += `;${currentVideo}${this.opts.deinterlaceFilter}[deinterlaced]`;
+                currentVideo = "[deinterlaced]";
+            }
+
             // prepare input streams
             if ( typeof(streamUrl.errorTitle) !== 'undefined') {
                 doOverlay = false; //never show icon in the error screen
