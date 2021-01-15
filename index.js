@@ -50,12 +50,14 @@ if (!fs.existsSync(process.env.DATABASE)) {
 if(!fs.existsSync(path.join(process.env.DATABASE, 'images'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'images'))
 }
-
 if(!fs.existsSync(path.join(process.env.DATABASE, 'channels'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'channels'))
 }
 if(!fs.existsSync(path.join(process.env.DATABASE, 'filler'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'filler'))
+}
+if(!fs.existsSync(path.join(process.env.DATABASE, 'cache'))) {
+    fs.mkdirSync(path.join(process.env.DATABASE, 'cache'))
 }
 
 

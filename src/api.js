@@ -9,11 +9,13 @@ const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 const FillerDB = require('./dao/filler-db');
 const timeSlotsService = require('./services/time-slots-service');
+const M3uService = require('./m3u-service');
 
 module.exports = { router: api }
 function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
-    let router = express.Router()
-    let plexServerDB = new PlexServerDB(channelDB, channelCache, db);
+    const m3uService = new M3uService(channelDB);
+    const router = express.Router()
+    const plexServerDB = new PlexServerDB(channelDB, channelCache, db);
 
     router.get('/api/version', async (req, res) => {
       try {
@@ -176,6 +178,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     })
     router.post('/api/channel', async (req, res) => {
       try {
+        await m3uService.clearCache();
         cleanUpChannel(req.body);
         await channelDB.saveChannel( req.body.number, req.body );
         channelCache.clear();
@@ -188,6 +191,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     })
     router.put('/api/channel', async (req, res) => {
       try {
+        await m3uService.clearCache();
         cleanUpChannel(req.body);
         await channelDB.saveChannel( req.body.number, req.body );
         channelCache.clear();
@@ -200,6 +204,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     })
     router.delete('/api/channel', async (req, res) => {
       try {
+        await m3uService.clearCache();
         await channelDB.deleteChannel( req.body.number  );
         channelCache.clear();
         res.send( { number: req.body.number} )
@@ -544,6 +549,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     //tool services
     router.post('/api/channel-tools/time-slots', async (req, res) => {
       try {
+        await m3uService.clearCache();
         let toolRes = await timeSlotsService(req.body.programs, req.body.schedule);
         if ( typeof(toolRes.userError) !=='undefined') {
           return res.status(400).send(toolRes.userError);
@@ -558,21 +564,9 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     // CHANNELS.M3U Download 
     router.get('/api/channels.m3u', async (req, res) => {
       try {
-        res.type('text')
-        let channels = await channelDB.getAllChannels();
-        channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
-        let tvg = `${req.protocol}://${req.get('host')}/api/xmltv.xml`
-        var data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
-        for (var i = 0; i < channels.length; i++) {
-          if (channels[i].stealth!==true) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" CUID="${channels[i].number}" tvg-chno="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
-            data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
-          }
-        }
-        if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
-            data += `${req.protocol}://${req.get('host')}/setup\n`
-        }
+        res.type('text');
+        const host = `${req.protocol}://${req.get('host')}`;
+        const data = await m3uService.getChannelList(host);
         res.send(data)
       } catch(err) {
         console.error(err);
