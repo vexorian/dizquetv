@@ -356,3 +356,10 @@ div.programming-programs div.list-group-item {
 .watermark-preview .alternate-aspect {
   background : rgba(255,255,255, 0.1);
 }
+
+
+#dizquetv-logo {
+  width: 1em;
+  height: 1em;
+  margin-bottom: 0.25em;
+}
