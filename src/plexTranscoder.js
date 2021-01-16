@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
+const fs = require('fs');
 
 class PlexTranscoder {
     constructor(clientId, server, settings, channel, lineupItem) {
@@ -73,6 +74,14 @@ class PlexTranscoder {
             // Update transcode decision for session
             await this.getDecision(stream.directPlay);
             stream.streamUrl = (this.settings.streamPath === 'direct') ? this.file : this.plexFile;
+            if(this.settings.streamPath === 'direct') {
+                fs.access(this.file, fs.F_OK, (err) => {
+                    if (err) {
+                      throw Error("Can't access this file", err);
+                      return
+                    }
+                })
+            }
             if (typeof(stream.streamUrl) == 'undefined') {
                 throw Error("Direct path playback is not possible for this program because it was registered at a time when the direct path settings were not set. To fix this, you must either revert the direct path setting or rebuild this channel.");
             }
@@ -290,10 +299,6 @@ lang=en`
     }
 
     async getDecisionUnmanaged(directPlay) {
-        if (this.settings.streamPath === 'direct') {
-            console.log("Skip get transcode decision because direct path is enabled");
-            return;
-        }
         let res = await axios.get(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, {
             headers: { Accept: 'application/json' }
         })
