@@ -37,7 +37,7 @@ class OfflinePlayer {
             } else {
                 ff = await ffmpeg.spawnOffline(duration);
             }
-            ff.pipe(outStream);
+            ff.pipe(outStream,  {'end':false} );
 
             ffmpeg.on('end', () => {
                 emitter.emit('end');
@@ -45,8 +45,32 @@ class OfflinePlayer {
             ffmpeg.on('close', () => {
                 emitter.emit('close');
             });
-            ffmpeg.on('error', (err) => {
-                emitter.emit('error', err);
+            ffmpeg.on('error', async (err) => {
+                //wish this code wasn't repeated.
+                if (! this.error ) {
+                    console.log("Replacing failed stream with error stream");
+                    ff.unpipe(outStream);
+                    ffmpeg.removeAllListeners('data');
+                    ffmpeg.removeAllListeners('end');
+                    ffmpeg.removeAllListeners('error');
+                    ffmpeg.removeAllListeners('close');
+                    ffmpeg = new FFMPEG(this.context.ffmpegSettings, this.context.channel);  // Set the transcoder options
+                    ffmpeg.on('close', () => {
+                        emitter.emit('close');
+                    });
+                    ffmpeg.on('end', () => {
+                        emitter.emit('end');
+                    });
+                    ffmpeg.on('error', (err) => {
+                        emitter.emit('error', err );
+                    });
+
+                    ff = await ffmpeg.spawnError('oops', 'oops', Math.min(duration, 60000) );
+                    ff.pipe(outStream);
+                } else {
+                    emitter.emit('error', err);
+                }
+
             });
             return emitter;
         } catch(err) {
