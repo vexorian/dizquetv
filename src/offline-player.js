@@ -19,6 +19,7 @@ class OfflinePlayer {
             context.channel.offlineSoundtrack = undefined;
         }
         this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
+        this.ffmpeg.setAudioOnly(this.context.audioOnly);
     }
 
     cleanUp() {
@@ -55,6 +56,7 @@ class OfflinePlayer {
                     ffmpeg.removeAllListeners('error');
                     ffmpeg.removeAllListeners('close');
                     ffmpeg = new FFMPEG(this.context.ffmpegSettings, this.context.channel);  // Set the transcoder options
+                    ffmpeg.setAudioOnly(this.context.audioOnly);
                     ffmpeg.on('close', () => {
                         emitter.emit('close');
                     });

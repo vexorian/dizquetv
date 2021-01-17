@@ -62,6 +62,7 @@ class PlexPlayer {
             this.plexTranscoder = plexTranscoder;
             let watermark = this.context.watermark;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+            ffmpeg.setAudioOnly( this.context.audioOnly );
             this.ffmpeg = ffmpeg;
             let streamDuration;
             if (typeof(lineupItem.streamDuration)!=='undefined') {
@@ -104,6 +105,7 @@ class PlexPlayer {
                 ffmpeg.removeAllListeners('error');
                 ffmpeg.removeAllListeners('close');
                 ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+                ffmpeg.setAudioOnly(this.context.audioOnly);
                 ffmpeg.on('close', () => {
                     emitter.emit('close');
                 });
