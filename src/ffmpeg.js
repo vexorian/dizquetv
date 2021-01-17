@@ -110,8 +110,8 @@ class FFMPEG extends events.EventEmitter {
         
         if (limitRead === true)
             ffmpegArgs.push(`-re`)
+              
         
-
         if (typeof startTime !== 'undefined')
             ffmpegArgs.push(`-ss`, startTime)
         
@@ -192,18 +192,20 @@ class FFMPEG extends events.EventEmitter {
                         '-loop', '1',
                         '-i', `${this.channel.offlinePicture}`,
                     );
-                    videoComplex = `;[0:0]loop=loop=-1:size=1:start=0[looped];[looped]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    videoComplex = `;[${inputFiles++}:0]loop=loop=-1:size=1:start=0[looped];[looped]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 } else if (this.opts.errorScreen == 'static') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `nullsrc=s=64x36`);
                     videoComplex = `;geq=random(1)*255:128:128[videoz];[videoz]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    inputFiles++;
                 } else if (this.opts.errorScreen == 'testsrc') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `testsrc=size=${iW}x${iH}`,
                     );
                     videoComplex = `;realtime[videox]`;
+                    inputFiles++;
                 } else if (this.opts.errorScreen == 'text') {
                     var sz2 = Math.ceil( (iH) / 33.0);
                     var sz1 = Math.ceil( sz2 * 3. / 2. );
@@ -213,6 +215,7 @@ class FFMPEG extends events.EventEmitter {
                         '-f', 'lavfi',
                         '-i', `color=c=black:s=${iW}x${iH}`
                     );
+                    inputFiles++;
 
                     videoComplex = `;drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${streamUrl.errorTitle}',drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${streamUrl.subtitle}'[videoy];[videoy]realtime[videox]`;
                 } else if (this.opts.errorScreen == 'blank') {
@@ -220,13 +223,15 @@ class FFMPEG extends events.EventEmitter {
                         '-f', 'lavfi',
                         '-i', `color=c=black:s=${iW}x${iH}`
                     );
+                    inputFiles++;
                     videoComplex = `;realtime[videox]`;
                 } else {//'pic'
                     ffmpegArgs.push(
                         '-loop', '1',
                         '-i', `${this.errorPicturePath}`,
                     );
-                    videoComplex = `;[0:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    inputFiles++;
+                    videoComplex = `;[${videoFile+1}:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 }
                 let durstr = `duration=${streamStats.duration}ms`;
                 //silent
@@ -239,12 +244,14 @@ class FFMPEG extends events.EventEmitter {
                         ffmpegArgs.push('-i', `${this.channel.offlineSoundtrack}`);
                         // I don't really understand why, but you need to use this
                         // 'size' in order to make the soundtrack actually loop
-                        audioComplex = `;[1:a]aloop=loop=-1:size=2147483647[audioy]`;
+                        audioComplex = `;[${inputFiles++}:a]aloop=loop=-1:size=2147483647[audioy]`;
                     }
                 } else if (this.opts.errorAudio == 'whitenoise') {
-                    audioComplex = `;aevalsrc=-2+0.1*random(0):${durstr}[audioy]`;
+                    audioComplex = `;aevalsrc=random(0):${durstr}[audioy]`;
+                    this.volumePercent = Math.min(70, this.volumePercent);
                 } else if (this.opts.errorAudio == 'sine') {
-                    audioComplex = `;sine=f=440:${durstr}[audiox];[audiox]volume=-35dB[audioy]`;
+                    audioComplex = `;sine=f=440:${durstr}[audioy]`;
+                    this.volumePercent = Math.min(70, this.volumePercent);
                 }
                 ffmpegArgs.push('-pix_fmt' , 'yuv420p' );
                 audioComplex += ';[audioy]arealtime[audiox]';
@@ -405,11 +412,11 @@ class FFMPEG extends events.EventEmitter {
             }
 
             ffmpegArgs.push(
-                            '-map', currentVideo,
-                            '-map', currentAudio,
-                            `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
-                            `-flags`, `cgop+ilme`,
-                            `-sc_threshold`, `1000000000`
+                '-map', currentVideo,
+                '-map', currentAudio,
+                `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
+                `-flags`, `cgop+ilme`,
+                `-sc_threshold`, `1000000000`
             );
             if ( transcodeVideo ) {
                 // add the video encoder flags

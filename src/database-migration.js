@@ -34,6 +34,7 @@ const STEPS = [
     [    600,    601, (db) => addFPS(db) ],
     [    601,    700, (db) => migrateWatermark(db) ],
     [    700,    701, (db) => addScalingAlgorithm(db) ],
+    [    701,    703, (db,channels,dir) => reAddIcon(dir) ],
     [    701,    702, (db) => addDeinterlaceFilter(db) ]
 ]
 
@@ -333,7 +334,7 @@ function commercialsRemover(db) {
 }
 
 
-function initDB(db, channelDB ) {
+function initDB(db, channelDB, dir ) {
     if (typeof(channelDB) === 'undefined') {
         throw Error("???");
     }
@@ -348,7 +349,7 @@ function initDB(db, channelDB ) {
                 ran =  true;
                 console.log("Migrating from db version " + dbVersion.version + " to: " + STEPS[i][1] + "...");
                 try {
-                    STEPS[i][2](db, channelDB);
+                    STEPS[i][2](db, channelDB, dir);
                     if (typeof(dbVersion._id) === 'undefined') {
                         db['db-version'].save( {'version': STEPS[i][1] }  );
                     } else {
@@ -755,6 +756,40 @@ function addScalingAlgorithm(db) {
     let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
     ffmpegSettings.scalingAlgorithm = "bicubic";
     fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
+}
+
+function moveBackup(path) {
+    if (fs.existsSync(`${process.env.DATABASE}${path}`) ) {
+        let i = 0;
+        while (fs.existsSync( `${process.env.DATABASE}${path}.bak.${i}`)   ) {
+            i++;
+        }
+        fs.renameSync(`${process.env.DATABASE}${path}`, `${process.env.DATABASE}${path}.bak.${i}` );
+    }
+}
+
+function reAddIcon(dir) {
+    moveBackup('/images/dizquetv.png');
+    let data = fs.readFileSync(path.resolve(path.join(dir, 'resources/dizquetv.png')));
+    fs.writeFileSync(process.env.DATABASE + '/images/dizquetv.png', data);
+
+    if (fs.existsSync(`${process.env.DATABASE}/images/pseudotv.png`) ) {
+        moveBackup('/images/pseudotv.png');
+        let data = fs.readFileSync(path.resolve(path.join(dir, 'resources/dizquetv.png')));
+        fs.writeFileSync(process.env.DATABASE + '/images/pseudotv.png', data);
+    }
+
+    moveBackup('/images/generic-error-screen.png');
+    data = fs.readFileSync(path.resolve(path.join(dir, 'resources/generic-error-screen.png')))
+    fs.writeFileSync(process.env.DATABASE + '/images/generic-error-screen.png', data)
+
+    moveBackup('/images/generic-offline-screen.png');
+    data = fs.readFileSync(path.resolve(path.join(dir, 'resources/generic-offline-screen.png')));
+    fs.writeFileSync(process.env.DATABASE + '/images/generic-offline-screen.png', data);
+
+    moveBackup('/images/loading-screen.png');
+    data = fs.readFileSync(path.resolve(path.join(dir, 'resources/loading-screen.png')))
+    fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)
 }
 
 function addDeinterlaceFilter(db) {

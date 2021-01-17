@@ -29,7 +29,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="3.0547013"
-     inkscape:cx="173.01248"
+     inkscape:cx="55.816079"
      inkscape:cy="84.726326"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
@@ -48,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -58,7 +58,7 @@
      id="layer1"
      transform="translate(0,-244.08278)">
     <rect
-       style="opacity:1;fill:#e6e6e6;fill-opacity:1;stroke:none;stroke-width:1.46508551;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="opacity:1;fill:#a1a1a1;fill-opacity:0.86666667;stroke:none;stroke-width:1.46508551;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect4712"
        width="52.211964"
        height="51.512306"
@@ -67,7 +67,7 @@
        transform="matrix(0.99980416,-0.01978974,0.00448328,0.99998995,0,0)" />
     <g
        id="g4581"
-       style="fill:#1f1f1f;fill-opacity:1;stroke-width:0.68901283"
+       style="fill:#080808;fill-opacity:1;stroke-width:0.68901283"
        transform="matrix(1.2119871,0,0,1.7379906,-82.577875,-167.18505)">
       <rect
          transform="rotate(-0.94645665)"
@@ -76,7 +76,7 @@
          height="27.75024"
          width="41.471352"
          id="rect4524"
-         style="opacity:1;fill:#1f1f1f;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="opacity:1;fill:#080808;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
     <rect
        style="opacity:1;fill:#9cbc28;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"

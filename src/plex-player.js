@@ -97,7 +97,7 @@ class PlexPlayer {
                 emitter.emit('close');
             });
             ffmpeg.on('error', async (err) => {
-                console.log("Replacing failed stream with error streram");
+                console.log("Replacing failed stream with error stream");
                 ff.unpipe(outStream);
                 ffmpeg.removeAllListeners('data');
                 ffmpeg.removeAllListeners('end');
