@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 702;
+const TARGET_VERSION = 800;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -35,7 +35,11 @@ const STEPS = [
     [    601,    700, (db) => migrateWatermark(db) ],
     [    700,    701, (db) => addScalingAlgorithm(db) ],
     [    701,    703, (db,channels,dir) => reAddIcon(dir) ],
-    [    701,    702, (db) => addDeinterlaceFilter(db) ]
+    [    703,    800, (db) => addDeinterlaceFilter(db) ],
+    // there was a bit of thing in which for a while 1.3.x migrated 701 to 702 using
+    // the addDeinterlaceFilter step. This 702 step no longer exists as a target
+    // but we have to migrate it to 800 using the reAddIcon.
+    [    702,    800, (db,channels,dir) => reAddIcon(dir) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -399,7 +403,7 @@ function ffmpeg() {
         normalizeAudio: true,
         maxFPS: 60,
         scalingAlgorithm: "bicubic",
-        deinterlaceFilter: "none"
+        deinterlaceFilter: "none",
     }
 }
 
