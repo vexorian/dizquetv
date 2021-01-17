@@ -9,7 +9,7 @@ const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 const FillerDB = require('./dao/filler-db');
 const timeSlotsService = require('./services/time-slots-service');
-const M3uService = require('./m3u-service');
+const M3uService = require('./services/m3u-service');
 
 module.exports = { router: api }
 function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
@@ -152,7 +152,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         let channel = await channelCache.getChannelConfig(channelDB, number);
         if (channel.length == 1) {
             channel = channel[0];
-            res.send( {
+            res.send({
                 number: channel.number,
                 icon: channel.icon,
                 name: channel.name,
@@ -565,9 +565,11 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     router.get('/api/channels.m3u', async (req, res) => {
       try {
         res.type('text');
-        const host = `${req.protocol}://${req.get('host')}`;
-        const data = await m3uService.getChannelList(host);
-        res.send(data)
+
+        const data = await m3uService.getChannelList();
+
+        res.send(data);
+
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
@@ -578,25 +580,18 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     // hls.m3u Download is not really working correctly right now
     router.get('/api/hls.m3u', async (req, res) => {
       try {
-        res.type('text')
-        let channels = await channelDB.getAllChannels();
-        channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
-        var data = "#EXTM3U\n"
-        for (var i = 0; i < channels.length; i++) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-chno="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
-            data += `${req.protocol}://${req.get('host')}/m3u8?channel=${channels[i].number}\n`
-        }
-        if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
-            data += `${req.protocol}://${req.get('host')}/setup\n`
-        }
-        res.send(data)
+        res.type('text');
+
+        const data = await m3uService.getChannelList('hls');
+
+        res.send(data);
+        
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
       }
-
     })
+
 
 
 

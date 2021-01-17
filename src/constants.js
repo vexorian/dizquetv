@@ -5,5 +5,7 @@ module.exports = {
     TVGUIDE_MAXIMUM_FLEX_DURATION : 6 * 60 * 60 * 1000,
     TOO_FREQUENT: 100,
 
-    VERSION_NAME: "1.3.0-prerelease"
+    VERSION_NAME: "1.3.0-prerelease",
+    HOST: undefined,
+    DATABASE: undefined,
 }

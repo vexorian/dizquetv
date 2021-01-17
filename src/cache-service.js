@@ -1,11 +1,25 @@
 const path = require('path');
 const fs = require('fs');
+const constants = require('./constants');
 
+/**
+ * A File Cache controller for store and retrieve files from disk
+ *
+ * @class CacheService
+ */
 class CacheService {
     constructor() {
-        this.cachePath = path.join(process.env.DATABASE, 'cache');
+        this.cachePath = path.join(constants.DATABASE, 'cache');
     }
 
+    /**
+     * `save` a file on cache folder
+     *
+     * @param {string} fullFilePath
+     * @param {*} data
+     * @returns {promise}
+     * @memberof CacheService
+     */
     setCache(fullFilePath, data) {
         return new Promise((resolve, reject) => {
             try {
@@ -23,6 +37,13 @@ class CacheService {
         });
     }
 
+    /**
+     * `get` a File from cache folder
+     *
+     * @param {string} fullFilePath
+     * @returns {promise} `Resolve` with file content, `Reject` with false
+     * @memberof CacheService
+     */
     getCache(fullFilePath) {
         return new Promise((resolve, reject) => {
             try {
@@ -39,6 +60,13 @@ class CacheService {
         });
     }
 
+    /**
+     * `delete` a File from cache folder
+     *
+     * @param {string} fullFilePath
+     * @returns {promise}
+     * @memberof CacheService
+     */
     deleteCache(fullFilePath) {
         return new Promise((resolve, reject) => {
             try {
