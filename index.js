@@ -187,7 +187,11 @@ app.listen(process.env.PORT, () => {
 })
 
 function initDB(db, channelDB) {
-    dbMigration.initDB(db, channelDB);
+    if (!fs.existsSync(process.env.DATABASE + '/images/dizquetv.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/dizquetv.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/dizquetv.png', data)
+    }
+    dbMigration.initDB(db, channelDB, __dirname);
     if (!fs.existsSync(process.env.DATABASE + '/font.ttf')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/font.ttf')))
         fs.writeFileSync(process.env.DATABASE + '/font.ttf', data)

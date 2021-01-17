@@ -62,6 +62,7 @@ class PlexPlayer {
             this.plexTranscoder = plexTranscoder;
             let watermark = this.context.watermark;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+            ffmpeg.setAudioOnly( this.context.audioOnly );
             this.ffmpeg = ffmpeg;
             let streamDuration;
             if (typeof(lineupItem.streamDuration)!=='undefined') {
@@ -97,13 +98,14 @@ class PlexPlayer {
                 emitter.emit('close');
             });
             ffmpeg.on('error', async (err) => {
-                console.log("Replacing failed stream with error streram");
+                console.log("Replacing failed stream with error stream");
                 ff.unpipe(outStream);
                 ffmpeg.removeAllListeners('data');
                 ffmpeg.removeAllListeners('end');
                 ffmpeg.removeAllListeners('error');
                 ffmpeg.removeAllListeners('close');
                 ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+                ffmpeg.setAudioOnly(this.context.audioOnly);
                 ffmpeg.on('close', () => {
                     emitter.emit('close');
                 });

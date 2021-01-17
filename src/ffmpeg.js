@@ -62,6 +62,10 @@ class FFMPEG extends events.EventEmitter {
         this.ensureResolution = this.opts.normalizeResolution;
         this.volumePercent =  this.opts.audioVolumePercent;
         this.hasBeenKilled = false;
+        this.audioOnly = false;
+    }
+    setAudioOnly(audioOnly) {
+        this.audioOnly = audioOnly;
     }
     async spawnConcat(streamUrl) {
         return await this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
@@ -108,8 +112,17 @@ class FFMPEG extends events.EventEmitter {
              `-threads`, isConcatPlaylist? 1 : this.opts.threads,
                           `-fflags`, `+genpts+discardcorrupt+igndts`];
         
-        if (limitRead === true)
-            ffmpegArgs.push(`-re`)
+        if (
+            (limitRead === true)
+            &&
+            (
+                (this.audioOnly !== true)
+                ||
+                ( typeof(streamUrl.errorTitle) === 'undefined')
+            )
+        )  {
+            ffmpegArgs.push(`-re`);
+        }
         
 
         if (typeof startTime !== 'undefined')
@@ -186,24 +199,27 @@ class FFMPEG extends events.EventEmitter {
                     iH = this.wantedH;
                 }
 
+              if ( this.audioOnly !== true) {
                 ffmpegArgs.push("-r" , "24");
                 if (  streamUrl.errorTitle == 'offline' ) {
                     ffmpegArgs.push(
                         '-loop', '1',
                         '-i', `${this.channel.offlinePicture}`,
                     );
-                    videoComplex = `;[0:0]loop=loop=-1:size=1:start=0[looped];[looped]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    videoComplex = `;[${inputFiles++}:0]loop=loop=-1:size=1:start=0[looped];[looped]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 } else if (this.opts.errorScreen == 'static') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `nullsrc=s=64x36`);
                     videoComplex = `;geq=random(1)*255:128:128[videoz];[videoz]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    inputFiles++;
                 } else if (this.opts.errorScreen == 'testsrc') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `testsrc=size=${iW}x${iH}`,
                     );
                     videoComplex = `;realtime[videox]`;
+                    inputFiles++;
                 } else if (this.opts.errorScreen == 'text') {
                     var sz2 = Math.ceil( (iH) / 33.0);
                     var sz1 = Math.ceil( sz2 * 3. / 2. );
@@ -213,6 +229,7 @@ class FFMPEG extends events.EventEmitter {
                         '-f', 'lavfi',
                         '-i', `color=c=black:s=${iW}x${iH}`
                     );
+                    inputFiles++;
 
                     videoComplex = `;drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${streamUrl.errorTitle}',drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${streamUrl.subtitle}'[videoy];[videoy]realtime[videox]`;
                 } else if (this.opts.errorScreen == 'blank') {
@@ -220,14 +237,17 @@ class FFMPEG extends events.EventEmitter {
                         '-f', 'lavfi',
                         '-i', `color=c=black:s=${iW}x${iH}`
                     );
+                    inputFiles++;
                     videoComplex = `;realtime[videox]`;
                 } else {//'pic'
                     ffmpegArgs.push(
                         '-loop', '1',
                         '-i', `${this.errorPicturePath}`,
                     );
-                    videoComplex = `;[0:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    inputFiles++;
+                    videoComplex = `;[${videoFile+1}:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 }
+              }
                 let durstr = `duration=${streamStats.duration}ms`;
                 //silent
                 audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
@@ -239,14 +259,26 @@ class FFMPEG extends events.EventEmitter {
                         ffmpegArgs.push('-i', `${this.channel.offlineSoundtrack}`);
                         // I don't really understand why, but you need to use this
                         // 'size' in order to make the soundtrack actually loop
-                        audioComplex = `;[1:a]aloop=loop=-1:size=2147483647[audioy]`;
+                        audioComplex = `;[${inputFiles++}:a]aloop=loop=-1:size=2147483647[audioy]`;
                     }
-                } else if (this.opts.errorAudio == 'whitenoise') {
-                    audioComplex = `;aevalsrc=-2+0.1*random(0):${durstr}[audioy]`;
+                } else if (
+                    (this.opts.errorAudio == 'whitenoise')
+                    ||
+                    (
+                        !(this.opts.errorAudio == 'sine')
+                        &&
+                        (this.audioOnly === true)  //when it's in audio-only mode, silent stream is confusing for errors.
+                    )
+                ) {
+                    audioComplex = `;aevalsrc=random(0):${durstr}[audioy]`;
+                    this.volumePercent = Math.min(70, this.volumePercent);
                 } else if (this.opts.errorAudio == 'sine') {
-                    audioComplex = `;sine=f=440:${durstr}[audiox];[audiox]volume=-35dB[audioy]`;
+                    audioComplex = `;sine=f=440:${durstr}[audioy]`;
+                    this.volumePercent = Math.min(70, this.volumePercent);
                 }
-                ffmpegArgs.push('-pix_fmt' , 'yuv420p' );
+                if ( this.audioOnly !== true ) {
+                    ffmpegArgs.push('-pix_fmt' , 'yuv420p' );
+                }
                 audioComplex += ';[audioy]arealtime[audiox]';
                 currentVideo = "[videox]";
                 currentAudio = "[audiox]";
@@ -319,7 +351,7 @@ class FFMPEG extends events.EventEmitter {
             }
 
             // Channel watermark:
-            if (doOverlay) {
+            if (doOverlay && (this.audioOnly !== true) ) {
                 var pW =watermark.width;
                 var w = Math.round( pW * iW / 100.0 );
                 var mpHorz = watermark.horizontalMargin;
@@ -361,7 +393,8 @@ class FFMPEG extends events.EventEmitter {
                 currentAudio = '[boosted]';
             }
             // Align audio is just the apad filter applied to audio stream
-            if (this.apad) {
+            if (this.apad &&  (this.audioOnly !== true) ) {
+                //it doesn't make much sense to pad audio when there is no video
                 audioComplex += `;${currentAudio}apad=whole_dur=${streamStats.duration}ms[padded]`;
                 currentAudio = '[padded]';
             } else if (this.audioChannelsSampleRate) {
@@ -382,11 +415,13 @@ class FFMPEG extends events.EventEmitter {
             } else {
                 console.log(resizeMsg)
             }
-            if (currentVideo != '[video]') {
-                transcodeVideo = true; //this is useful so that it adds some lines below
-                filterComplex += videoComplex;
-            } else {
-                currentVideo = `${videoFile}:${videoIndex}`;
+            if (this.audioOnly !== true) {
+                if (currentVideo != '[video]') {
+                    transcodeVideo = true; //this is useful so that it adds some lines below
+                    filterComplex += videoComplex;
+                } else {
+                    currentVideo = `${videoFile}:${videoIndex}`;
+                }
             }
             // same with audio:
             if (currentAudio != '[audio]') {
@@ -403,15 +438,18 @@ class FFMPEG extends events.EventEmitter {
                     ffmpegArgs.push('-shortest');
                 }
             }
-
+            if (this.audioOnly !== true) {
+                ffmpegArgs.push(
+                    '-map', currentVideo,
+                    `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
+                    `-sc_threshold`, `1000000000`,
+                );
+            }
             ffmpegArgs.push(
-                            '-map', currentVideo,
                             '-map', currentAudio,
-                            `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
                             `-flags`, `cgop+ilme`,
-                            `-sc_threshold`, `1000000000`
             );
-            if ( transcodeVideo ) {
+            if ( transcodeVideo && (this.audioOnly !== true) ) {
                 // add the video encoder flags
                 ffmpegArgs.push(
                             `-b:v`, `${this.opts.videoBitrate}k`,
@@ -453,8 +491,11 @@ class FFMPEG extends events.EventEmitter {
             //Concat stream is simpler and should always copy the codec
             ffmpegArgs.push(
                             `-probesize`, 32 /*`100000000`*/,
-                            `-i`, streamUrl,
-                            `-map`, `0:v`,
+                            `-i`, streamUrl );
+            if (this.audioOnly !== true) {
+                ffmpegArgs.push( `-map`, `0:v` );
+            }
+            ffmpegArgs.push(
                             `-map`, `0:${audioIndex}`,
                             `-c`, `copy`,
                             `-muxdelay`,  this.opts.concatMuxDelay, 
