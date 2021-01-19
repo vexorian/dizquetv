@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const constants = require('./constants');
+const config = require('./config');
 
 /**
  * A File Cache controller for store and retrieve files from disk
@@ -9,7 +9,8 @@ const constants = require('./constants');
  */
 class CacheService {
     constructor() {
-        this.cachePath = path.join(constants.DATABASE, 'cache');
+        this.cachePath = path.join(config.DATABASE, 'cache');
+        this.cache = {};
     }
 
     /**
@@ -28,6 +29,7 @@ class CacheService {
                     if(err) {
                         throw Error("Can't save file: ", err);
                     } else {
+                        this.cache[fullFilePath] = data;
                         resolve(true);
                     }
                 });
@@ -47,12 +49,16 @@ class CacheService {
     getCache(fullFilePath) {
         return new Promise((resolve, reject) => {
             try {
-                fs.readFile(path.join(this.cachePath, fullFilePath), 'utf8', function (err,data) {
-                    if (err) {
-                      resolve(false);
-                    }
-                    resolve(data);
-                });
+                if(fullFilePath in this.cache) {
+                    resolve(this.cache[fullFilePath]);
+                } else {
+                    fs.readFile(path.join(this.cachePath, fullFilePath), 'utf8', function (err,data) {
+                        if (err) {
+                          resolve(false);
+                        }
+                        resolve(data);
+                    });
+                }
             } catch (error) {
                 resolve(false);
                 throw Error("Can't get file", error)
@@ -74,6 +80,7 @@ class CacheService {
                     if(err) {
                         throw Error("Can't save file: ", err);
                     } else {
+                        delete this.cache[fullFilePath];
                         resolve(true);
                     }
                 });
@@ -84,4 +91,4 @@ class CacheService {
     }
 }
 
-module.exports = CacheService;
+module.exports = new CacheService();

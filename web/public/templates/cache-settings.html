@@ -1,0 +1,15 @@
+<div>
+    <h5>Cache</h5>
+
+    <div class="options col-sm-4">
+        <div class="option row" ng-repeat="setting in settings track by setting.key">
+            <div class="option__title col-sm-6">{{setting.title}}</div>
+            <div class="option__action col-sm-6">
+                <button class="pull-right btn btn-sm" ng-class="[{'btn-danger': setting.value, 'btn-success': !setting.value}]" ng-click="updateSetting(setting)">
+                    {{(setting.value) ? 'Disable' : 'Enable'}}
+                </button>
+            </div>
+        </div>
+    </div>
+    
+</div>

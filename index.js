@@ -10,6 +10,7 @@ const dbMigration = require('./src/database-migration');
 const video = require('./src/video')
 const HDHR = require('./src/hdhr')
 const CacheImageService = require('./src/cache-image-service');
+const SettingsService = require('./src/services/settings-service');
 
 const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex');
@@ -39,7 +40,6 @@ for (let i = 0, l = process.argv.length; i < l; i++) {
 }
 
 process.env.DATABASE = process.env.DATABASE || './.dizquetv'
-constants.DATABASE = process.env.DATABASE;
 process.env.PORT = process.env.PORT || 8000
 
 if (!fs.existsSync(process.env.DATABASE)) {
@@ -69,11 +69,10 @@ if(!fs.existsSync(path.join(process.env.DATABASE, 'cache/images'))) {
 channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
 fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelDB, channelCache );
 
-db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id', 'cache-images'])
+db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id', 'cache-images', 'settings'])
 
 initDB(db, channelDB)
 
-const imageService = new CacheImageService(db);
 
 const guideService = new TVGuideService(xmltv, db);
 
@@ -161,10 +160,7 @@ xmltvInterval.startInterval()
 let hdhr = HDHR(db, channelDB)
 let app = express()
 app.use(bodyParser.json({limit: '50mb'}))
-app.use((req, res, next) => {
-    constants.HOST = `${req.protocol}://${req.get('host')}`;
-    next();
-});
+
 app.get('/version.js', (req, res) => {
     res.writeHead(200, {
         'Content-Type': 'application/javascript'
@@ -185,16 +181,19 @@ app.get('/version.js', (req, res) => {
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
-app.use('/cache/images', imageService.routerInterceptor())
+app.use('/cache/images', CacheImageService.routerInterceptor())
 app.use('/cache/images', express.static(path.join(process.env.DATABASE, 'cache/images')))
 app.use('/favicon.svg', express.static(
     path.join(__dirname, 'resources/favicon.svg')
 ) );
 
+// API Routers
 app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService ))
+app.use('/api/cache/images', CacheImageService.apiRouters())
+app.use('/api/settings/cache', SettingsService.apiRouters())
+
 app.use(video.router( channelDB, fillerDB, db))
 app.use(hdhr.router)
-app.use('/api/cache/images', imageService.apiRouters())
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)
     let hdhrSettings = db['hdhr-settings'].find()[0]

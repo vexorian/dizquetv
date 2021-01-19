@@ -1,8 +1,11 @@
 const fs = require('fs');
 const express = require('express');
-const request = require('request')
+const request = require('request');
+const diskDb = require('diskdb');
 
+const config = require('./config');
 const CacheService = require('./cache-service');
+const SettingsService = require('./services/settings-service');
 
 /**
  * Manager a cache in disk for external images.
@@ -10,10 +13,13 @@ const CacheService = require('./cache-service');
  * @class CacheImageService
  */
 class CacheImageService {
-    constructor(db) {
-        this.cacheService = new CacheService();
+    constructor() {
+        this.cacheService = CacheService;
         this.imageCacheFolder = 'images';
-        this.db = db;
+        const connection = diskDb.connect(config.DATABASE, ['cache-images']);
+        this.db = connection['cache-images'];
+
+        SettingsService.saveSetting('enabled-cache-image', 'Enable Cache Image', false);
     }
 
     /**
@@ -31,7 +37,7 @@ class CacheImageService {
         router.get('/:hash', async (req, res, next) => {
             try {
                 const hash = req.params.hash;
-                const imgItem = this.db['cache-images'].find({url: hash})[0];
+                const imgItem = this.db.find({url: hash})[0];
                 if(imgItem) {
                     const file = await this.getImageFromCache(imgItem.url);
                     if(!file.length) {
@@ -96,7 +102,7 @@ class CacheImageService {
                     reject(err);
                 } else {
                     const mimeType = res.headers['content-type'];
-                    this.db['cache-images'].update({_id: dbFile._id}, {url: dbFile.url, mimeType});
+                    this.db.update({_id: dbFile._id}, {url: dbFile.url, mimeType});
                     request(requestConfiguration)
                     .pipe(fs.createWriteStream(`${this.cacheService.cachePath}/${this.imageCacheFolder}/${dbFile.url}`))
                     .on('close', () =>{
@@ -148,11 +154,11 @@ class CacheImageService {
     registerImageOnDatabase(imageUrl) {
         const url = Buffer.from(imageUrl).toString('base64');
         const dbQuery = {url};
-        if(!this.db['cache-images'].find(dbQuery)[0]) {
-            this.db['cache-images'].save(dbQuery);
+        if(!this.db.find(dbQuery)[0]) {
+            this.db.save(dbQuery);
         }
         return url;
     }
 }
 
-module.exports = CacheImageService;
+module.exports = new CacheImageService();

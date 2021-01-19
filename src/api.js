@@ -1,6 +1,7 @@
 
 const express = require('express')
 const path = require('path')
+const fs = require('fs')
 const databaseMigration = require('./database-migration');
 const channelCache = require('./channel-cache')
 const constants = require('./constants');
@@ -532,13 +533,19 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
 
 
     // XMLTV.XML Download
-    router.get('/api/xmltv.xml', (req, res) => {
+    router.get('/api/xmltv.xml', async (req, res) => {
       try {
+        const host = `${req.protocol}://${req.get('host')}`;
+
         res.set('Cache-Control', 'no-store')
-        res.type('text')
-        let xmltvSettings = db['xmltv-settings'].find()[0]
-        let f = path.resolve(xmltvSettings.file);
-        res.sendFile(f)
+        res.type('application/xml');
+        res.attachment('xmltv.xml');
+
+
+        let xmltvSettings = db['xmltv-settings'].find()[0];
+        const fileContent = await fs.readFileSync(xmltvSettings.file, 'utf8');
+        const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
+        res.send(fileFinal);
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
@@ -566,7 +573,8 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       try {
         res.type('text');
 
-        const data = await m3uService.getChannelList();
+        const host = `${req.protocol}://${req.get('host')}`;
+        const data = await m3uService.getChannelList(host);
 
         res.send(data);
 
@@ -582,7 +590,8 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       try {
         res.type('text');
 
-        const data = await m3uService.getChannelList('hls');
+        const host = `${req.protocol}://${req.get('host')}`;
+        const data = await m3uService.getChannelList(host, 'hls');
 
         res.send(data);
         

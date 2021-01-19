@@ -1,15 +1,14 @@
 const XMLWriter = require('xml-writer')
 const fs = require('fs')
 const CacheImageService = require('./cache-image-service');
-let dataBase = undefined;
+const SettingsService = require('./services/settings-service');
 
 module.exports = { WriteXMLTV: WriteXMLTV, shutdown: shutdown }
 
 let isShutdown = false;
 let isWorking = false;
 
-async function WriteXMLTV(json, xmlSettings, throttle, db) {
-    dataBase = db;
+async function WriteXMLTV(json, xmlSettings, throttle) {
     if (isShutdown) {
         return;
     }
@@ -114,11 +113,15 @@ async function _writeProgramme(channel, program, xw) {
     }
     // Icon
     if (typeof program.icon !== 'undefined') {
-        const cache = new CacheImageService(dataBase);
-        const imgUrl = cache.registerImageOnDatabase(program.icon);
-        
         xw.startElement('icon')
-        xw.writeAttribute('src', `/cache/images/${imgUrl}`)
+
+        if(await SettingsService.getSetting('enabled-cache-image')){
+            const imgUrl = CacheImageService.registerImageOnDatabase(program.icon);
+            xw.writeAttribute('src', `{{host}}/cache/images/${imgUrl}`)
+        } else {
+            xw.writeAttribute('src', program.icon)
+        }
+        
         xw.endElement()
     }
     // Desc
