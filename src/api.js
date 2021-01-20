@@ -209,6 +209,32 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
        res.status(500).send("error");
       }
     })
+    router.post('/api/channel/logo', async (req, res) => {
+      try {
+        if(!req.files) {
+            res.send({
+                status: false,
+                message: 'No file uploaded'
+            });
+        } else {
+            const logo = req.files.logo;
+            logo.mv(path.join(process.env.DATABASE, '/images/uploads/', logo.name));
+            
+            res.send({
+                status: true,
+                message: 'File is uploaded',
+                data: {
+                    name: logo.name,
+                    mimetype: logo.mimetype,
+                    size: logo.size,
+                    fileUrl: `${req.protocol}://${req.get('host')}/images/uploads/${logo.name}`
+                }
+            });
+        }
+      } catch (err) {
+          res.status(500).send(err);
+      }
+    })
 
     // Filler
     router.get('/api/fillers', async (req, res) => {

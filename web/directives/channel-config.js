@@ -1852,6 +1852,14 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 scope.timeSlots.startDialog(scope.channel.programs, scope.maxSize, scope.channel.scheduleBackup );
             }
 
+            scope.logoOnChange = (event) => {
+                const formData = new FormData();
+                formData.append('logo', event.target.files[0]);
+                dizquetv.addChannelLogo(formData).then((response) => {
+                    scope.channel.icon = response.data.fileUrl;
+                })
+            }
+
           },
 
           pre: function(scope) {

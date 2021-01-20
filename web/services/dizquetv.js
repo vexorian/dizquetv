@@ -150,6 +150,14 @@ module.exports = function ($http) {
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
         },
+        addChannelLogo: (file) => {
+            return $http({
+                method: 'POST',
+                url: '/api/channel/logo?logo',
+                data: file,
+                headers: { 'Content-Type': undefined }
+            }).then((d) => { return d.data })
+        },
         updateChannel: (channel) => {
             return $http({
                 method: 'PUT',
