@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const express = require('express')
 const bodyParser = require('body-parser')
+const fileUpload = require('express-fileupload');
 
 const api = require('./src/api')
 const dbMigration = require('./src/database-migration');
@@ -151,6 +152,9 @@ xmltvInterval.startInterval()
 
 let hdhr = HDHR(db, channelDB)
 let app = express()
+app.use(fileUpload({
+    createParentPath: true
+}));
 app.use(bodyParser.json({limit: '50mb'}))
 app.get('/version.js', (req, res) => {
     res.writeHead(200, {

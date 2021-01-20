@@ -5,7 +5,7 @@ Create live TV channel streams from media on your Plex servers.
 
 **dizqueTV** ( *dis·keˈtiːˈvi* )  is a fork of the project previously-known as [pseudotv-plex](https://gitlab.com/DEFENDORe/pseudotv-plex) or [pseudotv](https://github.com/DEFENDORe/pseudotv). New repository because of lack of activity from the main repository and the name change is because projects with the old name already existed and were created long before this approach and it was causing confusion. You can migrate from pseudoTV 0.0.51 to dizqueTV by renaming the .pseudotv folder to .dizquetv and running the new executable (or doing a similar trick with the volumes used by the docker containers).
 
-<img src="./resources/dizquetv.png" width="200">
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" width="200">
 
 Configure your channels, programs, commercials and settings using the dizqueTV web UI.
 
@@ -43,13 +43,13 @@ EPG (Guide Information) data is stored to `.dizquetv/xmltv.xml`
 
 
 ## App Preview
-<img src="./docs/channels.png" width="500">
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/channels.png" width="500">
 <br/>
-<img src="./docs/channel-config.png" width="500">
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/channel-config.png" width="500">
 <br/>
-<img src="./docs/plex-guide.png" width="500">
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/plex-guide.png" width="500">
 <br/>
-<img src="./docs/plex-stream.png" width="500">
+<img src="https://raw.githubusercontent.com/vexorian/dizquetv/main/docs/plex-stream.png" width="500">
 
 ## Development
 Building/Packaging Binaries: (uses `browserify`, `babel` and `pkg`)

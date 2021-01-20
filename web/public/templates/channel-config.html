@@ -41,6 +41,12 @@
                             <h6>Channel Icon Preview</h6>
                             <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
                             <span ng-if="channel.icon === ''">{{channel.name}}</span>
+                            <fieldset>
+                                <input type="file"
+                                onchange="angular.element(this).scope().logoOnChange(event)" 
+                                name="logo" 
+                                id="logo">
+                            </fieldset>
                         </div>
                     </div>
                 </div>
