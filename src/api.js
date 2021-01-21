@@ -209,7 +209,8 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
        res.status(500).send("error");
       }
     })
-    router.post('/api/channel/logo', async (req, res) => {
+
+    router.post('/api/upload/image', async (req, res) => {
       try {
         if(!req.files) {
             res.send({
@@ -217,7 +218,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
                 message: 'No file uploaded'
             });
         } else {
-            const logo = req.files.logo;
+            const logo = req.files.image;
             logo.mv(path.join(process.env.DATABASE, '/images/uploads/', logo.name));
             
             res.send({
