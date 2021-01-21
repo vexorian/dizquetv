@@ -1854,11 +1854,20 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
 
             scope.logoOnChange = (event) => {
                 const formData = new FormData();
-                formData.append('logo', event.target.files[0]);
-                dizquetv.addChannelLogo(formData).then((response) => {
+                formData.append('image', event.target.files[0]);
+                dizquetv.uploadImage(formData).then((response) => {
                     scope.channel.icon = response.data.fileUrl;
                 })
             }
+
+            scope.watermarkOnChange = (event) => {
+                const formData = new FormData();
+                formData.append('image', event.target.files[0]);
+                dizquetv.uploadImage(formData).then((response) => {
+                    scope.channel.watermark.url = response.data.fileUrl;
+                })
+            }
+
 
           },
 

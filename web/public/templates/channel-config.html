@@ -34,19 +34,24 @@
                     <div>
                         <span class="pull-right text-danger">{{error.icon}}</span>
                         <label for="channelIcon" class="small">Channel Icon</label>
+
                         <div class="input-group mb-1">
                             <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon" />
+                            <div class="input-group-append">
+                                <input type="file"
+                                accept="image/*"
+                                class="form-control-file"
+                                onchange="angular.element(this).scope().logoOnChange(event)"
+                                name="logo"
+                                id="logo">
+                                </input>
+                            </div>
                         </div>
+
                         <div>
                             <h6>Channel Icon Preview</h6>
                             <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
                             <span ng-if="channel.icon === ''">{{channel.name}}</span>
-                            <fieldset>
-                                <input type="file"
-                                onchange="angular.element(this).scope().logoOnChange(event)" 
-                                name="logo" 
-                                id="logo">
-                            </fieldset>
                         </div>
                     </div>
                 </div>
@@ -696,8 +701,19 @@
                                 <label for="overlayURL">
                                     Watermark Picture URL:
                                 </label>
+
                                 <input id='overlayURL' class='form-control' type='url' ng-model='channel.watermark.url' placeholder="Leave empty to use the channel&apos;s icon.">
                                 </input>
+                                <div class="input-group-append">
+                                    <input type="file"
+                                    accept="image/*"
+                                    class="form-control-file"
+                                    onchange="angular.element(this).scope().watermarkOnChange(event)"
+                                    name="logo"
+                                    id="logo">
+                                    </input>
+                                </div>
+
                             </div>
 
                             <div class="form-group">

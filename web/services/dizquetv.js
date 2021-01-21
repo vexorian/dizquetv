@@ -150,10 +150,18 @@ module.exports = function ($http) {
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
         },
-        addChannelLogo: (file) => {
+        uploadImage: (file) => {
             return $http({
                 method: 'POST',
-                url: '/api/channel/logo?logo',
+                url: '/api/upload/image',
+                data: file,
+                headers: { 'Content-Type': undefined }
+            }).then((d) => { return d.data })
+        },
+        addChannelWatermark: (file) => {
+            return $http({
+                method: 'POST',
+                url: '/api/channel/watermark',
                 data: file,
                 headers: { 'Content-Type': undefined }
             }).then((d) => { return d.data })
