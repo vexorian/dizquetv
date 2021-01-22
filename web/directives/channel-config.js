@@ -88,7 +88,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
 
-                if (typeof(scope.channel.watermark) === 'undefined') {
+                if (
+                    (typeof(scope.channel.watermark) === 'undefined')
+                    || (scope.channel.watermark.enabled !== true)
+                ) {
                     scope.channel.watermark = defaultWatermark();
                 }
 
