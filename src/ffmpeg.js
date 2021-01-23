@@ -111,6 +111,7 @@ class FFMPEG extends events.EventEmitter {
         let ffmpegArgs = [
              `-threads`, isConcatPlaylist? 1 : this.opts.threads,
                           `-fflags`, `+genpts+discardcorrupt+igndts`];
+        let stillImage = false;
         
         if (
             (limitRead === true)
@@ -185,28 +186,57 @@ class FFMPEG extends events.EventEmitter {
             }
 
             // prepare input streams
-            if ( typeof(streamUrl.errorTitle) !== 'undefined') {
+            if  ( ( typeof(streamUrl.errorTitle) !== 'undefined') || (streamStats.audioOnly) ) {
                 doOverlay = false; //never show icon in the error screen
                 // for error stream, we have to generate the input as well
                 this.apad = false; //all of these generate audio correctly-aligned to video so there is no need for apad
                 this.audioChannelsSampleRate = true; //we'll need these
 
-                if (this.ensureResolution) {
-                    //all of the error strings already choose the resolution to
-                    //match iW x iH , so with this we save ourselves a second
-                    // scale filter
-                    iW = this.wantedW;
-                    iH = this.wantedH;
+                //all of the error strings already choose the resolution to
+                //match iW x iH , so with this we save ourselves a second
+                // scale filter
+                iW = this.wantedW;
+                iH = this.wantedH;
+
+              if (this.audioOnly !== true) {
+                ffmpegArgs.push("-r" , "24");
+                let pic = null;
+
+                //does an image to play exist?
+                if (
+                    (typeof(streamUrl.errorTitle) === 'undefined')
+                    &&
+                    (streamStats.audioOnly)
+                ) {
+                    pic = streamStats.placeholderImage;
+                } else if ( streamUrl.errorTitle == 'offline') {
+                    pic = `${this.channel.offlinePicture}`;
+                } else if ( this.opts.errorScreen == 'pic' ) {
+                    pic = `${this.errorPicturePath}`;
                 }
 
-              if ( this.audioOnly !== true) {
-                ffmpegArgs.push("-r" , "24");
-                if (  streamUrl.errorTitle == 'offline' ) {
+                if (pic != null) {
                     ffmpegArgs.push(
-                        '-loop', '1',
-                        '-i', `${this.channel.offlinePicture}`,
+                        '-i', pic,
                     );
-                    videoComplex = `;[${inputFiles++}:0]loop=loop=-1:size=1:start=0[looped];[looped]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    if (
+                        (typeof duration === 'undefined')
+                        &&
+                        (typeof(streamStats.duration) !== 'undefined' )
+                    ) {
+                        //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
+                        duration = `${streamStats.duration + 150}ms`;
+                    }
+                    videoComplex = `;[${inputFiles++}:0]loop=loop=-1:size=1:start=0[looped]`;
+                    videoComplex += `;[looped]format=yuv420p[formatted]`;
+                    let stream = "scaled";
+                    videoComplex +=`;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
+                    if (this.ensureResolution) {
+                        stream = "padded";
+                        videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
+                    }
+                    videoComplex +=`;[${stream}]realtime[videox]`;
+                    stillImage = true;
                 } else if (this.opts.errorScreen == 'static') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
@@ -232,23 +262,17 @@ class FFMPEG extends events.EventEmitter {
                     inputFiles++;
 
                     videoComplex = `;drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${streamUrl.errorTitle}',drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${streamUrl.subtitle}'[videoy];[videoy]realtime[videox]`;
-                } else if (this.opts.errorScreen == 'blank') {
+                } else { //blank
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `color=c=black:s=${iW}x${iH}`
                     );
                     inputFiles++;
                     videoComplex = `;realtime[videox]`;
-                } else {//'pic'
-                    ffmpegArgs.push(
-                        '-loop', '1',
-                        '-i', `${this.errorPicturePath}`,
-                    );
-                    inputFiles++;
-                    videoComplex = `;[${videoFile+1}:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 }
               }
                 let durstr = `duration=${streamStats.duration}ms`;
+              if (typeof(streamUrl.errorTitle) !== 'undefined') {
                 //silent
                 audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
                 if ( streamUrl.errorTitle == 'offline' ) {
@@ -280,8 +304,9 @@ class FFMPEG extends events.EventEmitter {
                     ffmpegArgs.push('-pix_fmt' , 'yuv420p' );
                 }
                 audioComplex += ';[audioy]arealtime[audiox]';
-                currentVideo = "[videox]";
                 currentAudio = "[audiox]";
+              }
+                currentVideo = "[videox]";
             }
             if (doOverlay) {
                 if (watermark.animated === true) {
@@ -297,9 +322,13 @@ class FFMPEG extends events.EventEmitter {
             let algo =  this.opts.scalingAlgorithm;
             let resizeMsg = "";
             if (
+                (!streamStats.audioOnly)
+                &&
+                (
                   (this.ensureResolution && ( streamStats.anamorphic || (iW != this.wantedW || iH != this.wantedH) ) )
                   ||
                   isLargerResolution(iW, iH, this.wantedW, this.wantedH)
+                )
             ) {
                 //scaler stuff, need to change the size of the video and also add bars
                 // calculate wanted aspect ratio
@@ -444,6 +473,9 @@ class FFMPEG extends events.EventEmitter {
                     `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
                     `-sc_threshold`, `1000000000`,
                 );
+                if (stillImage) {
+                    ffmpegArgs.push('-tune', 'stillimage');
+                }
             }
             ffmpegArgs.push(
                             '-map', currentAudio,
@@ -506,14 +538,14 @@ class FFMPEG extends events.EventEmitter {
                         `service_provider="dizqueTV"`,
                         `-metadata`,
                         `service_name="${this.channel.name}"`,
-                        `-f`, `mpegts`);
+                        );
 
-        //t should be before output
+        //t should be before -f
         if (typeof duration !== 'undefined') {
-            ffmpegArgs.push(`-t`, duration)
+            ffmpegArgs.push(`-t`, `${duration}`);
         }
             
-        ffmpegArgs.push(`pipe:1`)
+        ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`)
 
         let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
         if (this.hasBeenKilled) {
@@ -521,6 +553,7 @@ class FFMPEG extends events.EventEmitter {
         }
         this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
         if (this.hasBeenKilled) {
+            console.log("Send SIGKILL to ffmpeg");
             this.ffmpeg.kill("SIGKILL");
             return;
         }

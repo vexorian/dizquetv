@@ -212,6 +212,10 @@ function initDB(db, channelDB) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/generic-offline-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/generic-offline-screen.png', data)
     }
+    if (!fs.existsSync(process.env.DATABASE + '/images/generic-music-screen.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/generic-music-screen.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/generic-music-screen.png', data)
+    }
     if (!fs.existsSync(process.env.DATABASE + '/images/loading-screen.png')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/loading-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)

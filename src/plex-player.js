@@ -124,11 +124,7 @@ class PlexPlayer {
             return emitter;
 
         } catch(err) {
-            if (err instanceof Error) {
-                throw err;
-            } else {
-                return Error("Error when playing plex program: " + JSON.stringify(err) );
-            }
+            return Error("Error when playing plex program: " + JSON.stringify(err) );
         }
     }
 }
