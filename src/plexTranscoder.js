@@ -35,6 +35,10 @@ class PlexTranscoder {
         this.updateInterval = 30000
         this.updatingPlex = undefined
         this.playState = "stopped"
+        this.albumArt = {
+            attempted : false,
+            path: null,
+        }
     }
 
     async getStream(deinterlace) {
@@ -53,7 +57,7 @@ class PlexTranscoder {
         } else {
             try {
                 this.log("Setting transcoding parameters")
-                this.setTranscodingArgs(stream.directPlay, true, deinterlace)
+                this.setTranscodingArgs(stream.directPlay, true, deinterlace, true)
                 await this.getDecision(stream.directPlay);
                 if (this.isDirectPlay()) {
                     stream.directPlay = true;
@@ -110,13 +114,14 @@ class PlexTranscoder {
         return stream
     }
 
-    setTranscodingArgs(directPlay, directStream, deinterlace) {   
+    setTranscodingArgs(directPlay, directStream, deinterlace, firstTry) {   
         let resolution = (directStream) ? this.settings.maxPlayableResolution : this.settings.maxTranscodeResolution
         let bitrate = (directStream) ? this.settings.directStreamBitrate : this.settings.transcodeBitrate
         let mediaBufferSize = (directStream) ? this.settings.mediaBufferSize : this.settings.transcodeMediaBufferSize
         let subtitles = (this.settings.enableSubtitles) ? "burn" : "none" // subtitle options: burn, none, embedded, sidecar
         let streamContainer = "mpegts" // Other option is mkv, mkv has the option of copying it's subs for later processing
-        let isDirectPlay = (directPlay) ? '1' : '0'
+        let isDirectPlay = (directPlay) ? '1' : (firstTry? '': '0');
+        let hasMDE = '1';
         
         let videoQuality=`100` // Not sure how this applies, maybe this works if maxVideoBitrate is not set
         let profileName=`Generic` // Blank profile, everything is specified through X-Plex-Client-Profile-Extra
@@ -166,7 +171,7 @@ X-Plex-Token=${this.server.accessToken}&\
 X-Plex-Client-Profile-Extra=${clientProfile_enc}&\
 protocol=${this.settings.streamProtocol}&\
 Connection=keep-alive&\
-hasMDE=1&\
+hasMDE=${hasMDE}&\
 path=${this.key}&\
 mediaIndex=0&\
 partIndex=0&\
@@ -206,6 +211,9 @@ lang=en`
 
     isDirectPlay() {
         try {
+            if (this.getVideoStats().audioOnly) {
+                return this.getVideoStats().audioDecision === "copy";
+            }
             return this.getVideoStats().videoDecision === "copy" && this.getVideoStats().audioDecision === "copy";
         } catch (e) {
             console.log("Error at decision:" , e);
@@ -217,7 +225,6 @@ lang=en`
         let ret = {}
         try {
             let streams = this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].Stream
-
             ret.duration = parseFloat( this.decisionJson.MediaContainer.Metadata[0].Media[0].Part[0].duration );
             streams.forEach(function (_stream, $index) {
                 // Video
@@ -256,6 +263,14 @@ lang=en`
             }.bind(this) )
         } catch (e) {
             console.log("Error at decision:" , e);
+        }
+        if (typeof(ret.videoCodec) === 'undefined') {
+            ret.audioOnly = true;
+            ret.placeholderImage = (this.albumArt.path != null) ?
+                ret.placeholderImage = this.albumArt.path
+                :
+                ret.placeholderImage = `http://localhost:${process.env.PORT}/images/generic-music-screen.png`
+            ;
         }
 
         this.log("Current video stats:")
@@ -300,21 +315,54 @@ lang=en`
     }
 
     async getDecisionUnmanaged(directPlay) {
-        let res = await axios.get(`${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`, {
+        let url = `${this.server.uri}/video/:/transcode/universal/decision?${this.transcodingArgs}`;
+        let res = await axios.get(url, {
             headers: { Accept: 'application/json' }
         })
             this.decisionJson = res.data;
 
-            this.log("Recieved transcode decision:")
+            this.log("Received transcode decision:");
             this.log(res.data)
 
             // Print error message if transcode not possible
             // TODO: handle failure better
-            let transcodeDecisionCode = res.data.MediaContainer.transcodeDecisionCode
-            if (!(directPlay || transcodeDecisionCode == "1001")) {
+            let transcodeDecisionCode = res.data.MediaContainer.transcodeDecisionCode;
+            if (
+                ( typeof(transcodeDecisionCode) === 'undefined' )
+            ) {
+                this.decisionJson.MediaContainer.transcodeDecisionCode = 'novideo';
+                console.log("Audio-only file detected");
+                await this.tryToGetAlbumArt();
+            } else  if (!(directPlay || transcodeDecisionCode == "1001")) {
                 console.log(`IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`)
                 console.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
             }
+    }
+
+    async tryToGetAlbumArt() {
+        try {
+            if(this.albumArt.attempted ) {
+                return;
+            }
+            this.albumArt.attempted = true;
+
+            this.log("Try to get album art:");
+            let url = `${this.server.uri}${this.key}?${this.transcodingArgs}`;
+            let res = await axios.get(url, {
+                headers: { Accept: 'application/json' }
+            });
+            let mediaContainer = res.data.MediaContainer;
+            if (typeof(mediaContainer) !== 'undefined') {
+                for( let i = 0; i < mediaContainer.Metadata.length; i++) {
+                    console.log("got art: " + mediaContainer.Metadata[i].thumb );
+                    this.albumArt.path = `${this.server.uri}${mediaContainer.Metadata[i].thumb}?${this.transcodingArgs}`;
+                }
+            }
+        } catch (err) {
+            console.error("Error when getting album art", err);
+        }
+
+
     }
 
     async getDecision(directPlay) {
