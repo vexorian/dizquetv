@@ -14,7 +14,7 @@
     <br/>
     <div class="row">
         <div class="col-sm-6">
-            <label>EPG Cache (hours)</label>
+            <label>EPG Hours</label>
             <input type="number" class="form-control form-control-sm" ng-model="settings.cache" aria-describedby="cachehelp"/>
             <small id="cachehelp" class="form-text text-muted">How many hours of programming to include in the xmltv file.</small>
         </div>
@@ -24,5 +24,13 @@
             <small id="timerhelp" class="form-text text-muted">How often should the xmltv file be updated.</small>
         </div>
     </div>
+    <br />
+    <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="imageCache" aria-describedby="imageCacheHelp" ng-model='settings.enableImageCache'>
+        <label class="form-check-label" for="stealth">Image Cache</label>
+
+        <div class='text-muted' id="imageCacheHelp">If enabled the pictures used for Movie and TV Show posters will be cached in dizqueTV's .dizqueTV folder and will be delivered by dizqueTV's server instead of requiring calls to Plex. Note that using fixed xmltv location in Plex (as opposed to url) will not work correctly in this case.</div>
+    </div>
+
     
 </div>

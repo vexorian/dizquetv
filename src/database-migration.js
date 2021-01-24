@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 800;
+const TARGET_VERSION = 801;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -40,6 +40,7 @@ const STEPS = [
     // the addDeinterlaceFilter step. This 702 step no longer exists as a target
     // but we have to migrate it to 800 using the reAddIcon.
     [    702,    800, (db,channels,dir) => reAddIcon(dir) ],
+    [    800,    801, (db) => addImageCache(db) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -802,6 +803,14 @@ function addDeinterlaceFilter(db) {
     ffmpegSettings.deinterlaceFilter = "none";
     fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
 }
+
+function addImageCache(db) {
+    let xmltvSettings = db['xmltv-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'xmltv-settings.json');
+    xmltvSettings.enableImageCache = false;
+    fs.writeFileSync( f, JSON.stringify( [xmltvSettings] ) );
+}
+
 
 module.exports = {
     initDB: initDB,

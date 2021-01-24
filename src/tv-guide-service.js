@@ -7,7 +7,7 @@ class TVGuideService
     /****
      *
      **/
-    constructor(xmltv, db) {
+    constructor(xmltv, db, cacheImageService) {
         this.cached = null;
         this.lastUpdate = 0;
         this.updateTime = 0;
@@ -18,6 +18,7 @@ class TVGuideService
         this.doThrottle = false;
         this.xmltv = xmltv;
         this.db = db;
+        this.cacheImageService = cacheImageService;
     }
 
     async get() {
@@ -351,7 +352,7 @@ class TVGuideService
 
     async refreshXML() {
         let xmltvSettings = this.db['xmltv-settings'].find()[0];
-        await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle(), this.db);
+        await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle(), this.cacheImageService);
     }
 
     async getStatus() {
