@@ -525,6 +525,11 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                         if ( angle >= 350 || angle < 10 ) {
                             angle += 53;
                         }
+                    } else if (program.type === 'track') {
+                        r = 10, g = 10, b = 10;
+                        r2 = 245, g2 = 245, b2 = 245;
+                        angle = 315;
+                        w = 2;
                     } else {
                         r = 10, g = 10, b = 10;
                         r2 = 245, g2 = 245, b2 = 245;

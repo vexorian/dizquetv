@@ -112,7 +112,7 @@ module.exports = function ($http, $window, $interval) {
             const res = await client.Get('/library/sections')
             var sections = []
             for (let i = 0, l = typeof res.Directory !== 'undefined' ? res.Directory.length : 0; i < l; i++)
-                if (res.Directory[i].type === 'movie' || res.Directory[i].type === 'show') {
+                if (res.Directory[i].type === 'movie' || res.Directory[i].type === 'show' || res.Directory[i].type === 'artist' ) {
                     var genres = []
                     if (res.Directory[i].type === 'movie') {
                         const genresRes = await client.Get(`/library/sections/${res.Directory[i].key}/genre`)
@@ -142,13 +142,18 @@ module.exports = function ($http, $window, $interval) {
             const res = await client.Get('/playlists')
             var playlists = []
             for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++)
-                if (res.Metadata[i].playlistType === 'video')
+                if (
+                    (res.Metadata[i].playlistType === 'video')
+                    ||
+                    (res.Metadata[i].playlistType === 'audio')
+                ) {
                     playlists.push({
                         title: res.Metadata[i].title,
                         key: res.Metadata[i].key,
                         icon: `${server.uri}${res.Metadata[i].composite}?X-Plex-Token=${server.accessToken}`,
                         duration: res.Metadata[i].duration
                     })
+                }
             return playlists
         },
         getStreams: async (server, key) => {
@@ -180,6 +185,15 @@ module.exports = function ($http, $window, $interval) {
                     continue
                 if (res.Metadata[i].duration <= 0 && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
                     continue
+                let year = res.Metadata[i].year;
+                if (typeof(year)==='undefined') {
+                    year = lib.year;
+                }
+                let date = res.Metadata[i].originallyAvailableAt;
+                if ( (typeof(date)==='undefined') || (typeof(year)!=='undefined') ) {
+                    //albums don't have date , only year, so let's fill it
+                    date = `${year}-01-01`;
+                }
                 var program = {
                     title: res.Metadata[i].title,
                     key: res.Metadata[i].key,
@@ -192,10 +206,10 @@ module.exports = function ($http, $window, $interval) {
                     subtitle: res.Metadata[i].subtitle,
                     summary: res.Metadata[i].summary,
                     rating: res.Metadata[i].contentRating,
-                    date: res.Metadata[i].originallyAvailableAt,
-                    year: res.Metadata[i].year,
+                    date: date,
+                    year: year,
                 }
-                if (program.type === 'episode' || program.type === 'movie') {
+                if (program.type === 'episode' || program.type === 'movie' || program.type === 'track') {
                     program.plexFile = `${res.Metadata[i].Media[0].Part[0].key}`
                     program.file = `${res.Metadata[i].Media[0].Part[0].file}`
                 }

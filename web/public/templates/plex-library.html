@@ -37,7 +37,7 @@
                                 <span class="fa {{ a.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
                                 <img ng-if="displayImages" lazy-img="{{a.icon}}" />
                                 <span>{{a.title}}</span><!-- Library -->
-                                <span ng-if="a.type === 'show' || a.type === 'movie'" class="flex-pull-right" ng-click='$event.stopPropagation(); selectLibrary(a)'>
+                                <span ng-if="a.type === 'show' || a.type === 'movie' || a.type === 'artist'" class="flex-pull-right" ng-click='$event.stopPropagation(); selectLibrary(a)'>
                                     <span class="fa fa-plus btn"></span>
                                 </span>
                             </div>
@@ -57,7 +57,7 @@
                                         <span ng-if="b.type === 'playlist'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectPlaylist(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
-                                        <span ng-if="b.type === 'show' || b.type === 'collection' || b.type === 'genre'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectShow(b);">
+                                        <span ng-if="b.type === 'show' || b.type === 'collection' || b.type === 'genre' || b.type === 'artist'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectShow(b);">
                                             <span class="fa fa-plus btn"></span>
                                         </span>
                                     </div>
@@ -81,7 +81,7 @@
                                                     class="flex-pull-right">
                                                     {{c.durationStr}}
                                                 </span>
-                                                <span ng-if="c.type === 'season'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectSeason(c);">
+                                                <span ng-if="c.type === 'season' || c.type === 'album'" class="flex-pull-right" ng-click="$event.stopPropagation(); selectSeason(c);">
                                                     <span class="fa fa-plus btn"></span>
                                                 </span>
                                             </div>
