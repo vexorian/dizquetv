@@ -355,7 +355,7 @@ lang=en`
             if (typeof(mediaContainer) !== 'undefined') {
                 for( let i = 0; i < mediaContainer.Metadata.length; i++) {
                     console.log("got art: " + mediaContainer.Metadata[i].thumb );
-                    this.albumArt.path = `${this.server.uri}${mediaContainer.Metadata[i].thumb}?${this.transcodingArgs}`;
+                    this.albumArt.path = `${this.server.uri}${mediaContainer.Metadata[i].thumb}?X-Plex-Token=${this.server.accessToken}`;
                 }
             }
         } catch (err) {
