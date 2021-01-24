@@ -178,7 +178,29 @@ module.exports = function ($http, $window, $interval) {
             }
             var seenFiles = {};
             var collections = {};
-            for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++) {
+
+            let albumKeys = {};
+            let albums = {};
+            for (let i = 0; i < res.size; i++) {
+                let meta = res.Metadata[i];
+                if (meta.type === 'track') {
+                    albumKeys[ meta.parentKey ] = false;
+                }
+            }
+            albumKeys = Object.keys( albumKeys );
+            await Promise.all( albumKeys.map( async(albumKey) => {
+                try {
+                    let album = await client.Get(albumKey);
+                    if ( (typeof(album)!=='undefined') && album.size == 1) {
+                        album = album.Metadata[0];
+                    }
+                    albums[albumKey] = album;
+                } catch (err) {
+                    console.error(err);
+                }
+            } ) );
+
+            for (let i = 0; i < res.size; i++) {
               try {
                 // Skip any videos (movie or episode) without a duration set...
                 if (typeof res.Metadata[i].duration === 'undefined' && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
@@ -186,12 +208,17 @@ module.exports = function ($http, $window, $interval) {
                 if (res.Metadata[i].duration <= 0 && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
                     continue
                 let year = res.Metadata[i].year;
-                if (typeof(year)==='undefined') {
-                    year = lib.year;
-                }
                 let date = res.Metadata[i].originallyAvailableAt;
-                if ( (typeof(date)==='undefined') || (typeof(year)!=='undefined') ) {
-                    //albums don't have date , only year, so let's fill it
+                let album = undefined;
+                if (res.Metadata[i].type === 'track') {
+                    //complete album year and date
+                    album = albums[res.Metadata[i].parentKey];
+                    if (typeof(album) !== 'undefined') {
+                        year = album.year;
+                        date = album.originallyAvailableAt;
+                    }
+                }
+                if ( (typeof(date)==='undefined') && (typeof(year)!=='undefined') ) {
                     date = `${year}-01-01`;
                 }
                 var program = {
@@ -235,8 +262,15 @@ module.exports = function ($http, $window, $interval) {
                     program.episodeIcon = `${server.uri}${res.Metadata[i].thumb}?X-Plex-Token=${server.accessToken}`
                     program.seasonIcon = `${server.uri}${res.Metadata[i].parentThumb}?X-Plex-Token=${server.accessToken}`
                     program.showIcon = `${server.uri}${res.Metadata[i].grandparentThumb}?X-Plex-Token=${server.accessToken}`
-                }
-                else if (program.type === 'movie') {
+                } else if (program.type === 'track') {
+                    if (typeof(album) !== 'undefined') {
+                        program.showTitle = album.title;
+                    } else {
+                        program.showTitle = res.Metadata[i].title
+                    }
+                    program.episode = res.Metadata[i].index;
+                    program.season = res.Metadata[i].parentIndex;
+                } else if (program.type === 'movie') {
                     program.showTitle = res.Metadata[i].title
                     program.episode = 1
                     program.season = 1
