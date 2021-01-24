@@ -1,15 +1,14 @@
 const path = require('path');
 const fs = require('fs');
-const config = require('./config');
 
 /**
- * A File Cache controller for store and retrieve files from disk
+ * Store files in cache
  *
- * @class CacheService
+ * @class FileCacheService
  */
-class CacheService {
-    constructor() {
-        this.cachePath = path.join(config.DATABASE, 'cache');
+class FileCacheService {
+    constructor(cachePath) {
+        this.cachePath = cachePath;
         this.cache = {};
     }
 
@@ -76,7 +75,11 @@ class CacheService {
     deleteCache(fullFilePath) {
         return new Promise((resolve, reject) => {
             try {
-                fs.unlinkSync(path.join(this.cachePath, fullFilePath), (err) => {
+                let thePath = path.join(this.cachePath, fullFilePath);
+                if (! fs.existsSync(thePath)) {
+                    return resolve(true);
+                }
+                fs.unlinkSync(thePath, (err) => {
                     if(err) {
                         throw Error("Can't save file: ", err);
                     } else {
@@ -91,4 +94,4 @@ class CacheService {
     }
 }
 
-module.exports = new CacheService();
+module.exports = FileCacheService;

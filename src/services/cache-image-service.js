@@ -1,11 +1,6 @@
 const fs = require('fs');
 const express = require('express');
 const request = require('request');
-const diskDb = require('diskdb');
-
-const config = require('./config');
-const CacheService = require('./cache-service');
-const SettingsService = require('./services/settings-service');
 
 /**
  * Manager a cache in disk for external images.
@@ -13,13 +8,10 @@ const SettingsService = require('./services/settings-service');
  * @class CacheImageService
  */
 class CacheImageService {
-    constructor() {
-        this.cacheService = CacheService;
+    constructor( db, fileCacheService ) {
+        this.cacheService = fileCacheService;
         this.imageCacheFolder = 'images';
-        const connection = diskDb.connect(config.DATABASE, ['cache-images']);
-        this.db = connection['cache-images'];
-
-        SettingsService.saveSetting('enabled-cache-image', 'Enable Cache Image', false);
+        this.db = db['cache-images'];
     }
 
     /**
@@ -161,4 +153,4 @@ class CacheImageService {
     }
 }
 
-module.exports = new CacheImageService();
+module.exports = CacheImageService;

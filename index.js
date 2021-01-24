@@ -10,14 +10,15 @@ const api = require('./src/api')
 const dbMigration = require('./src/database-migration');
 const video = require('./src/video')
 const HDHR = require('./src/hdhr')
-const CacheImageService = require('./src/cache-image-service');
-const SettingsService = require('./src/services/settings-service');
+const FileCacheService = require('./src/services/file-cache-service');
+const CacheImageService = require('./src/services/cache-image-service');
 
 const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex');
 const channelCache = require('./src/channel-cache');
 const constants = require('./src/constants')
 const ChannelDB = require("./src/dao/channel-db");
+const M3uService = require("./src/services/m3u-service");
 const FillerDB = require("./src/dao/filler-db");
 const TVGuideService = require("./src/tv-guide-service");
 const onShutdown = require("node-graceful-shutdown").onShutdown;
@@ -72,10 +73,14 @@ fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelDB, 
 
 db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id', 'cache-images', 'settings'])
 
+fileCache = new FileCacheService( path.join(process.env.DATABASE, 'cache') );
+cacheImageService = new CacheImageService(db, fileCache);
+m3uService = new M3uService(channelDB, fileCache, channelCache)
+
 initDB(db, channelDB)
 
 
-const guideService = new TVGuideService(xmltv, db);
+const guideService = new TVGuideService(xmltv, db, cacheImageService);
 
 
 
@@ -185,16 +190,15 @@ app.get('/version.js', (req, res) => {
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
-app.use('/cache/images', CacheImageService.routerInterceptor())
+app.use('/cache/images', cacheImageService.routerInterceptor())
 app.use('/cache/images', express.static(path.join(process.env.DATABASE, 'cache/images')))
 app.use('/favicon.svg', express.static(
     path.join(__dirname, 'resources/favicon.svg')
 ) );
 
 // API Routers
-app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService ))
-app.use('/api/cache/images', CacheImageService.apiRouters())
-app.use('/api/settings/cache', SettingsService.apiRouters())
+app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService, m3uService ))
+app.use('/api/cache/images', cacheImageService.apiRouters())
 
 app.use(video.router( channelDB, fillerDB, db))
 app.use(hdhr.router)

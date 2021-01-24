@@ -10,11 +10,10 @@ const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 const FillerDB = require('./dao/filler-db');
 const timeSlotsService = require('./services/time-slots-service');
-const M3uService = require('./services/m3u-service');
 
 module.exports = { router: api }
-function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
-    const m3uService = new M3uService(channelDB);
+function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService ) {
+    const m3uService = _m3uService;
     const router = express.Router()
     const plexServerDB = new PlexServerDB(channelDB, channelCache, db);
 
@@ -452,6 +451,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
                 _id: req.body._id,
                 cache:   req.body.cache,
                 refresh: req.body.refresh,
+                enableImageCache: (req.body.enableImageCache === true),
                 file: xmltv.file,
             }
         );
@@ -611,24 +611,6 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       }
 
     })
-
-    // hls.m3u Download is not really working correctly right now
-    router.get('/api/hls.m3u', async (req, res) => {
-      try {
-        res.type('text');
-
-        const host = `${req.protocol}://${req.get('host')}`;
-        const data = await m3uService.getChannelList(host, 'hls');
-
-        res.send(data);
-        
-      } catch(err) {
-        console.error(err);
-        res.status(500).send("error");
-      }
-    })
-
-
 
 
     function updateXmltv() {
