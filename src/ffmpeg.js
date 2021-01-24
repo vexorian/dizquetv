@@ -227,15 +227,13 @@ class FFMPEG extends events.EventEmitter {
                         //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
                         duration = `${streamStats.duration + 150}ms`;
                     }
-                    videoComplex = `;[${inputFiles++}:0]loop=loop=-1:size=1:start=0[looped]`;
-                    videoComplex += `;[looped]format=yuv420p[formatted]`;
-                    let stream = "scaled";
+                    videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
                     videoComplex +=`;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
-                    if (this.ensureResolution) {
-                        stream = "padded";
-                        videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
-                    }
-                    videoComplex +=`;[${stream}]realtime[videox]`;
+                    videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
+                    videoComplex += `;[padded]loop=loop=-1:size=1:start=0[looped]`;
+                    videoComplex +=`;[looped]realtime[videox]`;
+                    //this tune apparently makes the video compress better
+                    // when it is the same image
                     stillImage = true;
                 } else if (this.opts.errorScreen == 'static') {
                     ffmpegArgs.push(
