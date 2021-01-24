@@ -63,21 +63,21 @@
                                     </div>
                                     <ul ng-if="b.collapse" class="list-group">
                                         <li ng-repeat="c in b.nested"
-                                            class="list-group-item {{ c.type !== 'movie' && c.type !== 'episode' ? 'list-group-item-dark' : 'list-group-item-video' }}">
+                                            class="list-group-item {{ c.type !== 'movie' && c.type !== 'episode' && c.type !== 'track' ? 'list-group-item-dark' : 'list-group-item-video' }}">
                                             <div class="flex-container"
-                                                ng-click="c.type !== 'movie' && c.type !== 'episode' ? getNested(c) : selectItem(c, true)">
-                                                <span ng-if="c.type === 'movie' || c.type === 'episode'"
+                                                ng-click="c.type !== 'movie' && c.type !== 'episode' && c.type !== 'track' ? getNested(c) : selectItem(c, true)">
+                                                <span ng-if="c.type === 'movie' || c.type === 'episode' || c.type === 'track'"
                                                     class="fa fa-plus-circle tab"></span>
-                                                <span ng-if="c.type !== 'movie' && c.type !== 'episode'"
+                                                <span ng-if="c.type !== 'movie' && c.type !== 'episode' && c.type !== 'track'"
                                                     class="tab"></span>
-                                                <span ng-if="c.type !== 'movie' && c.type !== 'episode'"
+                                                <span ng-if="c.type !== 'movie' && c.type !== 'episode' && c.type !== 'track'"
                                                     class="tab"></span>
-                                                <span ng-if="c.type !== 'movie' && c.type !== 'episode'"
+                                                <span ng-if="c.type !== 'movie' && c.type !== 'episode' && c.type !== 'track'"
                                                     class="fa {{ c.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
                                                 <img ng-if="displayImages" lazy-img="{{c.type === 'episode' ? c.episodeIcon : c.icon }}" />
                                                 {{ c.type === 'episode' ? c.showTitle + ' - S' + c.season.toString().padStart(2,'0') + 'E' + c.episode.toString().padStart(2,'0') + ' - ' : '' }}
                                                 {{c.title}}
-                                                <span ng-if="c.type === 'movie' || c.type === 'episode'"
+                                                <span ng-if="c.type === 'movie' || c.type === 'episode' || c.type === 'track' "
                                                     class="flex-pull-right">
                                                     {{c.durationStr}}
                                                 </span>
