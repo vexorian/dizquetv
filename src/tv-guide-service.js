@@ -351,7 +351,7 @@ class TVGuideService
 
     async refreshXML() {
         let xmltvSettings = this.db['xmltv-settings'].find()[0];
-        await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle() );
+        await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle(), this.db);
     }
 
     async getStatus() {

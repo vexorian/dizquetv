@@ -1,4 +1,4 @@
-module.exports = function ($http) {
+module.exports = function ($http, $q) {
     return {
         getVersion: () => {
             return $http.get('/api/version').then((d) => { return d.data })
@@ -264,8 +264,47 @@ module.exports = function ($http) {
                 headers: { 'Content-Type': 'application/json; charset=utf-8' },
             } );
             return d.data;
-        }
+        },
 
+        /*======================================================================
+        * Settings
+        */
+        getAllSettings: async () => {
+            var deferred = $q.defer();
+            $http({
+                method: "GET",
+                url : "/api/settings/cache",
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            }).then((response) => {
+                if(response.status === 200) {
+                    deferred.resolve(response.data);
+                } else {
+                    deferred.reject();
+                }
+            });
+
+            return deferred.promise;
+        },
+        putSetting: async (key, value) => {
+            console.warn(key, value);
+            var deferred = $q.defer();
+            $http({
+                method: "PUT",
+                url : `/api/settings/cache/${key}`,
+                data: {
+                    value
+                },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            }).then((response) => {
+                if(response.status === 200) {
+                    deferred.resolve(response.data);
+                } else {
+                    deferred.reject();
+                }
+            });
+
+            return deferred.promise;
+        }
 
     }
 }

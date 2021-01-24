@@ -20,10 +20,16 @@
                 HDHR
             </span>
         </li>
+        <li class="nav-item">
+            <span class="nav-link btn btn-link {{ selected === 'cache' ? 'active' : ''}}" ng-click="selected = 'cache'">
+                Cache
+            </span>
+        </li>
     </ul>
     <br />
     <plex-settings ng-if="selected == 'plex'"></plex-settings>
     <ffmpeg-settings ng-if="selected == 'ffmpeg'"></ffmpeg-settings>
     <xmltv-settings ng-if="selected == 'xmltv'"></xmltv-settings>
+    <cache-settings ng-if="selected == 'cache'"></cache-settings>
     <hdhr-settings ng-if="selected == 'hdhr'"></hdhr-settings>
 </div>

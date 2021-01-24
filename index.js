@@ -10,6 +10,8 @@ const api = require('./src/api')
 const dbMigration = require('./src/database-migration');
 const video = require('./src/video')
 const HDHR = require('./src/hdhr')
+const CacheImageService = require('./src/cache-image-service');
+const SettingsService = require('./src/services/settings-service');
 
 const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex');
@@ -51,21 +53,27 @@ if (!fs.existsSync(process.env.DATABASE)) {
 if(!fs.existsSync(path.join(process.env.DATABASE, 'images'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'images'))
 }
-
 if(!fs.existsSync(path.join(process.env.DATABASE, 'channels'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'channels'))
 }
 if(!fs.existsSync(path.join(process.env.DATABASE, 'filler'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'filler'))
 }
+if(!fs.existsSync(path.join(process.env.DATABASE, 'cache'))) {
+    fs.mkdirSync(path.join(process.env.DATABASE, 'cache'))
+}
+if(!fs.existsSync(path.join(process.env.DATABASE, 'cache/images'))) {
+    fs.mkdirSync(path.join(process.env.DATABASE, 'cache/images'))
+}
 
 
 channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
 fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelDB, channelCache );
 
-db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id'])
+db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id', 'cache-images', 'settings'])
 
 initDB(db, channelDB)
+
 
 const guideService = new TVGuideService(xmltv, db);
 
@@ -156,6 +164,7 @@ app.use(fileUpload({
     createParentPath: true
 }));
 app.use(bodyParser.json({limit: '50mb'}))
+
 app.get('/version.js', (req, res) => {
     res.writeHead(200, {
         'Content-Type': 'application/javascript'
@@ -176,11 +185,17 @@ app.get('/version.js', (req, res) => {
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use(express.static(path.join(__dirname, 'web/public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
+app.use('/cache/images', CacheImageService.routerInterceptor())
+app.use('/cache/images', express.static(path.join(process.env.DATABASE, 'cache/images')))
 app.use('/favicon.svg', express.static(
     path.join(__dirname, 'resources/favicon.svg')
 ) );
 
+// API Routers
 app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService ))
+app.use('/api/cache/images', CacheImageService.apiRouters())
+app.use('/api/settings/cache', SettingsService.apiRouters())
+
 app.use(video.router( channelDB, fillerDB, db))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
