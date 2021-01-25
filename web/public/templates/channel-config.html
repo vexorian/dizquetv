@@ -21,16 +21,28 @@
                 </div>
                 <!-- ============= TAB: PROPERTIES ========================= -->
                 <div class="modal-body" ng-if="tab == 'basic'">
-                    <div>
-                        <span class="pull-right text-danger">{{error.number}}</span>
-                        <label id="channelNumber" class="small">Ch. #</label>
-                        <input for="channelNumber" class="form-control form-control-sm" type="number" ng-model="channel.number" />
+
+                    <div class='form-group'>
+                        <label class='form-label' >Channel Number:</label>
+                        <input type="text" class='form-control' type='number' ng-model="channel.number" id='channelNumber'  aria-describedby="channelNumberHelp" />
+
+                        <small id='channelNumberHelp' class="text-danger" for='channelNumber'>{{error.number}}</small>
                     </div>
-                    <div>
-                        <span class="pull-right text-danger">{{error.name}}</span>
-                        <label id="channelName" class="small">Channel Name</label>
-                        <input for="channelName" class="form-control form-control-sm" type="text" ng-model="channel.name" />
+
+                    <div class='form-group'>
+                        <label class='form-label' >Channel Name:</label>
+                        <input type="text" class='form-control' ng-model="channel.name" id='channelName'  aria-describedby="channelNameHelp" />
+
+                        <small id='channelNumberHelp' class="text-danger" for='channelNumber'>{{error.name}}</small>
                     </div>
+
+                    <div class='form-group'>
+                        <label class='form-label' >Channel Group:</label>
+                        <input type="text" class='form-control' ng-model="channel.groupTitle" id='groupTitle' placeholder="dizqueTV"  aria-describedby="groupTitleHelp" />
+
+                        <small id='groupTitleHelp' class="text-muted" for='channelNumber'>This is used by iptv clients to categorize the channels. You can leave it as dizqueTV if you don&apos;t need this sort of classification.</small>
+                    </div>
+
                     <div>
                         <span class="pull-right text-danger">{{error.icon}}</span>
                         <label for="channelIcon" class="small">Channel Icon</label>
@@ -48,8 +60,9 @@
                             </div>
                         </div>
 
+                        <br />
                         <div>
-                            <h6>Channel Icon Preview</h6>
+                            <h6>Preview</h6>
                             <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
                             <span ng-if="channel.icon === ''">{{channel.name}}</span>
                         </div>
@@ -793,14 +806,14 @@
     
 
                         <div class="form-group col-sm-auto">
-                            <label for="channelBitrate">Video Bitrate (k:</label>
+                            <label for="channelBitrate">Video Bitrate (K):</label>
                             <input id='channelBitrate' class='form-control' type='number' ng-model='channel.transcoding.videoBitrate' min=0 placeholder='{{videoRateDefault}}'>
                             </input>
                             <small class='text-muted form-text'>Leave unassigned to use the global setting</small>
                         </div>
 
                         <div class="form-group col-sm-auto">
-                            <label for="channelBufsize">Video Buffer Size (k):</label>
+                            <label for="channelBufsize">Video Buffer Size (K):</label>
                             <input id='channelBufsize' class='form-control' type='number' ng-model='channel.transcoding.videoBufSize' min=0 placeholder='{{videoBufSizeDefault}}'>
                             </input>
                             <small class='text-muted form-text'>Leave unassigned to use the global setting</small>

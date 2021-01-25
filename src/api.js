@@ -627,6 +627,13 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
     }
 
     function cleanUpChannel(channel) {
+        if (
+          (typeof(channel.groupTitle) === 'undefined')
+          ||
+          (channel.groupTitle === '')
+        ) {
+          channel.groupTitle = "dizqueTV";
+        }
         channel.programs.forEach( cleanUpProgram );
         delete channel.fillerContent;
         delete channel.filler;

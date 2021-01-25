@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 801;
+const TARGET_VERSION = 802;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -41,6 +41,7 @@ const STEPS = [
     // but we have to migrate it to 800 using the reAddIcon.
     [    702,    800, (db,channels,dir) => reAddIcon(dir) ],
     [    800,    801, (db) => addImageCache(db) ],
+    [    801,    802, () => addGroupTitle() ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -741,7 +742,7 @@ function migrateWatermark(db, channelDB) {
         return channel;
     }
 
-    console.log("Extracting fillers from channels...");
+    console.log("Migrating watermarks...");
     let channels = path.join(process.env.DATABASE, 'channels');
     let channelFiles = fs.readdirSync(channels);
     for (let i = 0; i < channelFiles.length; i++) {
@@ -810,6 +811,30 @@ function addImageCache(db) {
     xmltvSettings.enableImageCache = false;
     fs.writeFileSync( f, JSON.stringify( [xmltvSettings] ) );
 }
+
+function addGroupTitle() {
+
+    function migrateChannel(channel) {
+        channel.groupTitle= "dizqueTV";
+        return channel;
+    }
+
+    console.log("Adding group title to channels...");
+    let channels = path.join(process.env.DATABASE, 'channels');
+    let channelFiles = fs.readdirSync(channels);
+    for (let i = 0; i < channelFiles.length; i++) {
+        if (path.extname( channelFiles[i] ) === '.json') {
+            console.log("Adding group title to channel : " + channelFiles[i] +"..." );
+            let channelPath = path.join(channels, channelFiles[i]);
+            let channel = JSON.parse(fs.readFileSync(channelPath, 'utf-8'));
+            channel = migrateChannel(channel);
+            fs.writeFileSync( channelPath, JSON.stringify(channel), 'utf-8');
+        }
+    }
+    console.log("Done migrating group titles in channels.");
+}
+
+
 
 
 module.exports = {

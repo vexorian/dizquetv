@@ -60,6 +60,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 scope.channel.guideMinimumDurationSeconds = 5 * 60;
                 scope.isNewChannel = true
                 scope.channel.icon = `${$location.protocol()}://${location.host}/images/dizquetv.png`
+                scope.channel.groupTitle = "dizqueTV";
                 scope.channel.disableFillerOverlay = true;
                 scope.channel.iconWidth = 120
                 scope.channel.iconDuration = 60
@@ -93,6 +94,14 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     || (scope.channel.watermark.enabled !== true)
                 ) {
                     scope.channel.watermark = defaultWatermark();
+                }
+
+                if (
+                    (typeof(scope.channel.groupTitle) === 'undefined')
+                    ||
+                    (scope.channel.groupTitle === '')
+                ) {
+                    scope.channel.groupTitle = "dizqueTV";
                 }
 
                 if (typeof(scope.channel.fillerRepeatCooldown) === 'undefined') {
