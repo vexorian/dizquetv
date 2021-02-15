@@ -172,6 +172,7 @@ module.exports = function ($http, $window, $interval) {
             var client = new Plex(server)
             const key = lib.key
             const res = await client.Get(key)
+            const size = res.Metadata !== 'undefined' ? res.Metadata.length : 0;
             var nested = []
             if (typeof (lib.genres) !== 'undefined') {
                 nested = Array.from(lib.genres)
@@ -181,7 +182,7 @@ module.exports = function ($http, $window, $interval) {
 
             let albumKeys = {};
             let albums = {};
-            for (let i = 0; i < res.size; i++) {
+            for (let i = 0; i < size; i++) {
                 let meta = res.Metadata[i];
                 if (meta.type === 'track') {
                     albumKeys[ meta.parentKey ] = false;
@@ -200,7 +201,7 @@ module.exports = function ($http, $window, $interval) {
                 }
             } ) );
 
-            for (let i = 0; i < res.size; i++) {
+            for (let i = 0; i < size; i++) {
               try {
                 // Skip any videos (movie or episode) without a duration set...
                 if (typeof res.Metadata[i].duration === 'undefined' && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
