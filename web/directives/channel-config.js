@@ -1454,6 +1454,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             scope.rerunBlockSize = -1;
             scope.rerunBlockSizes = [
                 { id: -1, description: "Block" },
+                { id: 4, description: "4 Hours" },
                 { id: 6, description: "6 Hours" },
                 { id: 8, description: "8 Hours" },
                 { id: 12, description: "12 Hours" },
@@ -1464,6 +1465,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 { id: 2, description: "2" },
                 { id: 3, description: "3" },
                 { id: 4, description: "4" },
+                { id: 6, description: "6" },
             ];
             scope.rerunsDisabled = () => {
                 return scope.rerunStart == -1 || scope.rerunBlockSize == -1 || scope.rerunRepeats == -1
