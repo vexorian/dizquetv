@@ -177,6 +177,9 @@ module.exports = async( programs, schedule  ) => {
     if (! Array.isArray(schedule.slots) ) {
         return { userError: 'Expected a "slots" array in schedule' };
     }
+    if (typeof(schedule).period === 'undefined') {
+        schedule.period = DAY;
+    }
     for (let i = 0; i < schedule.slots.length; i++) {
         if (typeof(schedule.slots[i].time) === 'undefined') {
             return { userError: "Each slot should have a time" };
@@ -186,12 +189,12 @@ module.exports = async( programs, schedule  ) => {
         }
         if (
             (schedule.slots[i].time < 0)
-            || (schedule.slots[i].time >= DAY)
+            || (schedule.slots[i].time >= schedule.period)
             || (Math.floor(schedule.slots[i].time) != schedule.slots[i].time)
         ) {
-            return { userError: "Slot times should be a integer number of milliseconds since the start of the day." };
+            return { userError: "Slot times should be a integer number of milliseconds between 0 and period-1, inclusive" };
         }
-        schedule.slots[i].time = ( schedule.slots[i].time  + 10*DAY + schedule.timeZoneOffset*MINUTE) % DAY;
+        schedule.slots[i].time = ( schedule.slots[i].time  + 10*schedule.period + schedule.timeZoneOffset*MINUTE) % schedule.period;
     }
     schedule.slots.sort( (a,b) => {
         return (a.time - b.time);
@@ -300,16 +303,12 @@ module.exports = async( programs, schedule  ) => {
     }
 
     let s = schedule.slots;
-    let d = (new Date() );
-    d.setUTCMilliseconds(0);
-    d.setUTCSeconds(0);
-    d.setUTCMinutes(0);
-    d.setUTCHours(0);
-    d.setUTCMilliseconds( s[0].time );
-    let t0 = d.getTime();
+    let ts = (new Date() ).getTime();
+    let curr = ts - ts % (schedule.period);
+    let t0 = curr + s[0].time;
     let p = [];
     let t = t0;
-    let wantedFinish = t % DAY;
+    let wantedFinish = t % schedule.period;
     let hardLimit = t0 + schedule.maxDays * DAY;
 
     let pushFlex = (d) => {
@@ -335,14 +334,14 @@ module.exports = async( programs, schedule  ) => {
             continue;
         }
 
-        let dayTime = t % DAY;
+        let dayTime = t % schedule.period;
         let slot = null;
         let remaining = null;
         let late = null;
         for (let i = 0; i < s.length; i++) {
             let endTime;
             if (i == s.length - 1) {
-                endTime = s[0].time + DAY;
+                endTime = s[0].time + schedule.period;
             } else {
                 endTime = s[i+1].time;
             }
@@ -353,11 +352,11 @@ module.exports = async( programs, schedule  ) => {
                 late = dayTime - s[i].time;
                 break;
             }
-            if ((s[i].time <= dayTime + DAY) && (dayTime + DAY < endTime)) {
+            if ((s[i].time <= dayTime + schedule.period) && (dayTime + schedule.period < endTime)) {
                 slot = s[i];
-                dayTime += DAY;
+                dayTime += schedule.period;
                 remaining = endTime - dayTime;
-                late = dayTime + DAY - s[i].time;
+                late = dayTime + schedule.period - s[i].time;
                 break;
             }
         }
@@ -442,10 +441,10 @@ module.exports = async( programs, schedule  ) => {
     while ( (t > hardLimit) || (p.length >= LIMIT) ) {
         t -= p.pop().duration;
     }
-    let m = t % DAY;
+    let m = t % schedule.period;
     let rem = 0;
     if (m > wantedFinish) {
-        rem = DAY + wantedFinish - m;
+        rem = schedule.period + wantedFinish - m;
     } else if (m < wantedFinish) {
         rem = wantedFinish - m;
     }

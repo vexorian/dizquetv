@@ -14,19 +14,19 @@
 
                 <div class="modal-body" ng-show='! loading' >
                     <div class="form-row" ng-repeat = "slot in schedule.slots" track-by = "$index">
-                        <div class='form-group col-md-2'>
+                        <div class='form-group' ng-class='timeColumnClass()' >
                             <label ng-if="$index==0" for="showTime{{$index}}">Time</label>
-                            <select
-                                id="showTime{{$index}}" class="custom-select form-control"
-                                ng-class="{'is-invalid': hasTimeError(slot) }"
-                                ng-model="slot.time" ng-options="o.id as o.description for o in timeOptions"
-                                ng-change="refreshSlots()"
-                                aria-describedby="showTime{{$index}}Help"
-                                >
-                            </select>
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary form-control"
+                                ng-click="editTime($index)"
+                            >
+                                {{ displayTime(slot.time) }}
+                            </button>
                             <small class='form-text text-danger'>{{slot.timeError}}</small>
                         </div>
-                        <div class='form-group col-md-7'>
+                        <div class='form-group' ng-class='programColumnClass()' >
                             <label ng-if="$index==0" for="showId{{$index}}">Program</label>
                             <select
                                 id="showId{{$index}}" class="custom-select form-control"
@@ -56,17 +56,33 @@
     
                     </div>
                     <div class="form-row">
-                        <div class='form-group col-md-2'>
+                        <div class='form-group col-md-2' ng-class='timeColumnClass()'>
                             <label ng-if="schedule.slots.length==0" for="fakeTime">Time</label>
-                            <select
-                                id="fakeTime" class="custom-select form-control"
-                                ng-model="fake.time" ng-options="o.id as o.description for o in fakeTimeOptions"
-                                ng-change="fakeTimeChanged()"
-                                >
-                            </select>
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary form-control"
+                                ng-click="addSlot()"
+                            >
+                                Add Slot
+                            </button>
                         </div>
                     </div>
                     <hr>
+                    <div class='form-group'>
+                        <label for="period">Period</label>
+                        <select
+                            id="period" class="custom-select form-control"
+                            ng-model="schedule.period" ng-options="o.id as o.description for o in periodOptions"
+                            ng-change="periodChanged()"
+                            aria-describedby="periodHelp"
+                            >
+                        </select>
+                        <small id='periodHelp' class='form-text text-muted'>
+                            By default, time slots are time of the day-based, you can change it to time of the day + day of the week. That means scheduling  7x the number of time slots. If you change from daily to weekly, the current schedule will be repeated 7 times. If you change from weekly to daily, many of the slots will be deleted.
+                        </small>
+    
+                    </div>
+
                     <div class='form-group'>
                         <label for="lateness">Maximum lateness</label>
                         <select
@@ -137,4 +153,8 @@
             </div>
         </div>
     </div>
+
+    <time-slots-time-editor slot="_editedTime" on-done="finishedTimeEdit"></time-slots-time-editor>
+    <time-slots-time-editor slot="_addedTime" on-done="finishedAddingTime"></time-slots-time-editor>
+
 </div>
