@@ -83,7 +83,7 @@ function createLineup(obj, channel, fillers, isFirst) {
             if ( (channel.offlineMode === 'clip') && (channel.fallback.length != 0) ) {
                 special = JSON.parse(JSON.stringify(channel.fallback[0]));
             }
-            let randomResult = pickRandomWithMaxDuration(channel, fillers, remaining + (isFirst? (24*60*60*1000) : 0) );
+            let randomResult = pickRandomWithMaxDuration(channel, fillers, remaining + (isFirst? (7*24*60*60*1000) : 0) );
             filler = randomResult.filler;
             if (filler == null && (typeof(randomResult.minimumWait) !== undefined) && (remaining > randomResult.minimumWait) ) {
                 remaining = randomResult.minimumWait;
@@ -169,7 +169,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
     let pick2 = null;
     let t0 = (new Date()).getTime();
     let minimumWait = 1000000000;
-    const D = 24*60*60*1000;
+    const D = 7*24*60*60*1000;
     if (typeof(channel.fillerRepeatCooldown) === 'undefined') {
         channel.fillerRepeatCooldown = 30*60*1000;
     }
