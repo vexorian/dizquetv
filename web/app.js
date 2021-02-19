@@ -27,6 +27,7 @@ app.directive('channelRedirect',  require('./directives/channel-redirect'))
 app.directive('plexServerEdit',  require('./directives/plex-server-edit'))
 app.directive('channelConfig',  require('./directives/channel-config'))
 app.directive('timeSlotsScheduleEditor',  require('./directives/time-slots-schedule-editor'))
+app.directive('randomSlotsScheduleEditor',  require('./directives/random-slots-schedule-editor'))
 
 app.controller('settingsCtrl',  require('./controllers/settings'))
 app.controller('channelsCtrl',  require('./controllers/channels'))

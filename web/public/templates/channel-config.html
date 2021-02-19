@@ -449,7 +449,7 @@
                                     <p ng-show='showHelp.check'>Slides the whole schedule. The &quot;Fast-Forward&quot; button will advance the stream by the specified amount of time. The &quot;Rewind&quot; button does the opposite.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                         <button class='btn btn-sm btn-warning form-control' ng-click="onTimeSlotsButtonClick()"
                                                 title="Time Slots..."
@@ -457,7 +457,20 @@
                                                 <i class='fas fa-blender'></i> Time Slots...
                                         </button>
                                     </div>
-                                    <p ng-show='showHelp.check'>A more advanced dialog wip description.</p>
+                                    <p ng-show='showHelp.check'>This allows to schedul specific shows to run at specific time slots of the day or a week. It&apos;s recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects.</p>
+
+                                </div>
+
+                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
+                                    <div class="input-group">
+                                        <button class='btn btn-sm btn-warning form-control' ng-click="onRandomSlotsButtonClick()"
+                                                title="Random Slots..."
+                                            >
+                                                <i class='fas fa-flask'></i> Random Slots...
+                                        </button>
+                                    </div>
+                                    <p ng-show='showHelp.check'>This is similar to Time Slots, but instead of time sections, you pick a probability to play each tv show and the length of the block.</p>
+
 
                                 </div>
 
@@ -849,4 +862,5 @@
     <plex-library height="300" limit=1 visible="showFallbackPlexLibrary" on-finish="importFallback"></plex-library>
     <channel-redirect visible="_displayRedirect" on-done="finishRedirect" form-title="_redirectTitle" program="_selectedRedirect" ></channel-redirect>
     <time-slots-schedule-editor linker="registerTimeSlots" on-done="onTimeSlotsDone"></time-slots-schedule-editor>
+    <random-slots-schedule-editor linker="registerRandomSlots" on-done="onRandomSlotsDone"></random-slots-schedule-editor>
 </div>

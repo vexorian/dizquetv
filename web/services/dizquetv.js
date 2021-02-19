@@ -266,6 +266,19 @@ module.exports = function ($http, $q) {
             return d.data;
         },
 
+        calculateRandomSlots: async( programs, schedule) => {
+            let d = await $http( {
+                method: "POST",
+                url : "/api/channel-tools/random-slots",
+                data: {
+                    programs: programs,
+                    schedule: schedule,
+                },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            } );
+            return d.data;
+        },
+
         /*======================================================================
         * Settings
         */
