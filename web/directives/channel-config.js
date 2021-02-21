@@ -1846,8 +1846,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 return false;
             }
 
-            
-            scope.onTimeSlotsDone = (slotsResult) => {
+            let readSlotsResult = (slotsResult) => {
                 scope.channel.programs = slotsResult.programs;
 
                 let t = (new Date()).getTime();
@@ -1857,7 +1856,6 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     total += slotsResult.programs[i].duration;
                 }
                 
-                scope.channel.scheduleBackup = slotsResult.schedule;
 
                 while(t1 > t) {
                     //TODO: Replace with division
@@ -1866,9 +1864,26 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 scope.channel.startTime = new Date(t1);
                 adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
+
+            };
+
+            
+            scope.onTimeSlotsDone = (slotsResult) => {
+                scope.channel.scheduleBackup = slotsResult.schedule;
+                readSlotsResult(slotsResult);
             }
+
+            scope.onRandomSlotsDone = (slotsResult) => {
+                scope.channel.randomScheduleBackup = slotsResult.schedule;
+                readSlotsResult(slotsResult);
+            }
+
+
             scope.onTimeSlotsButtonClick = () => {
                 scope.timeSlots.startDialog(scope.channel.programs, scope.maxSize, scope.channel.scheduleBackup );
+            }
+            scope.onRandomSlotsButtonClick = () => {
+                scope.randomSlots.startDialog(scope.channel.programs, scope.maxSize, scope.channel.randomScheduleBackup );
             }
 
             scope.logoOnChange = (event) => {
@@ -1892,9 +1907,14 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
 
           pre: function(scope) {
             scope.timeSlots = null;
+            scope.randomSlots = null;
             scope.registerTimeSlots = (timeSlots) => {
                 scope.timeSlots = timeSlots;
             }
+            scope.registerRandomSlots = (randomSlots) => {
+                scope.randomSlots = randomSlots;
+            }
+
           },
 
         }

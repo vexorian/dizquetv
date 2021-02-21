@@ -7,7 +7,7 @@ class TVGuideService
     /****
      *
      **/
-    constructor(xmltv, db, cacheImageService) {
+    constructor(xmltv, db, cacheImageService, eventService) {
         this.cached = null;
         this.lastUpdate = 0;
         this.updateTime = 0;
@@ -19,6 +19,7 @@ class TVGuideService
         this.xmltv = xmltv;
         this.db = db;
         this.cacheImageService = cacheImageService;
+        this.eventService = eventService;
     }
 
     async get() {
@@ -44,6 +45,19 @@ class TVGuideService
                 this.currentUpdate = this.updateTime;
                 this.currentLimit = this.updateLimit;
                 this.currentChannels = this.updateChannels;
+                let t = "" + ( (new Date()) );
+                eventService.push(
+                    "xmltv",
+                    {
+                        "message": `Started building tv-guide at = ${t}`,
+                        "module" : "xmltv",
+                        "detail" : {
+                            "time": new Date(),
+                        },
+                        "level" : "info"
+                    }
+                );
+        
                 await this.buildIt();
             }
             await _wait(100);
@@ -353,6 +367,19 @@ class TVGuideService
     async refreshXML() {
         let xmltvSettings = this.db['xmltv-settings'].find()[0];
         await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle(), this.cacheImageService);
+        let t = "" + ( (new Date()) );
+        eventService.push(
+            "xmltv",
+            {
+                "message": `XMLTV updated at server time = ${t}`,
+                "module" : "xmltv",
+                "detail" : {
+                    "time": new Date(),
+                },
+                "level" : "info"
+            }
+        );
+
     }
 
     async getStatus() {

@@ -1,12 +1,13 @@
 
 module.exports = function ($timeout, dizquetv) {
-    const DAY = 24*60*60*1000;
+    const MINUTE = 60*1000;
+    const HOUR = 60*MINUTE;
+    const DAY = 24*HOUR;
     const WEEK = 7 * DAY;
-    const WEEK_DAYS = [ "Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday" ];
     
     return {
         restrict: 'E',
-        templateUrl: 'templates/time-slots-schedule-editor.html',
+        templateUrl: 'templates/random-slots-schedule-editor.html',
         replace: true,
         scope: {
             linker: "=linker",
@@ -16,7 +17,7 @@ module.exports = function ($timeout, dizquetv) {
         link: function (scope, element, attrs) {
             scope.limit = 50000;
             scope.visible = false;
-            scope.fake = { time: -1 };
+
             scope.badTimes = false;
             scope._editedTime = null;
             let showsById;
@@ -27,15 +28,13 @@ module.exports = function ($timeout, dizquetv) {
                 showsById = {};
                 shows = [];
                 scope.schedule = {
-                    period : DAY,
-                    lateness : 0,
                     maxDays: 365,
                     flexPreference : "distribute",
+                    padStyle: "slot",
+                    randomDistribution: "uniform",
                     slots : [],
                     pad: 1,
-                    fake: { time: -1 },
                 }
- 
             }
             reset();
 
@@ -60,141 +59,116 @@ module.exports = function ($timeout, dizquetv) {
                 if (typeof(scope.schedule.flexPreference) === 'undefined') {
                     scope.schedule.flexPreference = "distribute";
                 }
-                if (typeof(scope.schedule.period) === 'undefined') {
-                    scope.schedule.period = DAY;
+                if (typeof(scope.schedule.padStyle) === 'undefined') {
+                    scope.schedule.padStyle = "slot";
                 }
-                scope.schedule.fake = {
-                    time: -1,
+                if (typeof(scope.schedule.randomDistribution) === 'undefined') {
+                    scope.schedule.randomDistribution = "uniform";
                 }
+
+                scope.refreshSlots();
+
             }
 
-            let getTitle = (index) => {
+            getTitle = (index) => {
                 let showId = scope.schedule.slots[index].showId;
                 for (let i = 0; i < scope.showOptions.length; i++) {
                     if (scope.showOptions[i].id == showId) {
                         return scope.showOptions[i].description;
                     }
                 }
-                return "Uknown";
+                return "Unknown";
             }
             scope.isWeekly = () => {
                 return (scope.schedule.period === WEEK);
             };
-            scope.periodChanged = () => {
-                if (scope.isWeekly()) {
-                    //From daily to weekly
-                    let l = scope.schedule.slots.length;
-                    for (let i = 0; i < l; i++) {
-                        let t = scope.schedule.slots[i].time;
-                        scope.schedule.slots[i].time = t % DAY;
-                        for (let j = 1; j < 7; j++) {
-                            //clone the slot for every day of the week
-                            let c = JSON.parse( angular.toJson(scope.schedule.slots[i]) );
-                            c.time += j * DAY;
-                            scope.schedule.slots.push(c);
-                        }
-                    }
-                } else {
-                    //From weekly to daily
-                    let newSlots = [];
-                    let seen = {};
-                    for (let i = 0; i < scope.schedule.slots.length; i++) {
-                        let slot = scope.schedule.slots[i];
-                        let t = slot.time % DAY;
-                        if (seen[t] !== true) {
-                            seen[t] = true;
-                            newSlots.push(slot);
-                        }
-                    }
-                    scope.schedule.slots = newSlots;
-                }
-                scope.refreshSlots();
-            }
-            scope.editTime = (index) => {
-                let t = scope.schedule.slots[index].time;
-                scope._editedTime = {
-                    time: t,
-                    index : index,
-                    isWeekly : scope.isWeekly(),
-                    title : getTitle(index),
-                };
-            }
-            scope.finishedTimeEdit = (slot) => {
-                scope.schedule.slots[slot.index].time = slot.time;
-                scope.refreshSlots();
-            }
             scope.addSlot = () => {
-                scope._addedTime =  {
-                    time: 0,
-                    index : -1,
-                    isWeekly : scope.isWeekly(),
-                    title: "New time slot",
-                }
-            }
-            scope.finishedAddingTime = (slot) => {
-                scope.schedule.slots.push( {
-                    time: slot.time,
-                    showId: "flex.",
-                    order: "next"
-                } );
-                scope.refreshSlots();
-            }
-            scope.displayTime = (t) => {
-                if (scope.isWeekly()) {
-                    let w =  Math.floor( t / DAY );
-                    let t2 = t % DAY;
-                    return WEEK_DAYS[w].substring(0,3) + " " + niceLookingTime(t2);
-
-                } else {
-                    return niceLookingTime(t);
-                }
+                scope.schedule.slots.push(
+                    {
+                        duration: 30 * MINUTE,
+                        showId: "flex.",
+                        order: "next",
+                        cooldown : 0,
+                    }
+                );
             }
             scope.timeColumnClass = () => {
-                let r = {};
-                if (scope.isWeekly()) {
-                    r["col-md-3"] = true;
-                } else {
-                    r["col-md-2"] = true;
-                }
-                return r;
+                return { "col-md-1": true};
             }
             scope.programColumnClass = () => {
-                let r = {};
-                if (scope.isWeekly()) {
-                    r["col-md-6"] = true;
-                } else {
-                    r["col-md-7"] = true;
-                }
-                return r;
+                return { "col-md-6": true};
             };
-            scope.periodOptions = [
-                { id : DAY , description: "Daily" },
-                { id : WEEK , description: "Weekly" },
-            ]
-            scope.latenessOptions = [
-                { id: 0 , description: "Do not allow" },
-                { id: 5*60*1000, description:  "5 minutes" },
-                { id: 10*60*1000 , description:  "10 minutes" },
-                { id: 15*60*1000 , description:  "15 minutes" },
-                { id: 1*60*60*1000 , description:  "1 hour" },
-                { id: 2*60*60*1000 , description:  "2 hours" },
-                { id: 3*60*60*1000 , description:  "3 hours" },
-                { id: 4*60*60*1000 , description:  "4 hours" },
-                { id: 8*60*60*1000 , description:  "8 hours" },
-                { id: 24*60*60*1000 , description:  "I don't care about lateness" },
+            scope.durationOptions = [
+                { id: 5 * MINUTE , description: "5 Minutes" },
+                { id: 10 * MINUTE , description: "10 Minutes" },
+                { id: 15 * MINUTE , description: "15 Minutes" },
+                { id: 20 * MINUTE , description: "20 Minutes" },
+                { id: 25 * MINUTE , description: "25 Minutes" },
+                { id: 30 * MINUTE , description: "30 Minutes" },
+                { id: 45 * MINUTE , description: "45 Minutes" },
+                { id: 1 * HOUR , description: "1 Hour" },
+                { id: 90 * MINUTE , description: "90 Minutes" },
+                { id: 100 * MINUTE , description: "100 Minutes" },
+                { id: 2 * HOUR , description: "2 Hours" },
+                { id: 3 * HOUR , description: "3 Hours" },
+                { id: 4 * HOUR , description: "4 Hours" },
+                { id: 5 * HOUR , description: "5 Hours" },
+                { id: 6 * HOUR , description: "6 Hours" },
+                { id: 8 * HOUR , description: "8 Hours" },
+                { id: 10* HOUR , description: "10 Hours" },
+                { id: 12* HOUR , description: "12 Hours" },
+                { id: 1 * DAY , description: "1 Day" },
             ];
+            scope.cooldownOptions = [
+                { id: 0 , description: "No cooldown" },
+                { id: 1 * MINUTE , description: "1 Minute" },
+                { id: 5 * MINUTE , description: "5 Minutes" },
+                { id: 10 * MINUTE , description: "10 Minutes" },
+                { id: 15 * MINUTE , description: "15 Minutes" },
+                { id: 20 * MINUTE , description: "20 Minutes" },
+                { id: 25 * MINUTE , description: "25 Minutes" },
+                { id: 30 * MINUTE , description: "30 Minutes" },
+                { id: 45 * MINUTE , description: "45 Minutes" },
+                { id: 1 * HOUR , description: "1 Hour" },
+                { id: 90 * MINUTE , description: "90 Minutes" },
+                { id: 100 * MINUTE , description: "100 Minutes" },
+                { id: 2 * HOUR , description: "2 Hours" },
+                { id: 3 * HOUR , description: "3 Hours" },
+                { id: 4 * HOUR , description: "4 Hours" },
+                { id: 5 * HOUR , description: "5 Hours" },
+                { id: 6 * HOUR , description: "6 Hours" },
+                { id: 8 * HOUR , description: "8 Hours" },
+                { id: 10* HOUR , description: "10 Hours" },
+                { id: 12* HOUR , description: "12 Hours" },
+                { id: 1 * DAY , description: "1 Day" },
+                { id: 1 * DAY , description: "2 Days" },
+                { id: 3 * DAY + 12 * HOUR , description: "3.5 Days" },
+                { id: 7 * DAY , description: "1 Week" },
+            ];
+
             scope.flexOptions = [
                 { id: "distribute", description: "Between videos" },
                 { id: "end", description: "End of the slot" },
             ]
 
+            scope.distributionOptions = [
+                { id: "uniform", description: "Uniform" },
+                { id: "weighted", description: "Weighted" },
+            ]
+
+
             scope.padOptions = [
                 {id: 1, description: "Do not pad" },
-                {id: 5*60*1000, description: "0:00, 0:05, 0:10, ..., 0:55" },
+                {id: 1*MINUTE, description: "0:00, 0:01, 0:02, ..., 0:59" },
+                {id: 5*MINUTE, description: "0:00, 0:05, 0:10, ..., 0:55" },
                 {id: 10*60*1000, description: "0:00, 0:10, 0:20, ..., 0:50" },
                 {id: 15*60*1000, description: "0:00, 0:15, 0:30, ..., 0:45" },
                 {id: 30*60*1000, description: "0:00, 0:30" },
                 {id: 1*60*60*1000, description: "0:00" },
+            ];
+            scope.padStyleOptions = [
+                {id: "episode" , description: "Pad Episodes" },
+                {id: "slot" , description: "Pad Slots" },
             ];
 
             scope.showOptions = [];
@@ -204,10 +178,11 @@ module.exports = function ($timeout, dizquetv) {
             ];
 
             let doIt = async() => {
-                scope.schedule.timeZoneOffset =  (new Date()).getTimezoneOffset();
-                let res = await dizquetv.calculateTimeSlots(scope.programs, scope.schedule  );
+                let res = await dizquetv.calculateRandomSlots(scope.programs, scope.schedule  );
+                for (let i = 0; i < scope.schedule.slots.length; i++) {
+                    delete scope.schedule.slots[i].weightPercentage;
+                }
                 res.schedule = scope.schedule;
-                delete res.schedule.fake;
                 return res;
             }
 
@@ -297,32 +272,34 @@ module.exports = function ($timeout, dizquetv) {
             }
 
             scope.refreshSlots = () => {
-                scope.badTimes = false;
-                //"Bubble sort ought to be enough for anybody"
+                let sum = 0;
                 for (let i = 0; i < scope.schedule.slots.length; i++) {
-                    for (let j = i+1; j < scope.schedule.slots.length; j++) {
-                        if (scope.schedule.slots[j].time< scope.schedule.slots[i].time) {
-                            let x = scope.schedule.slots[i];
-                            scope.schedule.slots[i] = scope.schedule.slots[j];
-                            scope.schedule.slots[j] = x;
-                        }
-                    }
+                    sum += scope.schedule.slots[i].weight;
+                }
+                for (let i = 0; i < scope.schedule.slots.length; i++) {
                     if (scope.schedule.slots[i].showId == 'movie.') {
                         scope.schedule.slots[i].order = "shuffle";
                     }
-                }
-                for (let i = 0; i < scope.schedule.slots.length; i++) {
-                    if (
-                        (i > 0 && (scope.schedule.slots[i].time == (scope.schedule.slots[i-1].time) ) )
-                        || ( (i+1 < scope.schedule.slots.length) && (scope.schedule.slots[i].time == (scope.schedule.slots[i+1].time) ) )
-                    ) {
-                        scope.badTimes = true;
-                        scope.schedule.slots[i].timeError = "Please select a unique time.";
-                    } else {
-                        delete scope.schedule.slots[i].timeError;
+                    if ( isNaN(scope.schedule.slots[i].cooldown) ) {
+                        scope.schedule.slots[i].cooldown = 0;
                     }
+                    scope.schedule.slots[i].weightPercentage
+                        = (100 * scope.schedule.slots[i].weight / sum).toFixed(2) + "%";
                 }
                 $timeout();
+            }
+
+            scope.randomDistributionChanged = () => {
+                if (scope.schedule.randomDistribution === 'uniform') {
+                    for (let i = 0; i < scope.schedule.slots.length; i++) {
+                        scope.schedule.slots[i].weight = 1;
+                    }
+                } else {
+                    for (let i = 0; i < scope.schedule.slots.length; i++) {
+                        scope.schedule.slots[i].weight = 300;
+                    }
+                }
+                scope.refreshSlots();
             }
 
 
@@ -331,12 +308,6 @@ module.exports = function ($timeout, dizquetv) {
     };
 }
 
-function niceLookingTime(t) {
-    let d = new Date(t);
-    d.setMilliseconds(0);
-
-    return d.toLocaleTimeString( [] , {timeZone: 'UTC' } );
-}
 
 //This is a duplicate code, but maybe it doesn't have to be?
 function getShow(program) {

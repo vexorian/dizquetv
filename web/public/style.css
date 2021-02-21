@@ -357,6 +357,38 @@ div.programming-programs div.list-group-item {
   background : rgba(255,255,255, 0.1);
 }
 
+.dizque-toast {
+  margin-top: 0.2rem;
+  padding: 0.5rem;
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: .25rem;
+  color: #FFFFFF;
+}
+
+.dizque-toast.bg-warning {
+  color: black
+}
+
+.about-to-fade-in {
+  opacity: 0.00;
+  transition: opacity 1.00s ease-in-out;
+  -moz-transition: opacity 1.00s ease-in-out;
+  -webkit-transition: opacity 1.00s ease-in-out;
+}
+.fade-in {
+  opacity: 0.95;
+  transition: opacity 1.00s ease-in-out;
+  -moz-transition: opacity 1.00s ease-in-out;
+  -webkit-transition: opacity 1.00s ease-in-out;
+}
+
+.fade-out {
+  transition: opacity 1.00s ease-in-out;
+  -moz-transition: opacity 1.00s ease-in-out;
+  -webkit-transition: opacity 1.00s ease-in-out;
+  opacity: 0.0;
+}
 
 #dizquetv-logo {
   width: 1em;

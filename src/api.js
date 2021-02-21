@@ -8,12 +8,24 @@ const constants = require('./constants');
 const FFMPEGInfo = require('./ffmpeg-info');
 const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
-const FillerDB = require('./dao/filler-db');
+
 const timeSlotsService = require('./services/time-slots-service');
+const randomSlotsService = require('./services/random-slots-service');
+
+function safeString(object) {
+  let o = object;
+  for(let i = 1; i < arguments.length; i++) {
+    o = o[arguments[i]];
+    if (typeof(o) === 'undefined') {
+      return "missing";
+    }
+  }
+  return String(o);
+}
 
 module.exports = { router: api }
-function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService ) {
-    const m3uService = _m3uService;
+function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService, eventService ) {
+    let m3uService = _m3uService;
     const router = express.Router()
     const plexServerDB = new PlexServerDB(channelDB, channelCache, db);
 
@@ -88,34 +100,113 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
       }
     })
     router.delete('/api/plex-servers', async (req, res) => {
+      let name = "unknown";
       try {
-        let name = req.body.name;
+        name = req.body.name;
         if (typeof(name) === 'undefined') {
             return res.status(400).send("Missing name");
         }
         let report = await plexServerDB.deleteServer(name);
         res.send(report)
+        eventService.push(
+          "settings-update",
+          {
+            "message": `Plex server ${name} removed.`,
+            "module" : "plex-server",
+            "detail" : {
+              "serverName" : name,
+              "action" : "delete"
+            },
+            "level" : "warn"
+          }
+        );
+
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+       eventService.push(
+        "settings-update",
+        {
+          "message": "Error deleting plex server.",
+          "module" : "plex-server",
+          "detail" : {
+            "action": "delete",
+            "serverName" : name,
+            "error" : safeString(err, "message"),
+          },
+          "level" : "danger"
+        }
+      );
       }
     })
     router.post('/api/plex-servers', async (req, res) => {
         try {
             await plexServerDB.updateServer(req.body);
             res.status(204).send("Plex server updated.");;
+            eventService.push(
+              "settings-update",
+              {
+                "message": `Plex server ${req.body.name} updated.`,
+                "module" : "plex-server",
+                "detail" : {
+                  "serverName" : req.body.name,
+                  "action" : "update"
+                },
+                "level" : "info"
+              }
+            );
+        
         } catch (err) {
-            console.error("Could not add plex server.", err);
+            console.error("Could not update plex server.", err);
             res.status(400).send("Could not add plex server.");
+            eventService.push(
+              "settings-update",
+              {
+                "message": "Error updating plex server.",
+                "module" : "plex-server",
+                "detail" : {
+                  "action": "update",
+                  "serverName" : safeString(req, "body", "name"),
+                  "error" : safeString(err, "message"),
+                },
+                "level" : "danger"
+              }
+            );
         }
     })
     router.put('/api/plex-servers', async (req, res) => {
         try {
             await plexServerDB.addServer(req.body);
             res.status(201).send("Plex server added.");;
+            eventService.push(
+              "settings-update",
+              {
+                "message": `Plex server ${req.body.name} added.`,
+                "module" : "plex-server",
+                "detail" : {
+                  "serverName" : req.body.name,
+                  "action" : "add"
+                },
+                "level" : "info"
+              }
+            );
+
         } catch (err) {
             console.error("Could not add plex server.", err);
             res.status(400).send("Could not add plex server.");
+            eventService.push(
+              "settings-update",
+              {
+                "message": "Error adding plex server.",
+                "module" : "plex-server",
+                "detail" : {
+                  "action": "add",
+                  "serverName" : safeString(req, "body", "name"),
+                  "error" : safeString(err, "message"),
+                },
+                "level" : "danger"
+              }
+            );
         }
     })
 
@@ -340,10 +431,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         if (typeof(err) !== 'undefined') {
           return res.status(400).send(err);
         }
+        eventService.push(
+          "settings-update",
+          {
+            "message": "FFMPEG configuration updated.",
+            "module" : "ffmpeg",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
         res.send(ffmpeg)
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+       eventService.push(
+        "settings-update",
+        {
+          "message": "Error updating FFMPEG configuration.",
+          "module" : "ffmpeg",
+          "detail" : {
+            "action": "update",
+            "error" : safeString(err, "message"),
+          },
+          "level" : "danger"
+        }
+       );
+
       }
     })
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
@@ -352,10 +467,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         ffmpeg.ffmpegPath = req.body.ffmpegPath;
         db['ffmpeg-settings'].update({ _id: req.body._id },  ffmpeg)
         ffmpeg = db['ffmpeg-settings'].find()[0]
+        eventService.push(
+          "settings-update",
+          {
+            "message": "FFMPEG configuration reset.",
+            "module" : "ffmpeg",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
         res.send(ffmpeg)
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting FFMPEG configuration.",
+            "module" : "ffmpeg",
+            "detail" : {
+              "action": "reset",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -383,9 +522,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         db['plex-settings'].update({ _id: req.body._id }, req.body)
         let plex = db['plex-settings'].find()[0]
         res.send(plex)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Plex configuration updated.",
+            "module" : "plex",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
+
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error updating Plex configuration",
+            "module" : "plex",
+            "detail" : {
+              "action": "update",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -414,9 +578,35 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         })
         let plex = db['plex-settings'].find()[0]
         res.send(plex)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Plex configuration reset.",
+            "module" : "plex",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting Plex configuration",
+            "module" : "plex",
+            "detail" : {
+            "action": "reset",
+            "error" : safeString(err, "message"),
+          },
+            "level" : "danger"
+          }
+        );
+
+
       }
 
     })
@@ -457,10 +647,35 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         );
         xmltv = db['xmltv-settings'].find()[0]
         res.send(xmltv)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "xmltv settings updated.",
+            "module" : "xmltv",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
         updateXmltv()
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error updating xmltv configuration",
+            "module" : "xmltv",
+            "detail" : {
+            "action": "update",
+            "error" : safeString(err, "message"),
+          },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -474,10 +689,35 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         })
         var xmltv = db['xmltv-settings'].find()[0]
         res.send(xmltv)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "xmltv settings reset.",
+            "module" : "xmltv",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
+
         updateXmltv()
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting xmltv configuration",
+            "module" : "xmltv",
+            "detail" : {
+              "action": "reset",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
     })
 
@@ -536,9 +776,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         db['hdhr-settings'].update({ _id: req.body._id }, req.body)
         let hdhr = db['hdhr-settings'].find()[0]
         res.send(hdhr)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "HDHR configuration updated.",
+            "module" : "hdhr",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
+
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error updating HDHR configuration",
+            "module" : "hdhr",
+            "detail" : {
+              "action": "action",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -551,9 +816,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
         })
         var hdhr = db['hdhr-settings'].find()[0]
         res.send(hdhr)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "HDHR configuration reset.",
+            "module" : "hdhr",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
+
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting HDHR configuration",
+            "module" : "hdhr",
+            "detail" : {
+              "action": "reset",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -583,9 +873,23 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService 
     //tool services
     router.post('/api/channel-tools/time-slots', async (req, res) => {
       try {
-        await m3uService.clearCache();
         let toolRes = await timeSlotsService(req.body.programs, req.body.schedule);
         if ( typeof(toolRes.userError) !=='undefined') {
+          console.error("time slots error: " + toolRes.userError);
+          return res.status(400).send(toolRes.userError);
+        }
+        res.status(200).send(toolRes);
+      } catch(err) {
+        console.error(err);
+        res.status(500).send("Internal error");
+      }
+    });
+
+    router.post('/api/channel-tools/random-slots', async (req, res) => {
+      try {
+        let toolRes = await randomSlotsService(req.body.programs, req.body.schedule);
+        if ( typeof(toolRes.userError) !=='undefined') {
+          console.error("random slots error: " + toolRes.userError);
           return res.status(400).send(toolRes.userError);
         }
         res.status(200).send(toolRes);

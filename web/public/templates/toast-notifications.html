@@ -1,0 +1,11 @@
+<div style='position: fixed; top: 30px; right: 30px; width:400px; z-index: 1000000;'>
+
+    <div
+        ng-repeat="toast in toasts track by $index"
+        class="dizque-toast"
+        ng-class="toast.clazz"
+    >
+        <strong>{{ toast.title }}</strong>
+        <div>{{ toast.text }}</div>
+    </div>
+</div>
