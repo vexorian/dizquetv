@@ -21,6 +21,7 @@ const ChannelDB = require("./src/dao/channel-db");
 const M3uService = require("./src/services/m3u-service");
 const FillerDB = require("./src/dao/filler-db");
 const TVGuideService = require("./src/tv-guide-service");
+const EventService = require("./src/services/event-service");
 const onShutdown = require("node-graceful-shutdown").onShutdown;
 
 console.log(
@@ -76,6 +77,7 @@ db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings',
 fileCache = new FileCacheService( path.join(process.env.DATABASE, 'cache') );
 cacheImageService = new CacheImageService(db, fileCache);
 m3uService = new M3uService(channelDB, fileCache, channelCache)
+eventService = new EventService();
 
 initDB(db, channelDB)
 
@@ -165,6 +167,8 @@ xmltvInterval.startInterval()
 
 let hdhr = HDHR(db, channelDB)
 let app = express()
+eventService.setup(app);
+
 app.use(fileUpload({
     createParentPath: true
 }));
@@ -197,7 +201,7 @@ app.use('/favicon.svg', express.static(
 ) );
 
 // API Routers
-app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService, m3uService ))
+app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService, m3uService, eventService ))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 
 app.use(video.router( channelDB, fillerDB, db))
@@ -242,8 +246,49 @@ function initDB(db, channelDB) {
 
 }
 
+
+function _wait(t) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, t);
+    });
+}
+
+
+async function sendEventAfterTime() {
+    let t = (new Date()).getTime();
+    await _wait(20000);
+    eventService.push(
+        "lifecycle",
+        {
+            "message": `Server Started`,
+            "detail" : {
+                "time": t,
+            },
+            "level" : "success"
+        }
+    );
+    
+}
+sendEventAfterTime();
+
+
+
+
 onShutdown("log" , [],  async() => {
+    let t = (new Date()).getTime();
+    eventService.push(
+        "lifecycle",
+        {
+            "message": `Initiated Server Shutdown`,
+            "detail" : {
+                "time": t,
+            },
+            "level" : "warning"
+        }
+    );
+
     console.log("Received exit signal, attempting graceful shutdonw...");
+    await _wait(2000);
 });
 onShutdown("xmltv-writer" , [],  async() => {
     await xmltv.shutdown();
