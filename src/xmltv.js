@@ -105,9 +105,15 @@ async function _writeProgramme(channel, program, xw, xmlSettings, cacheImageServ
         xw.endElement()
 
         xw.startElement('episode-num')
-        xw.writeAttribute('system', 'xmltv_ns')
-        xw.text((program.sub.season - 1) + ' . ' + (program.sub.episode - 1) + ' . 0/1')
+        xw.writeAttribute('system', 'onscreen')
+        xw.text( "S" + (program.sub.season) + ' E' + (program.sub.episode) )
         xw.endElement()
+
+        xw.startElement('episode-num')
+        xw.writeAttribute('system', 'xmltv_ns')
+        xw.text((program.sub.season - 1) + '.' + (program.sub.episode - 1) + '.0/1')
+        xw.endElement()
+
     }
     // Icon
     if (typeof program.icon !== 'undefined') {
