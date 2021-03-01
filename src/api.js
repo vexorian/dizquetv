@@ -856,7 +856,6 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService,
 
         res.set('Cache-Control', 'no-store')
         res.type('application/xml');
-        res.attachment('xmltv.xml');
 
 
         let xmltvSettings = db['xmltv-settings'].find()[0];
