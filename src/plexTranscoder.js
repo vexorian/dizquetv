@@ -416,8 +416,15 @@ X-Plex-Token=${this.server.accessToken}`;
     }
 
     updatePlex() {
-        this.log("Updating plex status")
-        axios.post(this.getStatusUrl());
+        this.log("Updating plex status");
+        const statusUrl = this.getStatusUrl();
+        try {
+            axios.post(statusUrl);
+        } catch (error) {
+            this.log(`Problem updating Plex status using status URL ${statusUrl}:`);
+            this.log(error);
+            return false;
+        }
         this.currTimeMs += this.updateInterval;
         if (this.currTimeMs > this.duration) {
             this.currTimeMs = this.duration;
