@@ -388,9 +388,8 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
             }
-            scope.removeDuplicates = () => {
+            let removeDuplicatesSub = (progs) => {
                 let tmpProgs = {}
-                let progs = scope.channel.programs
                 for (let i = 0, l = progs.length; i < l; i++) {
                     if ( progs[i].type ==='redirect' ) {
                         tmpProgs['_redirect ' + progs[i].channel + ' _ '+ progs[i].duration ] = progs[i];
@@ -405,7 +404,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 for (let i = 0, l = keys.length; i < l; i++) {
                     newProgs.push(tmpProgs[keys[i]])
                 }
-                scope.channel.programs = newProgs
+                return newProgs;
+            }
+            scope.removeDuplicates = () => {
+                scope.channel.programs = removeDuplicatesSub(scope.channel.programs);
                 updateChannelDuration(); //oops someone forgot to add this
             }
             scope.removeOffline = () => {
@@ -1854,7 +1856,8 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 updateChannelDuration();
             }
             scope.onTimeSlotsButtonClick = () => {
-                scope.timeSlots.startDialog(scope.channel.programs, scope.maxSize, scope.channel.scheduleBackup );
+                let progs = removeDuplicatesSub( scope.channel.programs );
+                scope.timeSlots.startDialog( progs, scope.maxSize, scope.channel.scheduleBackup );
             }
 
           },
