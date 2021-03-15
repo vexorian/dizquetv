@@ -1886,7 +1886,8 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 scope.timeSlots.startDialog( progs, scope.maxSize, scope.channel.scheduleBackup );
             }
             scope.onRandomSlotsButtonClick = () => {
-                scope.randomSlots.startDialog(scope.channel.programs, scope.maxSize, scope.channel.randomScheduleBackup );
+                let progs = removeDuplicatesSub( scope.channel.programs );
+                scope.randomSlots.startDialog(progs, scope.maxSize, scope.channel.randomScheduleBackup );
             }
 
             scope.logoOnChange = (event) => {
