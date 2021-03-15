@@ -325,6 +325,9 @@ module.exports = async( programs, schedule  ) => {
         }
     }
 
+    if (ts > t0) {
+        pushFlex( ts - t0 );
+    }
     while ( (t < hardLimit) && (p.length < LIMIT) ) {
         await throttle();
         //ensure t is padded
