@@ -340,6 +340,7 @@ module.exports = function ($scope, $timeout, dizquetv) {
         }
     }
 
+    $scope.adjustZoom();
     $scope.refresh();
 
     $scope.checkUpdates = async () => {
