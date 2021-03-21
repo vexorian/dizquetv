@@ -199,6 +199,7 @@ app.use('/cache/images', express.static(path.join(process.env.DATABASE, 'cache/i
 app.use('/favicon.svg', express.static(
     path.join(__dirname, 'resources/favicon.svg')
 ) );
+app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.css')))
 
 // API Routers
 app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService, m3uService, eventService ))
@@ -242,6 +243,10 @@ function initDB(db, channelDB) {
     if (!fs.existsSync(process.env.DATABASE + '/images/loading-screen.png')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/loading-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)
+    }
+    if (!fs.existsSync( path.join(process.env.DATABASE, 'custom.css') )) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources', 'default-custom.css')))
+        fs.writeFileSync( path.join(process.env.DATABASE, 'custom.css'), data)
     }
 
 }
