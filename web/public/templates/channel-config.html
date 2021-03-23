@@ -564,7 +564,7 @@
                         <h5 style="margin-top: 10px;">Filler</h5>
                         <div>
                         <label>Minimum time before replaying a filler (Minutes): </label>
-                        <input type="number" class="form-control form-control-sm"  ng-model="channel.fillerRepeatCooldownMinutes" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='1440' />
+                        <input type="number" class="form-control form-control-sm"  ng-model="channel.fillerRepeatCooldownMinutes" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='10080' />
 
                         <span class="text-danger pull-right">{{error.blockRepeats}}</span>
                         </div>
@@ -590,7 +590,7 @@
                                 <div class='form-group col-md-2' ng-if="x.id !== &apos;none&apos; " >
                                     <label ng-if="$index==0" for="cooldown{{$index}}">Cooldown (minutes)</label>
                                     <input class='form-control' id="cooldown{{$index}}" type='number' ng-model='x.cooldownMinutes' ng-pattern="/^([0-9][0-9]*)$/"
-                                    min='0' max='1440'
+                                    min='0' max='10080'
                                     data-toggle="tooltip" data-placement="bottom" title="The channel won&apos;t pick a video from this list if it played something from this list less than this amount of minutes ago."
                                     > </input>
                                 </div>
