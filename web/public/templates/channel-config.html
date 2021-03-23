@@ -181,7 +181,7 @@
                                 <div ng-style="programSquareStyle(x)" />
 
                                 <div ng-hidden="x.isOffline" class='title' >
-                                    {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
+                                    {{ getProgramDisplayTitle(x) }}
                                 </div>
                                 <div style="font-weight:ligther"  ng-show="x.isOffline" class='title' >
                                     <i ng-if="x.type !== 'redirect' " >Flex</i>
@@ -856,7 +856,7 @@
     <program-config program="_selectedProgram" on-done="finshedProgramEdit"></program-config>
     <flex-config offline-title="Modify Flex Time" program="_selectedOffline" on-done="finishedOfflineEdit"></flex-config>
     <frequency-tweak programs="_programFrequencies" message="_frequencyMessage" modified="_frequencyModified" on-done="tweakFrequencies"></frequency-tweak>
-    <remove-shows program-titles="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
+    <remove-shows program-infos="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
     <flex-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></flex-config>
     <plex-library limit="libraryLimit" height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
     <plex-library height="300" limit=1 visible="showFallbackPlexLibrary" on-finish="importFallback"></plex-library>

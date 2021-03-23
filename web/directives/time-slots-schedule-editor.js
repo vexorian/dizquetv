@@ -1,5 +1,5 @@
 
-module.exports = function ($timeout, dizquetv) {
+module.exports = function ($timeout, dizquetv, getShowData ) {
     const DAY = 24*60*60*1000;
     const WEEK = 7 * DAY;
     const WEEK_DAYS = [ "Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday" ];
@@ -329,6 +329,22 @@ module.exports = function ($timeout, dizquetv) {
 
         }
     };
+
+
+    function getShow(program) {
+
+        let d = getShowData(program);
+        if (! d.hasShow) {
+            return null;
+        } else {
+            d.description = d.showDisplayName;
+            d.id = d.showId;
+            return d;
+        }
+    }
+
+
+
 }
 
 function niceLookingTime(t) {
@@ -337,31 +353,4 @@ function niceLookingTime(t) {
 
     return d.toLocaleTimeString( [] , {timeZone: 'UTC' } );
 }
-
-//This is a duplicate code, but maybe it doesn't have to be?
-function getShow(program) {
-    //used for equalize and frequency tweak
-    if (program.isOffline) {
-        if (program.type == 'redirect') {
-            return {
-                description : `Redirect to channel ${program.channel}`,
-                id: "redirect." + program.channel,
-                channel: program.channel,
-            }
-        } else {
-            return null;
-        }
-    } else if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
-        return {
-            description: program.showTitle,
-            id: "tv." + program.showTitle,
-        }
-    } else {
-        return {
-            description: "Movies",
-            id: "movie.",
-        }
-    }
-}
-
 

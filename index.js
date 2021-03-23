@@ -20,6 +20,7 @@ const constants = require('./src/constants')
 const ChannelDB = require("./src/dao/channel-db");
 const M3uService = require("./src/services/m3u-service");
 const FillerDB = require("./src/dao/filler-db");
+const CustomShowDB = require("./src/dao/custom-show-db");
 const TVGuideService = require("./src/tv-guide-service");
 const EventService = require("./src/services/event-service");
 const onShutdown = require("node-graceful-shutdown").onShutdown;
@@ -42,11 +43,11 @@ for (let i = 0, l = process.argv.length; i < l; i++) {
         process.env.DATABASE = process.argv[i + 1]
 }
 
-process.env.DATABASE = process.env.DATABASE || './.dizquetv'
+process.env.DATABASE = process.env.DATABASE ||  path.join(".", ".dizquetv")
 process.env.PORT = process.env.PORT || 8000
 
 if (!fs.existsSync(process.env.DATABASE)) {
-    if (fs.existsSync("./.pseudotv")) {
+    if (fs.existsSync(  path.join(".", ".pseudotv")  )) {
         throw Error(process.env.DATABASE + " folder not found but ./.pseudotv has been found. Please rename this folder or create an empty " + process.env.DATABASE + " folder so that the program is not confused about.");
     }
     fs.mkdirSync(process.env.DATABASE)
@@ -61,16 +62,21 @@ if(!fs.existsSync(path.join(process.env.DATABASE, 'channels'))) {
 if(!fs.existsSync(path.join(process.env.DATABASE, 'filler'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'filler'))
 }
+if(!fs.existsSync(path.join(process.env.DATABASE, 'custom-shows'))) {
+    fs.mkdirSync(path.join(process.env.DATABASE, 'custom-shows'))
+}
 if(!fs.existsSync(path.join(process.env.DATABASE, 'cache'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'cache'))
 }
-if(!fs.existsSync(path.join(process.env.DATABASE, 'cache/images'))) {
-    fs.mkdirSync(path.join(process.env.DATABASE, 'cache/images'))
+if(!fs.existsSync(path.join(process.env.DATABASE, 'cache','images'))) {
+    fs.mkdirSync(path.join(process.env.DATABASE, 'cache','images'))
 }
 
 
 channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
 fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelDB, channelCache );
+
+customShowDB = new CustomShowDB( path.join(process.env.DATABASE, 'custom-shows') );
 
 db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id', 'cache-images', 'settings'])
 
@@ -192,16 +198,17 @@ app.get('/version.js', (req, res) => {
     res.end();
 });
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
-app.use(express.static(path.join(__dirname, 'web/public')))
+app.use(express.static(path.join(__dirname, 'web','public')))
 app.use('/images', express.static(path.join(process.env.DATABASE, 'images')))
 app.use('/cache/images', cacheImageService.routerInterceptor())
-app.use('/cache/images', express.static(path.join(process.env.DATABASE, 'cache/images')))
+app.use('/cache/images', express.static(path.join(process.env.DATABASE, 'cache','images')))
 app.use('/favicon.svg', express.static(
-    path.join(__dirname, 'resources/favicon.svg')
+    path.join(__dirname, 'resources','favicon.svg')
 ) );
+app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.css')))
 
 // API Routers
-app.use(api.router(db, channelDB, fillerDB, xmltvInterval, guideService, m3uService, eventService ))
+app.use(api.router(db, channelDB, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService ))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 
 app.use(video.router( channelDB, fillerDB, db))
@@ -242,6 +249,10 @@ function initDB(db, channelDB) {
     if (!fs.existsSync(process.env.DATABASE + '/images/loading-screen.png')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/loading-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)
+    }
+    if (!fs.existsSync( path.join(process.env.DATABASE, 'custom.css') )) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources', 'default-custom.css')))
+        fs.writeFileSync( path.join(process.env.DATABASE, 'custom.css'), data)
     }
 
 }

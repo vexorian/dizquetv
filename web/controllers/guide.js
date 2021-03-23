@@ -287,6 +287,7 @@ module.exports = function ($scope, $timeout, dizquetv) {
                 $scope.enableNext = true;
             }
             let subTitle = undefined;
+            let episodeTitle = undefined;
             let altTitle = hourMinute(ad) + "-" + hourMinute(bd);
             if (typeof(program.title) !== 'undefined') {
                 altTitle = altTitle + " · " + program.title;
@@ -303,6 +304,7 @@ module.exports = function ($scope, $timeout, dizquetv) {
                 }
                 subTitle = `S${ps} · E${pe}`;
                 altTitle = altTitle + " " + subTitle;
+                episodeTitle = program.sub.title;
             } else if ( typeof(program.date) === 'undefined' ) {
                 subTitle = '.';
             } else {
@@ -313,6 +315,7 @@ module.exports = function ($scope, $timeout, dizquetv) {
                 altTitle: altTitle,
                 showTitle: program.title,
                 subTitle: subTitle,
+                episodeTitle : episodeTitle,
                 start: hasStart,
                 end: hasStop,
             } );
