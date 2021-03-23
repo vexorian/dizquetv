@@ -38,6 +38,7 @@ app.controller('channelsCtrl',  require('./controllers/channels'))
 app.controller('versionCtrl',  require('./controllers/version'))
 app.controller('libraryCtrl',  require('./controllers/library'))
 app.controller('guideCtrl',  require('./controllers/guide'))
+app.controller('playerCtrl',  require('./controllers/player'))
 app.controller('fillerCtrl',  require('./controllers/filler'))
 app.controller('customShowsCtrl',  require('./controllers/custom-shows'))
 
@@ -66,6 +67,10 @@ app.config(function ($routeProvider) {
     .when("/guide", {
         templateUrl: "views/guide.html",
         controller: 'guideCtrl'
+    })
+    .when("/player", {
+        templateUrl: "views/player.html",
+        controller: 'playerCtrl'
     })
     .when("/version", {
         templateUrl: "views/version.html",
