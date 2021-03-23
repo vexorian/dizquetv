@@ -448,25 +448,55 @@ function video( channelDB , fillerDB, db) {
         res.send(data)
     })
 
+
+    let mediaPlayer = async(channelNum, path, req, res) => {
+        let channel = await channelCache.getChannelConfig(channelDB, channelNum );
+        if (channel.length === 0) {
+            res.status(404).send("Channel not found.");
+            return;
+        }
+        res.type('video/x-mpegurl');
+        res.status(200).send(`#EXTM3U\n${req.protocol}://${req.get('host')}/${path}?channel=${channelNum}\n\n`);
+    }
+
     router.get('/media-player/:number.m3u', async (req, res) => {
         try {
             let channelNum = parseInt(req.params.number, 10);
-            let channel = await channelCache.getChannelConfig(channelDB, channelNum );
-            if (channel.length === 0) {
-                res.status(404).send("Channel not found.");
-                return;
-            }
-            res.type('video/x-mpegurl');
             let path ="video";
             if (req.query.fast==="1") {
                 path ="m3u8";
             }
-            res.status(200).send(`#EXTM3U\n${req.protocol}://${req.get('host')}/${path}?channel=${channelNum}\n\n`);
+            return await mediaPlayer(channelNum, path, req, res);
         } catch(err) {
             console.error(err);
             res.status(500).send("There was an error.");
         }
     });
+
+
+    router.get('/media-player/fast/:number.m3u', async (req, res) => {
+        try {
+            let channelNum = parseInt(req.params.number, 10);
+            let path ="m3u8";
+            return await mediaPlayer(channelNum, path, req, res);
+        } catch(err) {
+            console.error(err);
+            res.status(500).send("There was an error.");
+        }
+    });
+
+    router.get('/media-player/radio/:number.m3u', async (req, res) => {
+        try {
+            let channelNum = parseInt(req.params.number, 10);
+            let path ="radio";
+            return await mediaPlayer(channelNum, path, req, res);
+        } catch(err) {
+            console.error(err);
+            res.status(500).send("There was an error.");
+        }
+    });
+
+
 
     return router
 }

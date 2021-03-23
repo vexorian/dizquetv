@@ -28,7 +28,7 @@
                     </span>
                 </div>
                 <div class="modal-body">
-                    <select class="form-control form-control-sm" ng-model="currentOrigin"
+                    <select class="form-control form-control-sm custom-select" ng-model="currentOrigin"
                         ng-options="x.name for x in origins" ng-change="selectOrigin(currentOrigin)"></select>
                     <hr />
                     <ul ng-show="currentOrigin.type=='plex' " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
