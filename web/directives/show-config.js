@@ -1,7 +1,7 @@
-module.exports = function ($timeout) {
+module.exports = function ($timeout, commonProgramTools) {
     return {
         restrict: 'E',
-        templateUrl: 'templates/filler-config.html',
+        templateUrl: 'templates/show-config.html',
         replace: true,
         scope: {
             linker: "=linker",
@@ -49,17 +49,17 @@ module.exports = function ($timeout) {
 
 
 
-            scope.linker( (filler) => {
-                if ( typeof(filler) === 'undefined') {
+            scope.linker( (show) => {
+                if ( typeof(show) === 'undefined') {
                     scope.name = "";
                     scope.content = [];
                     scope.id = undefined;
-                    scope.title = "Create Filler List";
+                    scope.title = "Create Custom Show";
                 } else {
-                    scope.name = filler.name;
-                    scope.content = filler.content;
-                    scope.id = filler.id;
-                    scope.title = "Edit Filler List";
+                    scope.name = show.name;
+                    scope.content = show.content;
+                    scope.id = show.id;
+                    scope.title = "Edit Custom Show";
                 }
                 refreshContentIndexes();
                 scope.visible = true;
@@ -95,30 +95,34 @@ module.exports = function ($timeout) {
             scope.showList = () => {
                 return ! scope.showPlexLibrary;
             }
-            scope.sortFillers = () => {
-                scope.content.sort( (a,b) => { return a.duration - b.duration } );
+            scope.sortShows = () => {
+                scope.content = commonProgramTools.sortShows(scope.content);
                 refreshContentIndexes();
             }
-            scope.fillerRemoveAllFiller = () => {
+            scope.sortByDate = () => {
+                scope.content = commonProgramTools.sortByDate(scope.content);
+                refreshContentIndexes();
+            }
+            scope.shuffleShows = () => {
+                scope.content = commonProgramTools.shuffle(scope.content);
+                refreshContentIndexes();
+            }
+            scope.showRemoveAllShow = () => {
                 scope.content = [];
                 refreshContentIndexes();
             }
-            scope.fillerRemoveDuplicates = () => {
-                function getKey(p) {
-                    return p.serverKey + "|" + p.plexFile;
-                }
-                let seen = {};
-                let newFiller = [];
-                for (let i = 0; i < scope.content.length; i++) {
-                    let p = scope.content[i];
-                    let k = getKey(p);
-                    if ( typeof(seen[k]) === 'undefined') {
-                        seen[k] = true;
-                        newFiller.push(p);
-                    }
-                }
-                scope.content = newFiller;
+            scope.showRemoveDuplicates = () => {
+                scope.content = commonProgramTools.removeDuplicates(scope.content);
                 refreshContentIndexes();
+            }
+            scope.getProgramDisplayTitle = (x) => {
+                return commonProgramTools.getProgramDisplayTitle(x);
+            }
+
+            scope.removeSpecials = () => {
+                scope.content = commonProgramTools.removeSpecials(scope.content);
+                refreshContentIndexes();
+
             }
             scope.importPrograms = (selectedPrograms) => {
                 for (let i = 0, l = selectedPrograms.length; i < l; i++) {
@@ -152,32 +156,8 @@ module.exports = function ($timeout) {
 
             } )();
 
-            scope.programSquareStyle = (program, dash) => {
-                let background = "rgb(255, 255, 255)";
-                let ems = Math.pow( Math.min(60*60*1000, program.duration), 0.7 );
-                ems = ems / Math.pow(1*60*1000., 0.7);
-                ems = Math.max( 0.25 , ems);
-                let top = Math.max(0.0, (1.75 - ems) / 2.0) ;
-                if (top == 0.0) {
-                    top = "1px";
-                }
-                let solidOrDash = (dash? 'dashed' : 'solid');
-                let f = interpolate;
-                let w = 5.0;
-                let t = 4*60*60*1000;
-                let a = ( f(program.duration) *w) / f(t);
-                a = Math.min( w, Math.max(0.3, a) );
-                b = w - a + 0.01;
-
-                return {
-                    'width': `${a}%`,
-                    'height': '1.3em',
-                    'margin-right': `${b}%`,
-                    'background': background,
-                    'border': `1px ${solidOrDash} black`,
-                    'margin-top': top,
-                    'margin-bottom': '1px',
-                };
+            scope.programSquareStyle = (x) => {
+                return commonProgramTools.programSquareStyle(x);
             }
 
         }

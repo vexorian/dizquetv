@@ -1,5 +1,5 @@
 const constants = require("../constants");
-
+const getShowData = require("./get-show-data")();
 const random = require('../helperFuncs').random;
 
 const MINUTE = 60*1000;
@@ -8,29 +8,15 @@ const LIMIT = 40000;
 
 
 
-//This is a quadruplicate code, but maybe it doesn't have to be?
 function getShow(program) {
-    //used for equalize and frequency tweak
-    if (program.isOffline) {
-        if (program.type == 'redirect') {
-            return {
-                description : `Redirect to channel ${program.channel}`,
-                id: "redirect." + program.channel,
-                channel: program.channel,
-            }
-        } else {
-            return null;
-        }
-    } else if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
-        return {
-            description: program.showTitle,
-            id: "tv." + program.showTitle,
-        }
+
+    let d = getShowData(program);
+    if (! d.hasShow) {
+        return null;
     } else {
-        return {
-            description: "Movies",
-            id: "movie.",
-        }
+        d.description = d.showDisplayName;
+        d.id = d.showId;
+        return d;
     }
 }
 
@@ -86,19 +72,9 @@ function getShowOrderer(show) {
 
         let sortedPrograms = JSON.parse( JSON.stringify(show.programs) );
         sortedPrograms.sort((a, b) => {
-            if (a.season === b.season) {
-                if (a.episode > b.episode) {
-                    return 1
-                } else {
-                    return -1
-                }
-            } else if (a.season > b.season) {
-                return 1;
-            } else if (b.season > a.season) {
-                return -1;
-            } else {
-                return 0
-            }
+            let showA = getShowData(a);
+            let showB = getShowData(b);
+            return showA.order - showB.order;
         });
 
         let position = 0;
@@ -106,9 +82,9 @@ function getShowOrderer(show) {
             (position + 1 < sortedPrograms.length )
             &&
             (
-                show.founder.season !== sortedPrograms[position].season
-                ||
-                show.founder.episode !== sortedPrograms[position].episode
+                getShowData(show.founder).order
+                !==
+                getShowData(sortedPrograms[position]).order
             )
         ) {
             position++;

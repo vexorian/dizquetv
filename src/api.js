@@ -24,7 +24,7 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService, eventService ) {
+function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService ) {
     let m3uService = _m3uService;
     const router = express.Router()
     const plexServerDB = new PlexServerDB(channelDB, channelCache, db);
@@ -412,6 +412,68 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService, _m3uService,
       }
     } );
 
+
+    // Custom Shows
+    router.get('/api/shows', async (req, res) => {
+      try {
+        let fillers = await customShowDB.getAllShowsInfo();
+        res.send(fillers);
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.get('/api/show/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        let filler = await customShowDB.getShow(id);
+        if (filler == null) {
+            return res.status(404).send("Custom show not found");
+        }
+        res.send(filler);
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.post('/api/show/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        await customShowDB.saveShow(id, req.body );
+        return res.status(204).send({});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.put('/api/show', async (req, res) => {
+      try {
+        let uuid = await customShowDB.createShow(req.body );
+        return res.status(201).send({id: uuid});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.delete('/api/show/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        await customShowDB.deleteShow(id);
+        return res.status(204).send({});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    });
 
     // FFMPEG SETTINGS
     router.get('/api/ffmpeg-settings', (req, res) => {
