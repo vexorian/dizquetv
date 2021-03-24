@@ -1,16 +1,19 @@
+:root {
+  --guide-text :  #F0F0f0;
+  --guide-header-even:  #423cd4ff;
+  --guide-header-odd: #262198ff;
+  --guide-color-a:  #212121;
+  --guide-color-b:  #515151;
+  --guide-color-c:  #313131;
+  --guide-color-d: #414141;
+}
+
+
 .pull-right { float: right; }
 
 .modal-semi-body {
   padding: 1rem;
   flex: 1 1 auto;
-}
-
-.commercials-panel {
-  background-color: rgb(70, 70, 70);
-  border-top: 1px solid #daa104;
-  border-left-color: #daa104;
-  border-right-color: #daa104;
-  color: white
 }
 
 .plex-panel {
@@ -27,25 +30,15 @@
   padding-right: 0.2em
 }
 
-.list-group-item-video {
-  background-color: rgb(70, 70, 70);
-  border-top: 1px solid #daa104;
-  border-left-color: #daa104;
-  border-right-color: #daa104;
-  color: white
-}
-.list-group-item-video .fa-plus-circle {
+
+.fa-plus-circle {
   color: #daa104;
 }
 
-.list-group-item-video:hover .fa-plus-circle {
+.fa-plus-circle {
   color: #000;
 }
 
-.list-group-item-video:hover {
-  background-color: #daa104;
-  color: #000 !important;
-}
 .list-group.list-group-root .list-group-item {
   border-radius: 0;
   border-width: 1px 0 0 0;
@@ -157,8 +150,7 @@ table.tvguide {
   position: sticky;
   top: 0;
   bottom: 0;
-  background: white;
-  border-bottom: 1px solid black;
+  /*border-bottom: 1px solid black;*/
 }
 
 .tvguide th.guidenav {
@@ -168,7 +160,7 @@ table.tvguide {
 
 
 .tvguide td, .tvguide th {
-  color: #F0F0f0;
+  color: var(--guide-text);
   border-top: 0;
   height: 3.5em;
   padding-top: 0;
@@ -208,27 +200,27 @@ table.tvguide {
 
 
 .tvguide th.even {
-  background: #423cd4ff;
+  background: var(--guide-header-even);
 }
 
 .tvguide th.odd {
-  background: #262198ff;
+  background: var(--guide-header-odd);
 }
 
 .tvguide tr.odd td.even {
-  background: #212121;
+  background: var(--guide-color-a);
 }
 
 .tvguide tr.odd td.odd {
-  background: #515151;;
+  background: var(--guide-color-b);
 }
 
 .tvguide tr.even td.odd {
-  background: #313131
+  background: var(--guide-color-c);
 }
 
 .tvguide tr.even td.even {
-  background: #414141;
+  background: var(--guide-color-d) ;
 }
 
 .tvguide td .play-channel {
@@ -254,15 +246,19 @@ table.tvguide {
   text-align: right;
 }
 
-.filler-list .list-group-item, .program-row {
+.filler-list .list-group-item, .program-row, .show-list .list-group-item, .program-row {
   min-height: 1.5em;
 }
 
-.filler-list .list-group-item .title, .program-row .title {
+.filler-list .list-group-item .title, .program-row .title, .show-list .list-group-item .title, .program-row .title {
   margin-right: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.show-row .program-start {
+  width: 2em;
 }
 
 div.channel-tools {
@@ -315,7 +311,7 @@ div.programming-programs div.list-group-item {
 }
 
 
-.program-row:nth-child(odd), .filler-row:nth-child(odd), .channel-row:nth-child(odd)  {
+.program-row:nth-child(odd), .show-row:nth-child(odd), .filler-row:nth-child(odd), .channel-row:nth-child(odd)  {
   background-color: #eeeeee;
 }
 

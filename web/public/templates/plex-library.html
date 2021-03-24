@@ -3,7 +3,7 @@
         <div class="modal-dialog modal-dialog-scrollable modal-xl" role="document">
             <div class="modal-content" ng-if="noServers">
                 <div class="modal-header">
-                    <h5 class="modal-title">Plex Library</h5>
+                    <h5 class="modal-title">Library</h5>
                 </div>
                 <div class="model-body">
                     <br/>
@@ -21,17 +21,17 @@
 
             <div class="modal-content" ng-if="!noServers">
                 <div class="modal-header">
-                    <h5 class="modal-title">Plex Library</h5>
+                    <h5 class="modal-title">Library</h5>
                     <span class="pull-right">
                         <label class="small" for="displayImages">Thumbnails</label>&nbsp;
                         <input id="displayImages" type="checkbox" ng-model="displayImages" />&nbsp;
                     </span>
                 </div>
                 <div class="modal-body">
-                    <select class="form-control form-control-sm" ng-model="plexServer"
-                        ng-options="x.name for x in plexServers" ng-change="selectServer(plexServer)"></select>
+                    <select class="form-control form-control-sm custom-select" ng-model="currentOrigin"
+                        ng-options="x.name for x in origins" ng-change="selectOrigin(currentOrigin)"></select>
                     <hr />
-                    <ul class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
+                    <ul ng-show="currentOrigin.type=='plex' " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
                         <li class="list-group-item" ng-repeat="a in libraries">
                             <div class="flex-container {{ displayImages ? 'w_images' : 'wo_images' }}" ng-click="getNested(a, true);">
                                 <span class="fa {{ a.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
@@ -103,6 +103,16 @@
                             </ul>
                         </li>
                     </ul>
+                    <ul ng-show="currentOrigin.type=='dizquetv' " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
+                        <li class="list-group-item" ng-repeat="x in customShows">
+                            <div class="flex-container" ng-click="addCustomShow(x);">
+                                <span class="fa fa-plus-circle tab"></span>
+
+                                <span>{{x.name}} ({{x.count}})</span>
+                            </div>
+                        </li>
+                    </ul>
+
                     <hr/>
                     <div class="loader" ng-if="pending &gt; 0" ></div> <h6 style='display:inline-block'>Selected Items</h6>
                     
@@ -112,7 +122,7 @@
                     <ul class="list-group list-group-root"  style="height: 180px; overflow-y: scroll" dnd-list="selection" scroll-glue>
                         <div ng-if="selection.length === 0">Select media items from your plex library above.</div>
                         <li ng-if="selection.length + x &gt;= 0" class="list-group-item" ng-repeat="x in allowedIndexes" style="cursor:default;" dnd-draggable="x" dnd-moved="selection.splice(selection.length + x, 1)" dnd-effect-allowed="move">
-                            {{ (selection[selection.length + x].type !== 'episode') ? selection[selection.length + x].title : (selection[selection.length + x].showTitle + ' - S' + selection[selection.length + x].season.toString().padStart(2,'0') + 'E' + selection[selection.length + x].episode.toString().padStart(2,'0'))}}
+                            {{ getProgramDisplayTitle(selection[selection.length + x]) }}
                             <button class="pull-right btn btn-sm btn-link" ng-click="selection.splice(selection.length + x,1)">
                                 <span class="text-danger fa fa-trash-alt" ></span>
                             </button>

@@ -1,5 +1,5 @@
 
-module.exports = function ($timeout, dizquetv) {
+module.exports = function ($timeout, dizquetv, getShowData) {
     const MINUTE = 60*1000;
     const HOUR = 60*MINUTE;
     const DAY = 24*HOUR;
@@ -306,33 +306,17 @@ module.exports = function ($timeout, dizquetv) {
 
         }
     };
-}
 
+    function getShow(program) {
 
-//This is a duplicate code, but maybe it doesn't have to be?
-function getShow(program) {
-    //used for equalize and frequency tweak
-    if (program.isOffline) {
-        if (program.type == 'redirect') {
-            return {
-                description : `Redirect to channel ${program.channel}`,
-                id: "redirect." + program.channel,
-                channel: program.channel,
-            }
-        } else {
+        let d = getShowData(program);
+        if (! d.hasShow) {
             return null;
-        }
-    } else if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
-        return {
-            description: program.showTitle,
-            id: "tv." + program.showTitle,
-        }
-    } else {
-        return {
-            description: "Movies",
-            id: "movie.",
+        } else {
+            d.description = d.showDisplayName;
+            d.id = d.showId;
+            return d;
         }
     }
+
 }
-
-

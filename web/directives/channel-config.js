@@ -1,4 +1,4 @@
-module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
+module.exports = function ($timeout, $location, dizquetv, resolutionOptions, getShowData, commonProgramTools) {
     return {
         restrict: 'E',
         templateUrl: 'templates/channel-config.html',
@@ -293,39 +293,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             })
             scope.sortShows = () => {
                 scope.removeOffline();
-                let shows = {}
-                let movies = []
-                let newProgs = []
-                let progs = scope.channel.programs
-                for (let i = 0, l = progs.length; i < l; i++) {
-                    if ( progs[i].isOffline || (progs[i].type === 'movie') ) {
-                        movies.push(progs[i])
-                    } else {
-                        if (typeof shows[progs[i].showTitle] === 'undefined')
-                            shows[progs[i].showTitle] = []
-                        shows[progs[i].showTitle].push(progs[i])
-                    }
-                }
-                let keys = Object.keys(shows)
-                for (let i = 0, l = keys.length; i < l; i++) {
-                    shows[keys[i]].sort((a, b) => {
-                        if (a.season === b.season) {
-                            if (a.episode > b.episode) {
-                                return 1
-                            } else {
-                                return -1
-                            }
-                        } else if (a.season > b.season) {
-                            return 1;
-                        } else if (b.season > a.season) {
-                            return -1;
-                        } else {
-                            return 0
-                        }
-                    })
-                    newProgs = newProgs.concat(shows[keys[i]])
-                }
-                scope.channel.programs = newProgs.concat(movies)
+                scope.channel.programs = commonProgramTools.sortShows(scope.channel.programs);
                 updateChannelDuration()
             }
             scope.dateForGuide = (date) => {
@@ -345,43 +313,9 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             }
             scope.sortByDate = () => {
                 scope.removeOffline();
-                scope.channel.programs.sort( (a,b) => {
-                    let aHas = ( typeof(a.date) !== 'undefined' );
-                    let bHas = ( typeof(b.date) !== 'undefined' );
-                    if (!aHas && !bHas) {
-                        return 0;
-                    } else if (! aHas) {
-                        return 1;
-                    } else if (! bHas) {
-                        return -1;
-                    }
-                    if (a.date < b.date ) {
-                        return -1;
-                    } else if (a.date > b.date) {
-                        return 1;
-                    } else {
-                        let aHasSeason = ( typeof(a.season) !== 'undefined' );
-                        let bHasSeason = ( typeof(b.season) !== 'undefined' );
-                        if (! aHasSeason && ! bHasSeason) {
-                            return 0;
-                        } else if (! aHasSeason) {
-                            return 1;
-                        } else if (! bHasSeason) {
-                            return -1;
-                        }
-                        if (a.season < b.season) {
-                            return -1;
-                        } else if (a.season > b.season) {
-                            return 1;
-                        } else if (a.episode < b.episode) {
-                            return -1;
-                        } else if (a.episode > b.episode) {
-                            return 1;
-                        } else {
-                            return 0;
-                        }
-                    }
-                });
+                scope.channel.programs = commonProgramTools.sortByDate(
+                    scope.channel.programs
+                );
                 updateChannelDuration()
             }
             scope.slideAllPrograms = (offset) => {
@@ -397,26 +331,8 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
             }
-            let removeDuplicatesSub = (progs) => {
-                let tmpProgs = {}
-                for (let i = 0, l = progs.length; i < l; i++) {
-                    if ( progs[i].type ==='redirect' ) {
-                        tmpProgs['_redirect ' + progs[i].channel + ' _ '+ progs[i].duration ] = progs[i];
-                    } else  if (progs[i].type === 'movie') {
-                        tmpProgs[progs[i].title + progs[i].durationStr] = progs[i]
-                    } else {
-                        tmpProgs[progs[i].showTitle + '-' + progs[i].season + '-' + progs[i].episode] = progs[i]
-                    }
-                }
-                let newProgs = []
-                let keys = Object.keys(tmpProgs)
-                for (let i = 0, l = keys.length; i < l; i++) {
-                    newProgs.push(tmpProgs[keys[i]])
-                }
-                return newProgs;
-            }
             scope.removeDuplicates = () => {
-                scope.channel.programs = removeDuplicatesSub(scope.channel.programs);
+                scope.channel.programs = commonProgramTools.removeDuplicates(scope.channel.programs);
                 updateChannelDuration(); //oops someone forgot to add this
             }
             scope.removeOffline = () => {
@@ -432,42 +348,37 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             }
 
             scope.wipeSpecials = () => {
-                let tmpProgs = []
-                let progs = scope.channel.programs
-                for (let i = 0, l = progs.length; i < l; i++) {
-                    if (progs[i].season !== 0) {
-                        tmpProgs.push(progs[i]);
-                    }
-                }
-                scope.channel.programs = tmpProgs
+                scope.channel.programs =commonProgramTools.removeSpecials(scope.channel.programs);
                 updateChannelDuration()
             }
 
-            scope.getShowTitle = (program) => {
-                if (program.isOffline && program.type == 'redirect') {
-                    return `Redirect to channel ${program.channel}`;
-                } else {
-                    return program.showTitle;
-                }
-            }
-
             scope.startRemoveShows = () => {
-                scope._removablePrograms = scope.channel.programs
-                    .map(scope.getShowTitle)
-                    .reduce((dedupedArr, showTitle) => {
-                        if (!dedupedArr.includes(showTitle)) {
-                            dedupedArr.push(showTitle)
+                let seenIds = {};
+                let rem = [];
+                scope.channel.programs
+                    .map( getShowData )
+                    .filter( data => data.hasShow )
+                    .forEach( x => {
+                        if ( seenIds[x.showId] !== true) {
+                            seenIds[x.showId] = true;
+                            rem.push( {
+                                id: x.showId,
+                                displayName : x.showDisplayName
+                            } );
                         }
-                        return dedupedArr
-                    }, [])
-                    .filter(showTitle => !!showTitle);
+                    } );
+                scope._removablePrograms = rem;
                 scope._deletedProgramNames = [];
             }
-            scope.removeShows = (deletedShowNames) => {
+            scope.removeShows = (deletedShowIds) => {
                 const p = scope.channel.programs;
                 let set = {};
-                deletedShowNames.forEach( (a) => set[a] = true  );
-                scope.channel.programs = p.filter( (a) => (set[scope.getShowTitle(a)]!==true) );
+                deletedShowIds.forEach( (a) => set[a] = true  );
+                scope.channel.programs = p.filter( (a) => {
+                    let data = getShowData(a);
+                    return ( ! data.hasShow || ! set[ data.showId ] );
+                } );
+                updateChannelDuration();
             }
 
             scope.describeFallback = () => {
@@ -485,106 +396,14 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 }
             }
 
-            let interpolate = ( () => {
-                let h = 60*60*1000;
-                let ix = [0, 1*h, 2*h, 4*h, 8*h, 24*h];
-                let iy = [0, 1.0, 1.25, 1.5, 1.75, 2.0];
-                let n = ix.length;
-
-                return (x) => {
-                    for (let i = 0; i < n-1; i++) {
-                        if( (ix[i] <= x) && ( (x < ix[i+1]) || i==n-2 ) ) {
-                            return iy[i] + (iy[i+1] - iy[i]) * ( (x - ix[i]) / (ix[i+1] - ix[i]) );
-                        }
-                    }
-                }
-
-            } )();
-
-            scope.programSquareStyle = (program) => {
-                let background ="";
-                if  ( (program.isOffline) && (program.type !== 'redirect') ) {
-                    background = "rgb(255, 255, 255)";
-                } else {
-                    let r = 0, g = 0, b = 0, r2=0, g2=0,b2=0;
-                    let angle = 45;
-                    let w = 3;
-                    if (program.type === 'redirect') {
-                        angle = 0;
-                        w = 4 + (program.channel % 10);
-                        let c = (program.channel * 100019);
-                        //r = 255, g = 0, b = 0;
-                        //r2 = 0, g2 = 0, b2 = 255;
-
-                        r = ( (c & 3) * 77 );
-                        g = ( ( (c >> 1) & 3) * 77 );
-                        b = ( ( (c >> 2) & 3) * 77 );
-                        r2 = ( ( (c >> 5) & 3) * 37 );
-                        g2 = ( ( (c >> 3) & 3) * 37 );
-                        b2 = ( ( (c >> 4) & 3) * 37 );
-                        
-                    } else if (program.type === 'episode') {
-                        let h = Math.abs(scope.getHashCode(program.showTitle, false));
-                        let h2 = Math.abs(scope.getHashCode(program.showTitle, true));
-                        r = h % 256;
-                        g = (h / 256) % 256;
-                        b = (h / (256*256) ) % 256;
-                        r2 = (h2 / (256*256) ) % 256;
-                        g2 = (h2 / (256*256) ) % 256;
-                        b2 = (h2 / (256*256) ) % 256;
-                        angle = (360 - 90 + h % 180) % 360;
-                        if ( angle >= 350 || angle < 10 ) {
-                            angle += 53;
-                        }
-                    } else if (program.type === 'track') {
-                        r = 10, g = 10, b = 10;
-                        r2 = 245, g2 = 245, b2 = 245;
-                        angle = 315;
-                        w = 2;
-                    } else {
-                        r = 10, g = 10, b = 10;
-                        r2 = 245, g2 = 245, b2 = 245;
-                        angle = 45;
-                        w = 6;
-                    }
-                    let rgb1 = "rgb("+ r + "," + g + "," + b +")";
-                    let rgb2 = "rgb("+ r2 + "," + g2 + "," + b2 +")"
-                    angle += 90;
-                    background = "repeating-linear-gradient( " + angle + "deg, " + rgb1 + ", " + rgb1 + " " + w + "px, " + rgb2 + " " + w + "px, " + rgb2 + " " + (w*2) + "px)";
-
-                }
-                let f = interpolate;
-                let w = 15.0;
-                let t = 4*60*60*1000;
-                //let d = Math.log( Math.min(t, program.duration) ) / Math.log(2);
-                //let a = (d * Math.log(2) ) / Math.log(t);
-                let a = ( f(program.duration) *w) / f(t);
-                a = Math.min( w, Math.max(0.3, a) );
-                b = w - a + 0.01;
-
-                return {
-                    'width': `${a}%`,
-                    'height': '1.3em',
-                    'margin-right': `${b}%`,
-                    'background': background,
-                    'border': '1px solid black',
-                    'margin-top': "0.01em",
-                    'margin-bottom': '1px',
-                };
+            scope.getProgramDisplayTitle = (x) => {
+                return commonProgramTools.getProgramDisplayTitle(x);
             }
-            scope.getHashCode = (s, rev) => {
-                var hash = 0;
-                if (s.length == 0) return hash;
-                let inc = 1, st = 0, e = s.length;
-                if (rev) {
-                    inc = -1, st = e - 1, e = -1;
-                }
-                for (var i = st; i != e; i+= inc) {
-                    hash = s.charCodeAt(i) + ((hash << 5) - hash);
-                    hash = hash & hash; // Convert to 32bit integer
-                }
-                return hash;
+
+            scope.programSquareStyle = (x) => {
+                return commonProgramTools.programSquareStyle(x);
             }
+
 
             scope.doReruns = (rerunStart, rerunBlockSize, rerunRepeats) => {
                 let o =(new Date()).getTimezoneOffset() * 60 * 1000;
@@ -726,13 +545,11 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 };
                 let array = scope.channel.programs;
                 for (let i = 0; i < array.length; i++) {
-                    if (array[i].type === 'episode' && array[i].season != 0) {
-                        let key = array[i].showTitle;
+                    let data = getShowData( array[i] );
+                    if (data.hasShow) {
+                        let key = data.showId;
                         if (typeof(scope.episodeMemory[key]) === 'undefined') {
-                            scope.episodeMemory[key] = {
-                                season: array[i].season,
-                                episode: array[i].episode,
-                            }
+                            scope.episodeMemory[key] = data.order;
                         }
                     }
                 }
@@ -747,11 +564,11 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 // some precalculation, useful to stop the shuffle from being quadratic...
                 for (let i = 0; i < array.length; i++) {
                     let vid = array[i];
-                    if (vid.type === 'episode' && vid.season != 0) {
+                    let data = getShowData(vid);
+                    if (data.hasShow) {
                         let countKey = {
-                            title: vid.showTitle,
-                            s: vid.season,
-                            e: vid.episode,
+                            id: data.showId,
+                            order: data.order,
                         }
                         let key = JSON.stringify(countKey);
                         let c = ( (typeof(counts[key]) === 'undefined') ? 0 : counts[key] );
@@ -760,10 +577,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                             c: c,
                             it: vid
                         }
-                        if ( typeof(shows[vid.showTitle]) === 'undefined') {
-                            shows[vid.showTitle] = [];
+                        if ( typeof(shows[data.showId]) === 'undefined') {
+                            shows[data.showId] = [];
                         }
-                        shows[vid.showTitle].push(showEntry);
+                        shows[data.showId].push(showEntry);
                     }
                 }
                 //this is O(|N| log|M|) where |N| is the total number of TV
@@ -773,15 +590,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 Object.keys(shows).forEach(function(key,index) {
                     shows[key].sort( (a,b) => {
                         if (a.c == b.c) {
-                            if (a.it.season == b.it.season) {
-                                if (a.it.episode == b.it.episode) {
-                                    return 0;
-                                } else {
-                                    return (a.it.episode < b.it.episode)?-1: 1;
-                                }
-                            } else {
-                                return (a.it.season < b.it.season)?-1: 1;
-                            }
+                            return getShowData(a.it).order - getShowData(b.it).order;
                         } else {
                             return (a.c < b.c)? -1: 1;
                         }
@@ -790,8 +599,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     if (typeof(scope.episodeMemory[key]) !== 'undefined') {
                         for (let i = 0; i < shows[key].length; i++) {
                             if (
-                                (shows[key][i].it.season === scope.episodeMemory[key].season)
-                              &&(shows[key][i].it.episode === scope.episodeMemory[key].episode)
+                                getShowData(shows[key][i].it).order == scope.episodeMemory[key]
                             ) {
                                 next[key] = i;
                                 break;
@@ -800,13 +608,14 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                     }
                 });
                 for (let i = 0; i < array.length; i++) {
-                    if (array[i].type === 'episode' && array[i].season != 0) {
-                        let title = array[i].showTitle;
-                        var sequence = shows[title];
-                        let j = next[title];
+                    let data = getShowData( array[i] );
+                    if (data.hasShow) {
+                        let key = data.showId;
+                        var sequence = shows[key];
+                        let j = next[key];
                         array[i] = sequence[j].it;
                         
-                        next[title] = (j + 1) % sequence.length;
+                        next[key] = (j + 1) % sequence.length;
                     }
                 }
                 scope.channel.programs = array;
@@ -888,18 +697,23 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 let newProgs = []
                 let progs = scope.channel.programs
                 for (let i = 0, l = progs.length; i < l; i++) {
-                    if (progs[i].type === 'movie') {
+                    let data = getShowData(progs[i]);
+                    if (! data.hasShow) {
+                        continue;
+                    } else if (data.showId === 'movie.') {
                         movies.push(progs[i])
                     } else {
-                        if (typeof shows[progs[i].showTitle] === 'undefined')
-                            shows[progs[i].showTitle] = []
-                        shows[progs[i].showTitle].push(progs[i])
+                        if (typeof shows[data.showId] === 'undefined') {
+                            shows[data.showId] = [];
+                        }
+                        shows[data.showId].push(progs[i])
                     }
                 }
                 let keys = Object.keys(shows)
                 let index = 0
-                if (randomize)
-                    index = getRandomInt(0, keys.length - 1)
+                if (randomize) {
+                    index = getRandomInt(0, keys.length - 1);
+                }
                 while (keys.length > 0) {
                     if (shows[keys[index]].length === 0) {
                         keys.splice(index, 1)
@@ -933,12 +747,17 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 updateChannelDuration()
             }
             scope.randomShuffle = () => {
-                shuffle(scope.channel.programs)
+                commonProgramTools.shuffle(scope.channel.programs);
                 updateChannelDuration()
             }
             scope.cyclicShuffle = () => {
-                cyclicShuffle(scope.channel.programs);
-                updateChannelDuration();
+                // cyclic shuffle can be reproduced by simulating the effects
+                // of save and recover positions.
+                let oldSaved = scope.episodeMemory;
+                commonProgramTools.shuffle(scope.channel.programs);
+                scope.savePositions();
+                scope.recoverPositions();
+                scope.episodeMemory = oldSaved;
             }
             scope.equalizeShows = () => {
                 scope.removeDuplicates();
@@ -947,9 +766,12 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             }
             scope.startFrequencyTweak = () => {
                 let programs = {};
+                let displayName = {};
                 for (let i = 0; i < scope.channel.programs.length; i++) {
-                    if ( !scope.channel.programs[i].isOffline || (scope.channel.programs[i].type === 'redirect')  ) {
-                        let c = getShowCode(scope.channel.programs[i]);
+                    let data = getShowData( scope.channel.programs[i] );
+                    if ( data.hasShow ) {
+                        let c = data.showId;
+                        displayName[c] = data.showDisplayName;
                         if ( typeof(programs[c]) === 'undefined') {
                             programs[c] = 0;
                         }
@@ -967,11 +789,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                         name : key,
                         weight: w,
                         specialCategory: false,
-                        displayName: key,
+                        displayName: displayName[key],
                     }
-                    if (key.startsWith("_internal.")) {
+                    if (! key.startsWith("tv.")) {
                         obj.specialCategory = true;
-                        obj.displayName = key.slice("_internal.".length);
                     }
                     arr.push(obj);
                 });
@@ -1011,37 +832,13 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
             }
 
             function getShowCode(program) {
-                //used for equalize and frequency tweak
-                let showName = "_internal.Unknown";
-                if ( program.isOffline && (program.type == 'redirect') ) {
-                    showName = `Redirect to channel ${program.channel}`;
-                } else if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
-                    showName = program.showTitle;
-                } else {
-                    showName = "_internal.Movies";
-                }
-                return showName;
+                return getShowData(program).showId;
             }
 
             function getRandomInt(min, max) {
                 min = Math.ceil(min)
                 max = Math.floor(max)
                 return Math.floor(Math.random() * (max - min + 1)) + min
-            }
-            function shuffle(array, lo, hi ) {
-                if (typeof(lo) === 'undefined') {
-                    lo = 0;
-                    hi = array.length;
-                }
-                let currentIndex = hi, temporaryValue, randomIndex
-                while (lo !== currentIndex) {
-                    randomIndex = lo + Math.floor(Math.random() * (currentIndex -lo) );
-                    currentIndex -= 1
-                    temporaryValue = array[currentIndex]
-                    array[currentIndex] = array[randomIndex]
-                    array[randomIndex] = temporaryValue
-                }
-                return array
             }
             function equalizeShows(array, freqObject) {
                 let shows = {};
@@ -1104,79 +901,17 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
                 updateChannelDuration();
             }
             scope.shuffleReplicate =(t) => {
-                shuffle( scope.channel.programs );
+                commonProgramTools.shuffle( scope.channel.programs );
                 let n = scope.channel.programs.length;
                 let a = Math.floor(n / 2);
                 scope.replicate(t);
                 for (let i = 0; i < t; i++) {
-                    shuffle( scope.channel.programs, n*i, n*i + a);
-                    shuffle( scope.channel.programs, n*i + a, n*i + n);
+                    commonProgramTools.shuffle( scope.channel.programs, n*i, n*i + a);
+                    commonProgramTools.shuffle( scope.channel.programs, n*i + a, n*i + n);
                 }
                 updateChannelDuration();
 
             }
-            function cyclicShuffle(array) {
-                let shows = {};
-                let next = {};
-                let counts = {};
-                // some precalculation, useful to stop the shuffle from being quadratic...
-                for (let i = 0; i < array.length; i++) {
-                    let vid = array[i];
-                    if (vid.type === 'episode' && vid.season != 0) {
-                        let countKey = {
-                            title: vid.showTitle,
-                            s: vid.season,
-                            e: vid.episode,
-                        }
-                        let key = JSON.stringify(countKey);
-                        let c = ( (typeof(counts[key]) === 'undefined') ? 0 : counts[key] );
-                        counts[key] = c + 1;
-                        let showEntry = {
-                            c: c,
-                            it: array[i],
-                        }
-                        if ( typeof(shows[vid.showTitle]) === 'undefined') {
-                            shows[vid.showTitle] = [];
-                        }
-                        shows[vid.showTitle].push(showEntry);
-                    }
-                }
-                //this is O(|N| log|M|) where |N| is the total number of TV
-                // episodes and |M| is the maximum number of episodes
-                // in a single show. I am pretty sure this is a lower bound
-                // on the time complexity that's possible here.
-                Object.keys(shows).forEach(function(key,index) {
-                    shows[key].sort( (a,b) => {
-                        if (a.c == b.c) {
-                            if (a.it.season == b.it.season) {
-                                if (a.it.episode == b.it.episode) {
-                                    return 0;
-                                } else {
-                                    return (a.it.episode < b.it.episode)?-1: 1;
-                                }
-                            } else {
-                                return (a.it.season < b.it.season)?-1: 1;
-                            }
-                        } else {
-                            return (a.c < b.c)? -1: 1;
-                        }
-                    });
-                    next[key] = Math.floor( Math.random() * shows[key].length );
-                });
-                shuffle(array);
-                for (let i = 0; i < array.length; i++) {
-                    if (array[i].type === 'episode' && array[i].season != 0) {
-                        let title = array[i].showTitle;
-                        var sequence = shows[title];
-                        let j = next[title];
-                        array[i] = sequence[j].it;
-                        
-                        next[title] = (j + 1) % sequence.length;
-                    }
-                }
-                return array
-            }
-
             scope.updateChannelDuration = updateChannelDuration
             function updateChannelDuration() {
                 scope.showRotatedNote = false;
@@ -1882,11 +1617,11 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions) {
 
 
             scope.onTimeSlotsButtonClick = () => {
-                let progs = removeDuplicatesSub( scope.channel.programs );
+                let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
                 scope.timeSlots.startDialog( progs, scope.maxSize, scope.channel.scheduleBackup );
             }
             scope.onRandomSlotsButtonClick = () => {
-                let progs = removeDuplicatesSub( scope.channel.programs );
+                let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
                 scope.randomSlots.startDialog(progs, scope.maxSize, scope.channel.randomScheduleBackup );
             }
 

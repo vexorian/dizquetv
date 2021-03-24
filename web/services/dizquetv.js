@@ -228,6 +228,47 @@ module.exports = function ($http, $q) {
         },
 
         /*======================================================================
+        * Custom Show stuff
+        */
+        getAllShowsInfo: async () => {
+        let f = await $http.get('/api/shows');
+            return f.data;
+        },
+
+        getShow: async (id) => {
+            let f = await $http.get(`/api/show/${id}`);
+            return f.data;
+        },
+
+        updateShow: async(id, show) => {
+        return (await $http({
+            method: "POST",
+            url : `/api/show/${id}`,
+            data: angular.toJson(show),
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        }) ).data;
+        },
+
+        createShow: async(show) => {
+        return (await $http({
+            method: "PUT",
+            url : `/api/show`,
+            data: angular.toJson(show),
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        }) ).data;
+        },
+
+        deleteShow: async(id) => {
+        return ( await $http({
+            method: "DELETE",
+            url : `/api/show/${id}`,
+            data: {},
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        }) ).data;
+        },
+
+
+        /*======================================================================
         * TV Guide endpoints
         */
         getGuideStatus: async () => {
