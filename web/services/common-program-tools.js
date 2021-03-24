@@ -30,8 +30,7 @@ module.exports = function (getShowData) {
             })
             newProgs = newProgs.concat(shows[keys[i]])
         }
-        newProgs.concat(movies);
-        return newProgs;
+        return newProgs.concat(movies);
     }
 
     function shuffle(array, lo, hi ) {
