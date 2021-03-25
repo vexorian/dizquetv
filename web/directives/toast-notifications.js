@@ -110,6 +110,11 @@ module.exports = function ($timeout) {
                 eventSource.addEventListener('xmltv',  normalEvent("TV Guide") );
                 eventSource.addEventListener('lifecycle',  normalEvent("Server") );
             };
+
+            scope.destroy = (index) => {
+                scope.toasts.splice(index,1);
+            }
+
             scope.setup();
         }
     };
