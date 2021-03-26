@@ -123,10 +123,14 @@ function video( channelDB , fillerDB, db) {
     // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
     router.get('/stream', async (req, res) => {
         // Check if channel queried is valid
+        res.on("error", (e) => {
+            console.err("There was an unexpected error in stream.", e);
+        } );
         if (typeof req.query.channel === 'undefined') {
             res.status(400).send("No Channel Specified")
             return
         }
+
         let audioOnly = ("true" == req.query.audioOnly);
         console.log(`/stream audioOnly=${audioOnly}`);
         let session = parseInt(req.query.session);
@@ -323,6 +327,7 @@ function video( channelDB , fillerDB, db) {
         res.writeHead(200, {
             'Content-Type': 'video/mp2t'
         });
+
         try {
             playerObj = await player.play(res);
         } catch (err) {
