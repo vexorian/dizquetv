@@ -163,7 +163,15 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 let t = Date.now();
                 let originalStart = scope.channel.startTime.getTime();
                 let n = scope.channel.programs.length;
-                let totalDuration = scope.channel.duration;
+                //scope.channel.totalDuration might not have been initialized
+                let totalDuration = 0;
+                for (let i = 0; i < n; i++) {
+                    totalDuration += scope.channel.programs[i].duration;
+                }
+                if (totalDuration == 0) {
+                    return;
+                }
+
                 let m = (t - originalStart) % totalDuration;
                 let x = 0;
                 let runningProgram = -1;
