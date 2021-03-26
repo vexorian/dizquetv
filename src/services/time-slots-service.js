@@ -302,6 +302,15 @@ module.exports = async( programs, schedule  ) => {
         }
     }
 
+    let pushProgram = (item) => {
+        if ( item.isOffline && (item.type !== 'redirect') ) {
+            pushFlex(item.duration);
+        } else {
+            p.push(item);
+            t += item.duration;
+        }
+    };
+
     if (ts > t0) {
         pushFlex( ts - t0 );
     }
@@ -355,14 +364,13 @@ module.exports = async( programs, schedule  ) => {
 
         if (item.isOffline) {
             //flex or redirect. We can just use the whole duration
-            p.push(item);
-            t += remaining;
+            item.duration = remaining;
+            pushProgram(item);
             continue;
         }
         if (item.duration > remaining) {
             // Slide
-            p.push(item);
-            t += item.duration;
+            pushProgram(item);
             advanceSlot(slot);
             continue;
         }
@@ -373,7 +381,7 @@ module.exports = async( programs, schedule  ) => {
         let pads = [ padded ];
 
         while(true) {
-            let item2 = getNextForSlot(slot);
+            let item2 = getNextForSlot(slot, remaining);
             if (total + item2.duration > remaining) {
                 break;
             }
@@ -413,23 +421,17 @@ module.exports = async( programs, schedule  ) => {
         }
         // now unroll them all
         for (let i = 0; i < pads.length; i++) {
-            p.push( pads[i].item );
-            t += pads[i].item.duration;
+            pushProgram( pads[i].item );
             pushFlex( pads[i].pad );
         }
     }
     while ( (t > hardLimit) || (p.length >= LIMIT) ) {
         t -= p.pop().duration;
     }
-    let m = t % schedule.period;
-    let rem = 0;
-    if (m > wantedFinish) {
-        rem = schedule.period + wantedFinish - m;
-    } else if (m < wantedFinish) {
-        rem = wantedFinish - m;
-    }
-    if (rem > constants.SLACK) {
-        pushFlex(rem);
+    let m = (t - t0) % schedule.period;
+    if (m > 0) {
+        //ensure the schedule is a multiple of period
+        pushFlex( schedule.period - m);
     }
 
 

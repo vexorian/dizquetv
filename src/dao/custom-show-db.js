@@ -110,8 +110,8 @@ class CustomShowDB {
 
     async getAllShowsInfo() {
         //returns just name and id
-        let fillers = await this.getAllShows();
-        return fillers.map( (f) =>  {
+        let shows = await this.getAllShows();
+        return shows.map( (f) =>  {
             return {
                 'id'  : f.id,
                 'name': f.name,

@@ -27,7 +27,7 @@ module.exports = { router: api }
 function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService ) {
     let m3uService = _m3uService;
     const router = express.Router()
-    const plexServerDB = new PlexServerDB(channelDB, channelCache, db);
+    const plexServerDB = new PlexServerDB(channelDB, channelCache, fillerDB, customShowDB, db);
 
     router.get('/api/version', async (req, res) => {
       try {
@@ -141,18 +141,24 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
     })
     router.post('/api/plex-servers', async (req, res) => {
         try {
-            await plexServerDB.updateServer(req.body);
+            let report = await plexServerDB.updateServer(req.body);
+            let modifiedPrograms = 0;
+            let destroyedPrograms = 0;
+            report.forEach( (r) => {
+              modifiedPrograms += r.modifiedPrograms;
+              destroyedPrograms += r.destroyedPrograms;
+            } );
             res.status(204).send("Plex server updated.");;
             eventService.push(
               "settings-update",
               {
-                "message": `Plex server ${req.body.name} updated.`,
+                "message": `Plex server ${req.body.name} updated. ${modifiedPrograms} programs modified, ${destroyedPrograms} programs deleted`,
                 "module" : "plex-server",
                 "detail" : {
                   "serverName" : req.body.name,
                   "action" : "update"
                 },
-                "level" : "info"
+                "level" : "warning"
               }
             );
         

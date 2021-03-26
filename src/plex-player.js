@@ -49,7 +49,7 @@ class PlexPlayer {
         let channel = this.context.channel;
         let server = db['plex-servers'].find( { 'name': lineupItem.serverKey } );
         if (server.length == 0) {
-            throw Error(`Unable to find server "${lineupItem.serverKey}" specied by program.`);
+            throw Error(`Unable to find server "${lineupItem.serverKey}" specified by program.`);
         }
         server = server[0];
         if (server.uri.endsWith("/")) {

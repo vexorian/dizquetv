@@ -9,11 +9,13 @@ module.exports = function (dizquetv, $timeout) {
         },
         link: function (scope, element, attrs) {
             scope.state.modified = false;
+            scope.loading = { show: false };
             scope.setModified = () => {
                 scope.state.modified = true;
             }
             scope.onSave = async () => {
                 try {
+                    scope.loading = { show: true };
                     await dizquetv.updatePlexServer(scope.state.server);
                     scope.state.modified = false;
                     scope.state.success = "The server was updated.";
@@ -23,6 +25,8 @@ module.exports = function (dizquetv, $timeout) {
                     scope.state.error = "There was an error updating the server";
                     scope.state.success = "";
                     console.error(scope.state.error, err);
+                } finally {
+                    scope.loading = { show: false };
                 }
                 $timeout( () => { scope.$apply() } , 0 );
             }

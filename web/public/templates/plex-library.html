@@ -36,7 +36,7 @@
                             <div class="flex-container {{ displayImages ? 'w_images' : 'wo_images' }}" ng-click="getNested(a, true);">
                                 <span class="fa {{ a.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
                                 <img ng-if="displayImages" lazy-img="{{a.icon}}" />
-                                <span>{{a.title}}</span><!-- Library -->
+                                <span>{{ displayTitle(a) }}</span><!-- Library -->
                                 <span ng-if="a.type === 'show' || a.type === 'movie' || a.type === 'artist'" class="flex-pull-right" ng-click='$event.stopPropagation(); selectLibrary(a)'>
                                     <span class="fa fa-plus btn"></span>
                                 </span>
@@ -50,7 +50,7 @@
                                         <span ng-if="b.type !== 'movie'" class="tab"></span>
                                         <span ng-if="b.type !== 'movie'" class="fa {{ b.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
                                         <img ng-if="displayImages" lazy-img="{{ b.type === 'episode' ? b.episodeIcon : b.icon }}" />
-                                        {{b.title}}
+                                        {{ displayTitle(b) }}
                                         <span ng-if="b.type === 'movie'" class="flex-pull-right">
                                             {{b.durationStr}}
                                         </span>
@@ -75,8 +75,7 @@
                                                 <span ng-if="c.type !== 'movie' && c.type !== 'episode' && c.type !== 'track'"
                                                     class="fa {{ c.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
                                                 <img ng-if="displayImages" lazy-img="{{c.type === 'episode' ? c.episodeIcon : c.icon }}" />
-                                                {{ c.type === 'episode' ? c.showTitle + ' - S' + c.season.toString().padStart(2,'0') + 'E' + c.episode.toString().padStart(2,'0') + ' - ' : '' }}
-                                                {{c.title}}
+                                                {{ displayTitle(c) }}
                                                 <span ng-if="c.type === 'movie' || c.type === 'episode' || c.type === 'track' "
                                                     class="flex-pull-right">
                                                     {{c.durationStr}}
@@ -91,7 +90,7 @@
                                                     <div class="flex-container" ng-click="selectItem(d, true)">
                                                         <span class="fa fa-plus-circle tab"></span>
                                                         <img ng-if="displayImages" lazy-img="{{d.episodeIcon}}" />
-                                                        E{{ d.episode.toString().padStart(2,'0')}} - {{d.title}}
+                                                        {{ displayTitle(d) }}
                                                         <span class="flex-pull-right">{{d.durationStr}}</span>
                                                         <!-- Episode -->
                                                     </div>

@@ -276,11 +276,11 @@ module.exports = async( programs, schedule  ) => {
 
     let s = schedule.slots;
     let ts = (new Date() ).getTime();
-    let curr = ts - ts % DAY;
+
     let t0 = ts;
     let p = [];
     let t = t0;
-    let wantedFinish = 0;
+
     let hardLimit = t0 + schedule.maxDays * DAY;
 
     let pushFlex = (d) => {
@@ -296,6 +296,15 @@ module.exports = async( programs, schedule  ) => {
             }
         }
     }
+
+    let pushProgram = (item) => {
+        if ( item.isOffline && (item.type !== 'redirect') ) {
+            pushFlex(item.duration);
+        } else {
+            p.push(item);
+            t += item.duration;
+        }
+    };
 
     let slotLastPlayed = {};
 
@@ -338,15 +347,14 @@ module.exports = async( programs, schedule  ) => {
 
         if (item.isOffline) {
             //flex or redirect. We can just use the whole duration
-            p.push(item);
-            t += remaining;
+            item.duration = remaining;
+            pushProgram(item);
             slotLastPlayed[ slotIndex ] = t;
             continue;
         }
         if (item.duration > remaining) {
             // Slide
-            p.push(item);
-            t += item.duration;
+            pushProgram(item);
             slotLastPlayed[ slotIndex ] = t;
             advanceSlot(slot);
             continue;
@@ -412,8 +420,7 @@ module.exports = async( programs, schedule  ) => {
         }
         // now unroll them all
         for (let i = 0; i < pads.length; i++) {
-            p.push( pads[i].item );
-            t += pads[i].item.duration;
+            pushProgram( pads[i].item );
             slotLastPlayed[ slotIndex ] = t;
             pushFlex( pads[i].pad );
         }
@@ -421,15 +428,10 @@ module.exports = async( programs, schedule  ) => {
     while ( (t > hardLimit) || (p.length >= LIMIT) ) {
         t -= p.pop().duration;
     }
-    let m = t % schedule.period;
-    let rem = 0;
-    if (m > wantedFinish) {
-        rem = schedule.period + wantedFinish - m;
-    } else if (m < wantedFinish) {
-        rem = wantedFinish - m;
-    }
-    if (rem > constants.SLACK) {
-        pushFlex(rem);
+    let m = (t - t0) % schedule.period;
+    if (m != 0) {
+        //ensure the schedule is a multiple of period
+        pushFlex( schedule.period - m);
     }
 
 
