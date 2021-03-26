@@ -8,7 +8,7 @@
 * [ ] I am submitting to the correct base branch
 <!--
    * Bug fixes must go to `dev/1.2.x`.
-   * New features must go to `dev/1.3.x`.
+   * New features must go to `dev/1.4.x`.
 -->
 ### Changes that modify the db structure
 
