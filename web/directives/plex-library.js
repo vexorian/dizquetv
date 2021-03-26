@@ -219,6 +219,31 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
                 scope.customShows = await dizquetv.getAllShowsInfo();
                 scope.$apply();
             }
+
+            scope.displayTitle = (show) => {
+                let r = "";
+                if (show.type === 'episode') {
+                    r += show.showTitle + " - ";
+                    if ( typeof(show.season) !== 'undefined' ) {
+                        r += "S" + show.season.toString().padStart(2,'0');
+                    }
+                    if ( typeof(show.episode) !== 'undefined' ) {
+                        r += "E" + show.episode.toString().padStart(2,'0');
+                    }
+                }
+                if (r != "") {
+                    r = r + " - ";
+                }
+                r += show.title;
+                if (
+                    (show.type !== 'episode')
+                    &&
+                    (typeof(show.year) !== 'undefined')
+                ) {
+                    r += " (" + JSON.stringify(show.year) + ")";
+                }
+                return r;
+            }
         }
     };
 }
