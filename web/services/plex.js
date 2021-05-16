@@ -305,7 +305,7 @@ module.exports = function ($http, $window, $interval) {
                 });
                 for (let k = 0; k < keys.length; k++) {
                     let key = keys[k];
-                    if (collections[key].length <= 1) {
+                    if ( !(collections[key].length >= 1) ) {
                         //it's pointless to include it.
                         continue;
                     }
