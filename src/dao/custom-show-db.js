@@ -68,7 +68,6 @@ class CustomShowDB {
     }
 
     async deleteShow(id) {
-        try {
             let f = path.join(this.folder, `${id}.json` );
             await new Promise( (resolve, reject) => {
                 fs.unlink(f, function (err) {
@@ -78,9 +77,6 @@ class CustomShowDB {
                     resolve();
                 });
             });
-        } finally {
-            delete this.cache[id];
-        }
     }
 
     
