@@ -14,8 +14,6 @@ class TVGuideService
         this.currentUpdate = -1;
         this.currentLimit = -1;
         this.currentChannels = null;
-        this.throttleX = 0;
-        this.doThrottle = false;
         this.xmltv = xmltv;
         this.db = db;
         this.cacheImageService = cacheImageService;
@@ -26,7 +24,7 @@ class TVGuideService
         while (this.cached == null) {
             await _wait(100);
         }
-        this.doThrottle = true;
+
         return this.cached;
     }
 
@@ -357,11 +355,10 @@ class TVGuideService
         }
     }
 
-    async _throttle() {
-        //this.doThrottle = true;
-        if ( this.doThrottle && (this.throttleX++)%10 == 0) {
-            await _wait(0);
-        }
+    _throttle() {
+        return new Promise((resolve) => {
+            setImmediate(() => resolve());
+        });
     }
 
     async refreshXML() {
