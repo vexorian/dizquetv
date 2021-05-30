@@ -84,11 +84,14 @@
 
                 </div>
 
-                <div class="modal-footer">
+                <div class="modal-footer" ng-show='! loading.show'>
                     <div class='text-success small'>{{state.success}}</div>
                     <div class='text-danger small'>{{state.error}}</div>
                     <button type="button" class="btn btn-sm btn-link" ng-click="onFinish()">{{state.modified?"Cancel":"Close"}}</button>
                     <button type="button" class="btn btn-sm btn-primary" ng-click="onSave();" ng-show="state.modified" >Save</button>
+                </div>
+                <div class="modal-footer" ng-show='loading.show'>
+                    <div class='loader'></div>
                 </div>
             </div>
         </div>

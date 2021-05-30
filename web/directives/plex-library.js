@@ -1,4 +1,4 @@
-module.exports = function (plex, dizquetv, $timeout) {
+module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
     return {
         restrict: 'E',
         templateUrl: 'templates/plex-library.html',
@@ -14,6 +14,9 @@ module.exports = function (plex, dizquetv, $timeout) {
             if ( typeof(scope.limit) == 'undefined') {
                 scope.limit = 1000000000;
             }
+            scope.customShows = [];
+            scope.origins = [];
+            scope.currentOrigin = undefined;
             scope.pending = 0;
             scope.allowedIndexes = [];
             for (let i = -10; i <= -1; i++) {
@@ -25,9 +28,14 @@ module.exports = function (plex, dizquetv, $timeout) {
                     $timeout(resolve,t);
                 });
             }
-            scope.selectServer = function (server) {
-                scope.plexServer = server
-                updateLibrary(server)
+            scope.selectOrigin = function (origin) {
+                if ( origin.type === 'plex' ) {
+                    scope.plexServer = origin.server;
+                    updateLibrary(scope.plexServer);
+                } else {
+                    scope.plexServer = undefined;
+                    updateCustomShows();
+                }
             }
             scope._onFinish = (s) => {
                 if (s.length > scope.limit) {
@@ -78,30 +86,41 @@ module.exports = function (plex, dizquetv, $timeout) {
                 scope.$apply()
               }
             }
+
             dizquetv.getPlexServers().then((servers) => {
                 if (servers.length === 0) {
                     scope.noServers = true
                     return
                 }
-                scope.plexServers = servers
-                scope.plexServer = servers[0]
+                scope.origins = servers.map( (s) => {
+                    return {
+                        "type" : "plex",
+                        "name" : `Plex - ${s.name}`,
+                        "server": s,
+                    }
+                } );
+                scope.currentOrigin = scope.origins[0];
+                scope.plexServer = scope.currentOrigin.server;
+                scope.origins.push( {
+                    "type": "dizquetv",
+                    "name" : "dizqueTV - Custom Shows",
+                } );
                 updateLibrary(scope.plexServer)
             })
 
-            function updateLibrary(server) {
-                plex.getLibrary(server).then((lib) => {
-                    plex.getPlaylists(server).then((play) => {
-                        for (let i = 0, l = play.length; i < l; i++)
-                            play[i].type = 'playlist'
+            let updateLibrary = async(server) => {
+                let lib = await plex.getLibrary(server);
+                let play = await plex.getPlaylists(server);
+
+                play.forEach( p => {
+                    p.type = "playlist";
+                } );
                         scope.$apply(() => {
                             scope.libraries = lib
                             if (play.length > 0)
                                 scope.libraries.push({ title: "Playlists", key: "", icon: "", nested: play })
                         })
-                    })
-                }, (err) => {
-                    console.log(err)
-                })
+
             }
             scope.fillNestedIfNecessary = async (x, isLibrary) => {
                 if ( (typeof(x.nested) === 'undefined') && (x.type !== 'collection') ) {
@@ -173,6 +192,57 @@ module.exports = function (plex, dizquetv, $timeout) {
             }
             scope.createShowIdentifier = (season, ep) => {
                 return 'S' + (season.toString().padStart(2, '0')) + 'E' + (ep.toString().padStart(2, '0'))
+            }
+            scope.addCustomShow = async(show) => {
+                scope.pending++;
+                try {
+                    show = await dizquetv.getShow(show.id);
+                    for (let i = 0; i < show.content.length; i++) {
+                        let item = JSON.parse(angular.toJson( show.content[i] ));
+                        item.customShowId = show.id;
+                        item.customShowName = show.name;
+                        item.customOrder = i;
+                        scope.selection.push(item);
+                    }
+                    scope.$apply();
+                } finally {
+                    scope.pending--;
+                }
+
+            }
+
+            scope.getProgramDisplayTitle = (x) => {
+                return commonProgramTools.getProgramDisplayTitle(x);
+            }
+
+            let updateCustomShows = async() => {
+                scope.customShows = await dizquetv.getAllShowsInfo();
+                scope.$apply();
+            }
+
+            scope.displayTitle = (show) => {
+                let r = "";
+                if (show.type === 'episode') {
+                    r += show.showTitle + " - ";
+                    if ( typeof(show.season) !== 'undefined' ) {
+                        r += "S" + show.season.toString().padStart(2,'0');
+                    }
+                    if ( typeof(show.episode) !== 'undefined' ) {
+                        r += "E" + show.episode.toString().padStart(2,'0');
+                    }
+                }
+                if (r != "") {
+                    r = r + " - ";
+                }
+                r += show.title;
+                if (
+                    (show.type !== 'episode')
+                    &&
+                    (typeof(show.year) !== 'undefined')
+                ) {
+                    r += " (" + JSON.stringify(show.year) + ")";
+                }
+                return r;
             }
         }
     };

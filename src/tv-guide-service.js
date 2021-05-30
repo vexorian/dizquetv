@@ -7,24 +7,24 @@ class TVGuideService
     /****
      *
      **/
-    constructor(xmltv, db) {
+    constructor(xmltv, db, cacheImageService, eventService) {
         this.cached = null;
         this.lastUpdate = 0;
         this.updateTime = 0;
         this.currentUpdate = -1;
         this.currentLimit = -1;
         this.currentChannels = null;
-        this.throttleX = 0;
-        this.doThrottle = false;
         this.xmltv = xmltv;
         this.db = db;
+        this.cacheImageService = cacheImageService;
+        this.eventService = eventService;
     }
 
     async get() {
         while (this.cached == null) {
             await _wait(100);
         }
-        this.doThrottle = true;
+
         return this.cached;
     }
 
@@ -43,6 +43,19 @@ class TVGuideService
                 this.currentUpdate = this.updateTime;
                 this.currentLimit = this.updateLimit;
                 this.currentChannels = this.updateChannels;
+                let t = "" + ( (new Date()) );
+                eventService.push(
+                    "xmltv",
+                    {
+                        "message": `Started building tv-guide at = ${t}`,
+                        "module" : "xmltv",
+                        "detail" : {
+                            "time": new Date(),
+                        },
+                        "level" : "info"
+                    }
+                );
+        
                 await this.buildIt();
             }
             await _wait(100);
@@ -342,16 +355,28 @@ class TVGuideService
         }
     }
 
-    async _throttle() {
-        //this.doThrottle = true;
-        if ( this.doThrottle && (this.throttleX++)%10 == 0) {
-            await _wait(0);
-        }
+    _throttle() {
+        return new Promise((resolve) => {
+            setImmediate(() => resolve());
+        });
     }
 
     async refreshXML() {
         let xmltvSettings = this.db['xmltv-settings'].find()[0];
-        await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle() );
+        await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle(), this.cacheImageService);
+        let t = "" + ( (new Date()) );
+        eventService.push(
+            "xmltv",
+            {
+                "message": `XMLTV updated at server time = ${t}`,
+                "module" : "xmltv",
+                "detail" : {
+                    "time": new Date(),
+                },
+                "level" : "info"
+            }
+        );
+
     }
 
     async getStatus() {

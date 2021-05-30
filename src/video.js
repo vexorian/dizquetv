@@ -45,7 +45,7 @@ function video( channelDB , fillerDB, db) {
         })
     })
     // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos
-    router.get('/video', async (req, res) => {
+    let concat = async (req, res, audioOnly) => {
         // Check if channel queried is valid
         if (typeof req.query.channel === 'undefined') {
             res.status(500).send("No Channel Specified")
@@ -75,6 +75,7 @@ function video( channelDB , fillerDB, db) {
         console.log(`\r\nStream starting. Channel: ${channel.number} (${channel.name})`)
 
         let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+        ffmpeg.setAudioOnly(audioOnly);
         let stopped = false;
 
         function stop() {
@@ -109,16 +110,29 @@ function video( channelDB , fillerDB, db) {
         })
 
         let channelNum = parseInt(req.query.channel, 10)
-        let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}`);
+        let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}&audioOnly=${audioOnly}`);
         ff.pipe(res );
-    })
+    };
+    router.get('/video', async(req, res) => {
+        return await concat(req, res, false);
+    } );
+    router.get('/radio', async(req, res) => {
+        return await concat(req, res, true);
+    } );
+
     // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
     router.get('/stream', async (req, res) => {
         // Check if channel queried is valid
+        res.on("error", (e) => {
+            console.error("There was an unexpected error in stream.", e);
+        } );
         if (typeof req.query.channel === 'undefined') {
             res.status(400).send("No Channel Specified")
             return
         }
+
+        let audioOnly = ("true" == req.query.audioOnly);
+        console.log(`/stream audioOnly=${audioOnly}`);
         let session = parseInt(req.query.session);
         let m3u8 = (req.query.m3u8 === '1');
         let number = parseInt(req.query.channel);
@@ -296,6 +310,7 @@ function video( channelDB , fillerDB, db) {
             channel: combinedChannel,
             db: db,
             m3u8: m3u8,
+            audioOnly : audioOnly,
         }
         
         let player = new ProgramPlayer(playerContext);
@@ -312,6 +327,7 @@ function video( channelDB , fillerDB, db) {
         res.writeHead(200, {
             'Content-Type': 'video/mp2t'
         });
+
         try {
             playerObj = await player.play(res);
         } catch (err) {
@@ -416,6 +432,7 @@ function video( channelDB , fillerDB, db) {
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
 
         let sessionId = StreamCount++;
+        let audioOnly = ("true" == req.query.audioOnly);
 
         if (
                (ffmpegSettings.enableFFMPEGTranscoding === true)
@@ -423,36 +440,68 @@ function video( channelDB , fillerDB, db) {
             && (ffmpegSettings.normalizeAudioCodec === true)
             && (ffmpegSettings.normalizeResolution === true)
             && (ffmpegSettings.normalizeAudio === true)
+            && (audioOnly !== true) /* loading screen is pointless in audio mode (also for some reason it makes it fail when codec is aac, and I can't figure out why) */
         ) {
-            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}'\n`;
+            //loading screen
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
         }
-        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}'\n`
+        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
-            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}'\n`
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
         }
 
         res.send(data)
     })
 
+
+    let mediaPlayer = async(channelNum, path, req, res) => {
+        let channel = await channelCache.getChannelConfig(channelDB, channelNum );
+        if (channel.length === 0) {
+            res.status(404).send("Channel not found.");
+            return;
+        }
+        res.type('video/x-mpegurl');
+        res.status(200).send(`#EXTM3U\n${req.protocol}://${req.get('host')}/${path}?channel=${channelNum}\n\n`);
+    }
+
     router.get('/media-player/:number.m3u', async (req, res) => {
         try {
             let channelNum = parseInt(req.params.number, 10);
-            let channel = await channelCache.getChannelConfig(channelDB, channelNum );
-            if (channel.length === 0) {
-                res.status(404).send("Channel not found.");
-                return;
-            }
-            res.type('video/x-mpegurl');
             let path ="video";
             if (req.query.fast==="1") {
                 path ="m3u8";
             }
-            res.status(200).send(`#EXTM3U\n${req.protocol}://${req.get('host')}/${path}?channel=${channelNum}\n\n`);
+            return await mediaPlayer(channelNum, path, req, res);
         } catch(err) {
             console.error(err);
             res.status(500).send("There was an error.");
         }
     });
+
+
+    router.get('/media-player/fast/:number.m3u', async (req, res) => {
+        try {
+            let channelNum = parseInt(req.params.number, 10);
+            let path ="m3u8";
+            return await mediaPlayer(channelNum, path, req, res);
+        } catch(err) {
+            console.error(err);
+            res.status(500).send("There was an error.");
+        }
+    });
+
+    router.get('/media-player/radio/:number.m3u', async (req, res) => {
+        try {
+            let channelNum = parseInt(req.params.number, 10);
+            let path ="radio";
+            return await mediaPlayer(channelNum, path, req, res);
+        } catch(err) {
+            console.error(err);
+            res.status(500).send("There was an error.");
+        }
+    });
+
+
 
     return router
 }

@@ -33,6 +33,7 @@ module.exports = function ($timeout) {
                     z--;
                 }
                 scope.content.splice(z, 0, program );
+                refreshContentIndexes();
                 $timeout();
                 return false;
             }

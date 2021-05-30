@@ -17,7 +17,21 @@ module.exports = function ($http, $window, $interval) {
                     url: 'https://plex.tv/api/v2/pins?strong=true',
                     headers: headers
                 }).then((res) => {
-                    $window.open('https://app.plex.tv/auth/#!?clientID=rg14zekk3pa5zp4safjwaa8z&context[device][version]=Plex OAuth&context[device][model]=Plex OAuth&code=' + res.data.code + '&context[device][product]=Plex Web')
+                    const plexWindowSizes = {
+                        width: 800,
+                        height: 700
+                    }
+
+                    const plexWindowPosition = {
+                        width: window.innerWidth / 2 + plexWindowSizes.width,
+                        height: window.innerHeight / 2 - plexWindowSizes.height
+                    }
+
+                    const authModal = $window.open(
+                        `https://app.plex.tv/auth/#!?clientID=rg14zekk3pa5zp4safjwaa8z&context[device][version]=Plex OAuth&context[device][model]=Plex OAuth&code=${res.data.code}&context[device][product]=Plex Web`, 
+                        "_blank", 
+                        `height=${plexWindowSizes.height}, width=${plexWindowSizes.width}, top=${plexWindowPosition.height}, left=${plexWindowPosition.width}`
+                    );
                     let limit = 120000 // 2 minute time out limit
                     let poll = 2000 // check every 2 seconds for token
                     let interval = $interval(() => {
@@ -29,11 +43,17 @@ module.exports = function ($http, $window, $interval) {
                             limit -= poll
                             if (limit <= 0) {
                                 $interval.cancel(interval)
+                                if(authModal) {
+                                    authModal.close();
+                                }
                                 reject('Timed Out. Failed to sign in a timely manner (2 mins)')
                             }
                             if (r2.data.authToken !== null) {
                                 $interval.cancel(interval)
-
+                                if(authModal) {
+                                    authModal.close();
+                                }
+                                
                                 headers['X-Plex-Token'] = r2.data.authToken
 
                                 $http({
@@ -63,6 +83,9 @@ module.exports = function ($http, $window, $interval) {
                             }
                         }, (err) => {
                             $interval.cancel(interval)
+                            if(authModal) {
+                                authModal.close();
+                            }
                             reject(err)
                         })
                         
@@ -89,7 +112,7 @@ module.exports = function ($http, $window, $interval) {
             const res = await client.Get('/library/sections')
             var sections = []
             for (let i = 0, l = typeof res.Directory !== 'undefined' ? res.Directory.length : 0; i < l; i++)
-                if (res.Directory[i].type === 'movie' || res.Directory[i].type === 'show') {
+                if (res.Directory[i].type === 'movie' || res.Directory[i].type === 'show' || res.Directory[i].type === 'artist' ) {
                     var genres = []
                     if (res.Directory[i].type === 'movie') {
                         const genresRes = await client.Get(`/library/sections/${res.Directory[i].key}/genre`)
@@ -119,13 +142,18 @@ module.exports = function ($http, $window, $interval) {
             const res = await client.Get('/playlists')
             var playlists = []
             for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++)
-                if (res.Metadata[i].playlistType === 'video')
+                if (
+                    (res.Metadata[i].playlistType === 'video')
+                    ||
+                    (res.Metadata[i].playlistType === 'audio')
+                ) {
                     playlists.push({
                         title: res.Metadata[i].title,
                         key: res.Metadata[i].key,
                         icon: `${server.uri}${res.Metadata[i].composite}?X-Plex-Token=${server.accessToken}`,
                         duration: res.Metadata[i].duration
                     })
+                }
             return playlists
         },
         getStreams: async (server, key) => {
@@ -144,19 +172,56 @@ module.exports = function ($http, $window, $interval) {
             var client = new Plex(server)
             const key = lib.key
             const res = await client.Get(key)
+            const size = res.Metadata !== 'undefined' ? res.Metadata.length : 0;
             var nested = []
             if (typeof (lib.genres) !== 'undefined') {
                 nested = Array.from(lib.genres)
             }
             var seenFiles = {};
             var collections = {};
-            for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++) {
+
+            let albumKeys = {};
+            let albums = {};
+            for (let i = 0; i < size; i++) {
+                let meta = res.Metadata[i];
+                if (meta.type === 'track') {
+                    albumKeys[ meta.parentKey ] = false;
+                }
+            }
+            albumKeys = Object.keys( albumKeys );
+            await Promise.all( albumKeys.map( async(albumKey) => {
+                try {
+                    let album = await client.Get(albumKey);
+                    if ( (typeof(album)!=='undefined') && album.size == 1) {
+                        album = album.Metadata[0];
+                    }
+                    albums[albumKey] = album;
+                } catch (err) {
+                    console.error(err);
+                }
+            } ) );
+
+            for (let i = 0; i < size; i++) {
               try {
                 // Skip any videos (movie or episode) without a duration set...
                 if (typeof res.Metadata[i].duration === 'undefined' && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
                     continue
                 if (res.Metadata[i].duration <= 0 && (res.Metadata[i].type === "episode" || res.Metadata[i].type === "movie"))
                     continue
+                let year = res.Metadata[i].year;
+                let date = res.Metadata[i].originallyAvailableAt;
+                let album = undefined;
+                if (res.Metadata[i].type === 'track') {
+                    //complete album year and date
+                    album = albums[res.Metadata[i].parentKey];
+                    if (typeof(album) !== 'undefined') {
+                        year = album.year;
+                        date = album.originallyAvailableAt;
+                    }
+                }
+                if ( (typeof(date)==='undefined') && (typeof(year)!=='undefined') ) {
+                    date = `${year}-01-01`;
+                }
                 var program = {
                     title: res.Metadata[i].title,
                     key: res.Metadata[i].key,
@@ -169,10 +234,10 @@ module.exports = function ($http, $window, $interval) {
                     subtitle: res.Metadata[i].subtitle,
                     summary: res.Metadata[i].summary,
                     rating: res.Metadata[i].contentRating,
-                    date: res.Metadata[i].originallyAvailableAt,
-                    year: res.Metadata[i].year,
+                    date: date,
+                    year: year,
                 }
-                if (program.type === 'episode' || program.type === 'movie') {
+                if (program.type === 'episode' || program.type === 'movie' || program.type === 'track') {
                     program.plexFile = `${res.Metadata[i].Media[0].Part[0].key}`
                     program.file = `${res.Metadata[i].Media[0].Part[0].file}`
                 }
@@ -198,8 +263,15 @@ module.exports = function ($http, $window, $interval) {
                     program.episodeIcon = `${server.uri}${res.Metadata[i].thumb}?X-Plex-Token=${server.accessToken}`
                     program.seasonIcon = `${server.uri}${res.Metadata[i].parentThumb}?X-Plex-Token=${server.accessToken}`
                     program.showIcon = `${server.uri}${res.Metadata[i].grandparentThumb}?X-Plex-Token=${server.accessToken}`
-                }
-                else if (program.type === 'movie') {
+                } else if (program.type === 'track') {
+                    if (typeof(album) !== 'undefined') {
+                        program.showTitle = album.title;
+                    } else {
+                        program.showTitle = res.Metadata[i].title
+                    }
+                    program.episode = res.Metadata[i].index;
+                    program.season = res.Metadata[i].parentIndex;
+                } else if (program.type === 'movie') {
                     program.showTitle = res.Metadata[i].title
                     program.episode = 1
                     program.season = 1
@@ -233,7 +305,7 @@ module.exports = function ($http, $window, $interval) {
                 });
                 for (let k = 0; k < keys.length; k++) {
                     let key = keys[k];
-                    if (collections[key].length <= 1) {
+                    if ( !(collections[key].length >= 1) ) {
                         //it's pointless to include it.
                         continue;
                     }

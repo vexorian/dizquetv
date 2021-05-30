@@ -192,8 +192,8 @@ class FillerDB {
 }
 
 function fixup(json) {
-    if (typeof(json.fillerContent) === 'undefined') {
-        json.fillerContent = [];
+    if (typeof(json.content) === 'undefined') {
+        json.content = [];
     }
     if (typeof(json.name) === 'undefined') {
         json.name = "Unnamed Filler";

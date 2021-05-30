@@ -1,5 +1,7 @@
 const constants = require("../constants");
 
+
+const getShowData = require("./get-show-data")();
 const random = require('../helperFuncs').random;
 
 const MINUTE = 60*1000;
@@ -7,33 +9,17 @@ const DAY = 24*60*MINUTE;
 const LIMIT = 40000;
 
 
-
-//This is a triplicate code, but maybe it doesn't have to be?
 function getShow(program) {
-    //used for equalize and frequency tweak
-    if (program.isOffline) {
-        if (program.type == 'redirect') {
-            return {
-                description : `Redirect to channel ${program.channel}`,
-                id: "redirect." + program.channel,
-                channel: program.channel,
-            }
-        } else {
-            return null;
-        }
-    } else if ( (program.type == 'episode') && ( typeof(program.showTitle) !== 'undefined' ) ) {
-        return {
-            description: program.showTitle,
-            id: "tv." + program.showTitle,
-        }
+
+    let d = getShowData(program);
+    if (! d.hasShow) {
+        return null;
     } else {
-        return {
-            description: "Movies",
-            id: "movie.",
-        }
+        d.description = d.showDisplayName;
+        d.id = d.showId;
+        return d;
     }
 }
-
 
 function shuffle(array, lo, hi ) {
     if (typeof(lo) === 'undefined') {
@@ -86,19 +72,9 @@ function getShowOrderer(show) {
 
         let sortedPrograms = JSON.parse( JSON.stringify(show.programs) );
         sortedPrograms.sort((a, b) => {
-            if (a.season === b.season) {
-                if (a.episode > b.episode) {
-                    return 1
-                } else {
-                    return -1
-                }
-            } else if (a.season > b.season) {
-                return 1;
-            } else if (b.season > a.season) {
-                return -1;
-            } else {
-                return 0
-            }
+            let showA = getShowData(a);
+            let showB = getShowData(b);
+            return showA.order - showB.order;
         });
 
         let position = 0;
@@ -106,9 +82,9 @@ function getShowOrderer(show) {
             (position + 1 < sortedPrograms.length )
             &&
             (
-                show.founder.season !== sortedPrograms[position].season
-                ||
-                show.founder.episode !== sortedPrograms[position].episode
+                getShowData(show.founder).order
+                !==
+                getShowData(sortedPrograms[position]).order
             )
         ) {
             position++;
@@ -177,6 +153,9 @@ module.exports = async( programs, schedule  ) => {
     if (! Array.isArray(schedule.slots) ) {
         return { userError: 'Expected a "slots" array in schedule' };
     }
+    if (typeof(schedule).period === 'undefined') {
+        schedule.period = DAY;
+    }
     for (let i = 0; i < schedule.slots.length; i++) {
         if (typeof(schedule.slots[i].time) === 'undefined') {
             return { userError: "Each slot should have a time" };
@@ -186,12 +165,12 @@ module.exports = async( programs, schedule  ) => {
         }
         if (
             (schedule.slots[i].time < 0)
-            || (schedule.slots[i].time >= DAY)
+            || (schedule.slots[i].time >= schedule.period)
             || (Math.floor(schedule.slots[i].time) != schedule.slots[i].time)
         ) {
-            return { userError: "Slot times should be a integer number of milliseconds since the start of the day." };
+            return { userError: "Slot times should be a integer number of milliseconds between 0 and period-1, inclusive" };
         }
-        schedule.slots[i].time = ( schedule.slots[i].time  + 10*DAY + schedule.timeZoneOffset*MINUTE) % DAY;
+        schedule.slots[i].time = ( schedule.slots[i].time  + 10*schedule.period + schedule.timeZoneOffset*MINUTE) % schedule.period;
     }
     schedule.slots.sort( (a,b) => {
         return (a.time - b.time);
@@ -241,6 +220,7 @@ module.exports = async( programs, schedule  ) => {
             }
         }
         let show = shows[ showsById[slot.showId] ];
+
         if (slot.showId.startsWith("redirect.")) {
             return {
                 isOffline: true,
@@ -256,7 +236,7 @@ module.exports = async( programs, schedule  ) => {
     }
     
     function advanceSlot(slot) {
-        if ( (slot.showId === "flex.") || (slot.showId.startsWith("redirect") ) ) {
+        if ( (slot.showId === "flex.") || (slot.showId.startsWith("redirect.") ) ) {
             return;
         }
         let show = shows[ showsById[slot.showId] ];
@@ -300,16 +280,12 @@ module.exports = async( programs, schedule  ) => {
     }
 
     let s = schedule.slots;
-    let d = (new Date() );
-    d.setUTCMilliseconds(0);
-    d.setUTCSeconds(0);
-    d.setUTCMinutes(0);
-    d.setUTCHours(0);
-    d.setUTCMilliseconds( s[0].time );
-    let t0 = d.getTime();
+    let ts = (new Date() ).getTime();
+    let curr = ts - ts % (schedule.period);
+    let t0 = curr + s[0].time;
     let p = [];
     let t = t0;
-    let wantedFinish = t % DAY;
+    let wantedFinish = t % schedule.period;
     let hardLimit = t0 + schedule.maxDays * DAY;
 
     let pushFlex = (d) => {
@@ -326,6 +302,18 @@ module.exports = async( programs, schedule  ) => {
         }
     }
 
+    let pushProgram = (item) => {
+        if ( item.isOffline && (item.type !== 'redirect') ) {
+            pushFlex(item.duration);
+        } else {
+            p.push(item);
+            t += item.duration;
+        }
+    };
+
+    if (ts > t0) {
+        pushFlex( ts - t0 );
+    }
     while ( (t < hardLimit) && (p.length < LIMIT) ) {
         await throttle();
         //ensure t is padded
@@ -335,14 +323,14 @@ module.exports = async( programs, schedule  ) => {
             continue;
         }
 
-        let dayTime = t % DAY;
+        let dayTime = t % schedule.period;
         let slot = null;
         let remaining = null;
         let late = null;
         for (let i = 0; i < s.length; i++) {
             let endTime;
             if (i == s.length - 1) {
-                endTime = s[0].time + DAY;
+                endTime = s[0].time + schedule.period;
             } else {
                 endTime = s[i+1].time;
             }
@@ -353,11 +341,11 @@ module.exports = async( programs, schedule  ) => {
                 late = dayTime - s[i].time;
                 break;
             }
-            if ((s[i].time <= dayTime + DAY) && (dayTime + DAY < endTime)) {
+            if ((s[i].time <= dayTime + schedule.period) && (dayTime + schedule.period < endTime)) {
                 slot = s[i];
-                dayTime += DAY;
+                dayTime += schedule.period;
                 remaining = endTime - dayTime;
-                late = dayTime + DAY - s[i].time;
+                late = dayTime + schedule.period - s[i].time;
                 break;
             }
         }
@@ -376,14 +364,13 @@ module.exports = async( programs, schedule  ) => {
 
         if (item.isOffline) {
             //flex or redirect. We can just use the whole duration
-            p.push(item);
-            t += remaining;
+            item.duration = remaining;
+            pushProgram(item);
             continue;
         }
         if (item.duration > remaining) {
             // Slide
-            p.push(item);
-            t += item.duration;
+            pushProgram(item);
             advanceSlot(slot);
             continue;
         }
@@ -394,7 +381,7 @@ module.exports = async( programs, schedule  ) => {
         let pads = [ padded ];
 
         while(true) {
-            let item2 = getNextForSlot(slot);
+            let item2 = getNextForSlot(slot, remaining);
             if (total + item2.duration > remaining) {
                 break;
             }
@@ -434,23 +421,17 @@ module.exports = async( programs, schedule  ) => {
         }
         // now unroll them all
         for (let i = 0; i < pads.length; i++) {
-            p.push( pads[i].item );
-            t += pads[i].item.duration;
+            pushProgram( pads[i].item );
             pushFlex( pads[i].pad );
         }
     }
     while ( (t > hardLimit) || (p.length >= LIMIT) ) {
         t -= p.pop().duration;
     }
-    let m = t % DAY;
-    let rem = 0;
-    if (m > wantedFinish) {
-        rem = DAY + wantedFinish - m;
-    } else if (m < wantedFinish) {
-        rem = wantedFinish - m;
-    }
-    if (rem > constants.SLACK) {
-        pushFlex(rem);
+    let m = (t - t0) % schedule.period;
+    if (m > 0) {
+        //ensure the schedule is a multiple of period
+        pushFlex( schedule.period - m);
     }
 
 

@@ -80,7 +80,12 @@ module.exports = function ($scope, dizquetv) {
             $scope.showChannelConfig = true
         } else {
             $scope.channels[index].pending = true;
-            let ch = await dizquetv.getChannel($scope.channels[index].number);
+            let p = await Promise.all([
+                dizquetv.getChannelProgramless($scope.channels[index].number),
+                dizquetv.getChannelPrograms($scope.channels[index].number),
+            ]);
+            let ch = p[0];
+            ch.programs = p[1];
             let newObj = ch;
             newObj.startTime = new Date(newObj.startTime)
             $scope.originalChannelNumber = newObj.number;

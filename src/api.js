@@ -1,19 +1,34 @@
 
 const express = require('express')
 const path = require('path')
+const fs = require('fs')
 const databaseMigration = require('./database-migration');
 const channelCache = require('./channel-cache')
 const constants = require('./constants');
+const JSONStream = require('JSONStream');
 const FFMPEGInfo = require('./ffmpeg-info');
 const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
-const FillerDB = require('./dao/filler-db');
+
 const timeSlotsService = require('./services/time-slots-service');
+const randomSlotsService = require('./services/random-slots-service');
+
+function safeString(object) {
+  let o = object;
+  for(let i = 1; i < arguments.length; i++) {
+    o = o[arguments[i]];
+    if (typeof(o) === 'undefined') {
+      return "missing";
+    }
+  }
+  return String(o);
+}
 
 module.exports = { router: api }
-function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
-    let router = express.Router()
-    let plexServerDB = new PlexServerDB(channelDB, channelCache, db);
+function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService ) {
+    let m3uService = _m3uService;
+    const router = express.Router()
+    const plexServerDB = new PlexServerDB(channelDB, channelCache, fillerDB, customShowDB, db);
 
     router.get('/api/version', async (req, res) => {
       try {
@@ -86,34 +101,119 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       }
     })
     router.delete('/api/plex-servers', async (req, res) => {
+      let name = "unknown";
       try {
-        let name = req.body.name;
+        name = req.body.name;
         if (typeof(name) === 'undefined') {
             return res.status(400).send("Missing name");
         }
         let report = await plexServerDB.deleteServer(name);
         res.send(report)
+        eventService.push(
+          "settings-update",
+          {
+            "message": `Plex server ${name} removed.`,
+            "module" : "plex-server",
+            "detail" : {
+              "serverName" : name,
+              "action" : "delete"
+            },
+            "level" : "warn"
+          }
+        );
+
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+       eventService.push(
+        "settings-update",
+        {
+          "message": "Error deleting plex server.",
+          "module" : "plex-server",
+          "detail" : {
+            "action": "delete",
+            "serverName" : name,
+            "error" : safeString(err, "message"),
+          },
+          "level" : "danger"
+        }
+      );
       }
     })
     router.post('/api/plex-servers', async (req, res) => {
         try {
-            await plexServerDB.updateServer(req.body);
+            let report = await plexServerDB.updateServer(req.body);
+            let modifiedPrograms = 0;
+            let destroyedPrograms = 0;
+            report.forEach( (r) => {
+              modifiedPrograms += r.modifiedPrograms;
+              destroyedPrograms += r.destroyedPrograms;
+            } );
             res.status(204).send("Plex server updated.");;
+            eventService.push(
+              "settings-update",
+              {
+                "message": `Plex server ${req.body.name} updated. ${modifiedPrograms} programs modified, ${destroyedPrograms} programs deleted`,
+                "module" : "plex-server",
+                "detail" : {
+                  "serverName" : req.body.name,
+                  "action" : "update"
+                },
+                "level" : "warning"
+              }
+            );
+        
         } catch (err) {
-            console.error("Could not add plex server.", err);
+            console.error("Could not update plex server.", err);
             res.status(400).send("Could not add plex server.");
+            eventService.push(
+              "settings-update",
+              {
+                "message": "Error updating plex server.",
+                "module" : "plex-server",
+                "detail" : {
+                  "action": "update",
+                  "serverName" : safeString(req, "body", "name"),
+                  "error" : safeString(err, "message"),
+                },
+                "level" : "danger"
+              }
+            );
         }
     })
     router.put('/api/plex-servers', async (req, res) => {
         try {
             await plexServerDB.addServer(req.body);
             res.status(201).send("Plex server added.");;
+            eventService.push(
+              "settings-update",
+              {
+                "message": `Plex server ${req.body.name} added.`,
+                "module" : "plex-server",
+                "detail" : {
+                  "serverName" : req.body.name,
+                  "action" : "add"
+                },
+                "level" : "info"
+              }
+            );
+
         } catch (err) {
             console.error("Could not add plex server.", err);
             res.status(400).send("Could not add plex server.");
+            eventService.push(
+              "settings-update",
+              {
+                "message": "Error adding plex server.",
+                "module" : "plex-server",
+                "detail" : {
+                  "action": "add",
+                  "serverName" : safeString(req, "body", "name"),
+                  "error" : safeString(err, "message"),
+                },
+                "level" : "danger"
+              }
+            );
         }
     })
 
@@ -133,11 +233,67 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       try {
         let number = parseInt(req.params.number, 10);
         let channel = await channelCache.getChannelConfig(channelDB, number);
+
         if (channel.length == 1) {
-            channel = channel[0];
-            res.send(  channel );
+          channel = channel[0];
+          res.send(channel);
         } else {
             return res.status(404).send("Channel not found");
+        }
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.get('/api/channel/programless/:number', async (req, res) => {
+      try {
+        let number = parseInt(req.params.number, 10);
+        let channel = await channelCache.getChannelConfig(channelDB, number);
+
+        if (channel.length == 1) {
+          channel = channel[0];
+          let copy = {};
+          Object.keys(channel).forEach( (key) => {
+            if (key != 'programs') {
+              copy[key] = channel[key];
+            }
+          } );
+          res.send(copy);
+        } else {
+            return res.status(404).send("Channel not found");
+        }
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+
+    router.get('/api/channel/programs/:number', async (req, res) => {
+      try {
+        let number = parseInt(req.params.number, 10);
+        let channel = await channelCache.getChannelConfig(channelDB, number);
+
+        if (channel.length == 1) {
+          channel = channel[0];
+          let programs = channel.programs;
+          if (typeof(programs) === 'undefined') {
+            return res.status(404).send("Channel doesn't have programs?");
+          }
+          res.writeHead(200, {
+            'Content-Type': 'application.json'
+          });
+
+          let transformStream = JSONStream.stringify(); //false makes it not add 'separators'
+          transformStream.pipe(res);
+
+          for (let i = 0; i < programs.length; i++) {
+            transformStream.write( programs[i] );
+            await throttle();
+          }
+          transformStream.end();
+
+        } else {
+          return res.status(404).send("Channel not found");
         }
       } catch(err) {
         console.error(err);
@@ -150,7 +306,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         let channel = await channelCache.getChannelConfig(channelDB, number);
         if (channel.length == 1) {
             channel = channel[0];
-            res.send( {
+            res.send({
                 number: channel.number,
                 icon: channel.icon,
                 name: channel.name,
@@ -176,6 +332,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     })
     router.post('/api/channel', async (req, res) => {
       try {
+        await m3uService.clearCache();
         cleanUpChannel(req.body);
         await channelDB.saveChannel( req.body.number, req.body );
         channelCache.clear();
@@ -188,6 +345,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     })
     router.put('/api/channel', async (req, res) => {
       try {
+        await m3uService.clearCache();
         cleanUpChannel(req.body);
         await channelDB.saveChannel( req.body.number, req.body );
         channelCache.clear();
@@ -200,6 +358,7 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     })
     router.delete('/api/channel', async (req, res) => {
       try {
+        await m3uService.clearCache();
         await channelDB.deleteChannel( req.body.number  );
         channelCache.clear();
         res.send( { number: req.body.number} )
@@ -207,6 +366,33 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+      }
+    })
+
+    router.post('/api/upload/image', async (req, res) => {
+      try {
+        if(!req.files) {
+            res.send({
+                status: false,
+                message: 'No file uploaded'
+            });
+        } else {
+            const logo = req.files.image;
+            logo.mv(path.join(process.env.DATABASE, '/images/uploads/', logo.name));
+            
+            res.send({
+                status: true,
+                message: 'File is uploaded',
+                data: {
+                    name: logo.name,
+                    mimetype: logo.mimetype,
+                    size: logo.size,
+                    fileUrl: `${req.protocol}://${req.get('host')}/images/uploads/${logo.name}`
+                }
+            });
+        }
+      } catch (err) {
+          res.status(500).send(err);
       }
     })
 
@@ -290,6 +476,68 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     } );
 
 
+    // Custom Shows
+    router.get('/api/shows', async (req, res) => {
+      try {
+        let fillers = await customShowDB.getAllShowsInfo();
+        res.send(fillers);
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.get('/api/show/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        let filler = await customShowDB.getShow(id);
+        if (filler == null) {
+            return res.status(404).send("Custom show not found");
+        }
+        res.send(filler);
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.post('/api/show/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        await customShowDB.saveShow(id, req.body );
+        return res.status(204).send({});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.put('/api/show', async (req, res) => {
+      try {
+        let uuid = await customShowDB.createShow(req.body );
+        return res.status(201).send({id: uuid});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.delete('/api/show/:id', async (req, res) => {
+      try {
+        let id = req.params.id;
+        if (typeof(id) === 'undefined') {
+          return res.status(400).send("Missing id");
+        }
+        await customShowDB.deleteShow(id);
+        return res.status(204).send({});
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    });
+
     // FFMPEG SETTINGS
     router.get('/api/ffmpeg-settings', (req, res) => {
       try {
@@ -308,10 +556,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         if (typeof(err) !== 'undefined') {
           return res.status(400).send(err);
         }
+        eventService.push(
+          "settings-update",
+          {
+            "message": "FFMPEG configuration updated.",
+            "module" : "ffmpeg",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
         res.send(ffmpeg)
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+       eventService.push(
+        "settings-update",
+        {
+          "message": "Error updating FFMPEG configuration.",
+          "module" : "ffmpeg",
+          "detail" : {
+            "action": "update",
+            "error" : safeString(err, "message"),
+          },
+          "level" : "danger"
+        }
+       );
+
       }
     })
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
@@ -320,10 +592,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         ffmpeg.ffmpegPath = req.body.ffmpegPath;
         db['ffmpeg-settings'].update({ _id: req.body._id },  ffmpeg)
         ffmpeg = db['ffmpeg-settings'].find()[0]
+        eventService.push(
+          "settings-update",
+          {
+            "message": "FFMPEG configuration reset.",
+            "module" : "ffmpeg",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
         res.send(ffmpeg)
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting FFMPEG configuration.",
+            "module" : "ffmpeg",
+            "detail" : {
+              "action": "reset",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -351,9 +647,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         db['plex-settings'].update({ _id: req.body._id }, req.body)
         let plex = db['plex-settings'].find()[0]
         res.send(plex)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Plex configuration updated.",
+            "module" : "plex",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
+
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error updating Plex configuration",
+            "module" : "plex",
+            "detail" : {
+              "action": "update",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -382,9 +703,35 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         })
         let plex = db['plex-settings'].find()[0]
         res.send(plex)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Plex configuration reset.",
+            "module" : "plex",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
+
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting Plex configuration",
+            "module" : "plex",
+            "detail" : {
+            "action": "reset",
+            "error" : safeString(err, "message"),
+          },
+            "level" : "danger"
+          }
+        );
+
+
       }
 
     })
@@ -419,15 +766,41 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
                 _id: req.body._id,
                 cache:   req.body.cache,
                 refresh: req.body.refresh,
+                enableImageCache: (req.body.enableImageCache === true),
                 file: xmltv.file,
             }
         );
         xmltv = db['xmltv-settings'].find()[0]
         res.send(xmltv)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "xmltv settings updated.",
+            "module" : "xmltv",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
         updateXmltv()
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error updating xmltv configuration",
+            "module" : "xmltv",
+            "detail" : {
+            "action": "update",
+            "error" : safeString(err, "message"),
+          },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -441,10 +814,35 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         })
         var xmltv = db['xmltv-settings'].find()[0]
         res.send(xmltv)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "xmltv settings reset.",
+            "module" : "xmltv",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
+
         updateXmltv()
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting xmltv configuration",
+            "module" : "xmltv",
+            "detail" : {
+              "action": "reset",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
     })
 
@@ -503,9 +901,34 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         db['hdhr-settings'].update({ _id: req.body._id }, req.body)
         let hdhr = db['hdhr-settings'].find()[0]
         res.send(hdhr)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "HDHR configuration updated.",
+            "module" : "hdhr",
+            "detail" : {
+              "action" : "update"
+            },
+            "level" : "info"
+          }
+        );
+
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error updating HDHR configuration",
+            "module" : "hdhr",
+            "detail" : {
+              "action": "action",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
@@ -518,22 +941,52 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
         })
         var hdhr = db['hdhr-settings'].find()[0]
         res.send(hdhr)
+        eventService.push(
+          "settings-update",
+          {
+            "message": "HDHR configuration reset.",
+            "module" : "hdhr",
+            "detail" : {
+              "action" : "reset"
+            },
+            "level" : "warning"
+          }
+        );
+
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
+        eventService.push(
+          "settings-update",
+          {
+            "message": "Error reseting HDHR configuration",
+            "module" : "hdhr",
+            "detail" : {
+              "action": "reset",
+              "error" : safeString(err, "message"),
+            },
+            "level" : "danger"
+          }
+        );
+
       }
 
     })
 
 
     // XMLTV.XML Download
-    router.get('/api/xmltv.xml', (req, res) => {
+    router.get('/api/xmltv.xml', async (req, res) => {
       try {
+        const host = `${req.protocol}://${req.get('host')}`;
+
         res.set('Cache-Control', 'no-store')
-        res.type('text')
-        let xmltvSettings = db['xmltv-settings'].find()[0]
-        let f = path.resolve(xmltvSettings.file);
-        res.sendFile(f)
+        res.type('application/xml');
+
+
+        let xmltvSettings = db['xmltv-settings'].find()[0];
+        const fileContent = await fs.readFileSync(xmltvSettings.file, 'utf8');
+        const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
+        res.send(fileFinal);
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
@@ -546,6 +999,21 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
       try {
         let toolRes = await timeSlotsService(req.body.programs, req.body.schedule);
         if ( typeof(toolRes.userError) !=='undefined') {
+          console.error("time slots error: " + toolRes.userError);
+          return res.status(400).send(toolRes.userError);
+        }
+        res.status(200).send(toolRes);
+      } catch(err) {
+        console.error(err);
+        res.status(500).send("Internal error");
+      }
+    });
+
+    router.post('/api/channel-tools/random-slots', async (req, res) => {
+      try {
+        let toolRes = await randomSlotsService(req.body.programs, req.body.schedule);
+        if ( typeof(toolRes.userError) !=='undefined') {
+          console.error("random slots error: " + toolRes.userError);
           return res.status(400).send(toolRes.userError);
         }
         res.status(200).send(toolRes);
@@ -558,52 +1026,19 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     // CHANNELS.M3U Download 
     router.get('/api/channels.m3u', async (req, res) => {
       try {
-        res.type('text')
-        let channels = await channelDB.getAllChannels();
-        channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
-        let tvg = `${req.protocol}://${req.get('host')}/api/xmltv.xml`
-        var data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
-        for (var i = 0; i < channels.length; i++) {
-          if (channels[i].stealth!==true) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" CUID="${channels[i].number}" tvg-chno="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
-            data += `${req.protocol}://${req.get('host')}/video?channel=${channels[i].number}\n`
-          }
-        }
-        if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
-            data += `${req.protocol}://${req.get('host')}/setup\n`
-        }
-        res.send(data)
+        res.type('text');
+
+        const host = `${req.protocol}://${req.get('host')}`;
+        const data = await m3uService.getChannelList(host);
+
+        res.send(data);
+
       } catch(err) {
         console.error(err);
         res.status(500).send("error");
       }
 
     })
-
-    // hls.m3u Download is not really working correctly right now
-    router.get('/api/hls.m3u', async (req, res) => {
-      try {
-        res.type('text')
-        let channels = await channelDB.getAllChannels();
-        channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
-        var data = "#EXTM3U\n"
-        for (var i = 0; i < channels.length; i++) {
-            data += `#EXTINF:0 tvg-id="${channels[i].number}" tvg-chno="${channels[i].number}" tvg-name="${channels[i].name}" tvg-logo="${channels[i].icon}" group-title="dizqueTV",${channels[i].name}\n`
-            data += `${req.protocol}://${req.get('host')}/m3u8?channel=${channels[i].number}\n`
-        }
-        if (channels.length === 0) {
-            data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="dizqueTV" tvg-logo="https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png" group-title="dizqueTV",dizqueTV\n`
-            data += `${req.protocol}://${req.get('host')}/setup\n`
-        }
-        res.send(data)
-      } catch(err) {
-        console.error(err);
-        res.status(500).send("error");
-      }
-
-    })
-
 
 
     function updateXmltv() {
@@ -620,6 +1055,13 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
     }
 
     function cleanUpChannel(channel) {
+        if (
+          (typeof(channel.groupTitle) === 'undefined')
+          ||
+          (channel.groupTitle === '')
+        ) {
+          channel.groupTitle = "dizqueTV";
+        }
         channel.programs.forEach( cleanUpProgram );
         delete channel.fillerContent;
         delete channel.filler;
@@ -628,4 +1070,11 @@ function api(db, channelDB, fillerDB, xmltvInterval,  guideService ) {
 
 
     return router
+}
+
+
+async  function throttle() {
+  return new Promise((resolve) => {
+      setImmediate(() => resolve());
+  });
 }

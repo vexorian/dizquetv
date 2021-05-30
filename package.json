@@ -16,18 +16,20 @@
   "author": "Dan Ferguson",
   "license": "ISC",
   "dependencies": {
+    "JSONStream": "1.0.5",
     "angular": "^1.7.9",
     "angular-router-browserify": "0.0.2",
     "angular-vs-repeat": "2.0.13",
-    "random-js" : "2.1.0",
     "axios": "^0.19.2",
     "body-parser": "^1.19.0",
     "diskdb": "^0.1.17",
     "express": "^4.17.1",
+    "express-fileupload": "^1.2.1",
+    "node-graceful-shutdown": "1.1.0",
     "node-ssdp": "^4.0.0",
+    "random-js": "2.1.0",
     "request": "^2.88.2",
     "uuid": "^8.0.0",
-    "node-graceful-shutdown" : "1.1.0",
     "xml-writer": "^1.7.0"
   },
   "bin": "dist/index.js",
@@ -41,7 +43,7 @@
     "del-cli": "^3.0.0",
     "nodemon": "^2.0.3",
     "watchify": "^3.11.1",
-    "nexe" : "^3.3.7"
+    "nexe": "^3.3.7"
   },
   "babel": {
     "plugins": [

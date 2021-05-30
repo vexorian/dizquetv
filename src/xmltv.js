@@ -6,7 +6,7 @@ module.exports = { WriteXMLTV: WriteXMLTV, shutdown: shutdown }
 let isShutdown = false;
 let isWorking = false;
 
-async function WriteXMLTV(json, xmlSettings, throttle ) {
+async function WriteXMLTV(json, xmlSettings, throttle, cacheImageService) {
     if (isShutdown) {
         return;
     }
@@ -16,14 +16,14 @@ async function WriteXMLTV(json, xmlSettings, throttle ) {
     }
     isWorking = true;
     try {
-        await writePromise(json, xmlSettings, throttle);
+        await writePromise(json, xmlSettings, throttle, cacheImageService);
     } catch (err) {
         console.error("Error writing xmltv", err);
     }
     isWorking = false;
 }
 
-function writePromise(json, xmlSettings, throttle) {
+function writePromise(json, xmlSettings, throttle, cacheImageService) {
     return new Promise((resolve, reject) => {
         let ws = fs.createWriteStream(xmlSettings.file)
         let xw = new XMLWriter(true, (str, enc) => ws.write(str, enc))
@@ -37,7 +37,7 @@ function writePromise(json, xmlSettings, throttle) {
             _writeChannels( xw, channels );
             for (let i = 0; i < channelNumbers.length; i++) {
                 let number = channelNumbers[i];
-                await _writePrograms(xw, json[number].channel, json[number].programs, throttle);
+                await _writePrograms(xw, json[number].channel, json[number].programs, throttle, xmlSettings, cacheImageService);
             }
         }
       middle().then( () => {
@@ -75,16 +75,16 @@ function _writeChannels(xw, channels) {
     }
 }
 
-async function _writePrograms(xw, channel, programs, throttle) {
+async function _writePrograms(xw, channel, programs, throttle, xmlSettings, cacheImageService) {
     for (let i = 0; i < programs.length; i++) {
         if (! isShutdown) {
             await throttle();
         }
-        await _writeProgramme(channel, programs[i], xw);
+        await _writeProgramme(channel, programs[i], xw, xmlSettings, cacheImageService);
     }
 }
 
-async function _writeProgramme(channel, program, xw) {
+async function _writeProgramme(channel, program, xw, xmlSettings, cacheImageService) {
     // Programme
     xw.startElement('programme')
     xw.writeAttribute('start', _createXMLTVDate(program.start))
@@ -117,9 +117,14 @@ async function _writeProgramme(channel, program, xw) {
     }
     // Icon
     if (typeof program.icon !== 'undefined') {
-        xw.startElement('icon')
-        xw.writeAttribute('src', program.icon)
-        xw.endElement()
+        xw.startElement('icon');
+        let icon = program.icon;
+        if (xmlSettings.enableImageCache === true) {
+            const imgUrl = cacheImageService.registerImageOnDatabase(icon);
+            icon = `{{host}}/cache/images/${imgUrl}`;
+        }
+        xw.writeAttribute('src', icon);
+        xw.endElement();
     }
     // Desc
     xw.startElement('desc')

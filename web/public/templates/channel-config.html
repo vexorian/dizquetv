@@ -21,24 +21,48 @@
                 </div>
                 <!-- ============= TAB: PROPERTIES ========================= -->
                 <div class="modal-body" ng-if="tab == 'basic'">
-                    <div>
-                        <span class="pull-right text-danger">{{error.number}}</span>
-                        <label id="channelNumber" class="small">Ch. #</label>
-                        <input for="channelNumber" class="form-control form-control-sm" type="number" ng-model="channel.number" />
+
+                    <div class='form-group'>
+                        <label class='form-label' >Channel Number:</label>
+                        <input type="text" class='form-control' type='number' ng-model="channel.number" id='channelNumber'  aria-describedby="channelNumberHelp" />
+
+                        <small id='channelNumberHelp' class="text-danger" for='channelNumber'>{{error.number}}</small>
                     </div>
-                    <div>
-                        <span class="pull-right text-danger">{{error.name}}</span>
-                        <label id="channelName" class="small">Channel Name</label>
-                        <input for="channelName" class="form-control form-control-sm" type="text" ng-model="channel.name" />
+
+                    <div class='form-group'>
+                        <label class='form-label' >Channel Name:</label>
+                        <input type="text" class='form-control' ng-model="channel.name" id='channelName'  aria-describedby="channelNameHelp" />
+
+                        <small id='channelNumberHelp' class="text-danger" for='channelNumber'>{{error.name}}</small>
                     </div>
+
+                    <div class='form-group'>
+                        <label class='form-label' >Channel Group:</label>
+                        <input type="text" class='form-control' ng-model="channel.groupTitle" id='groupTitle' placeholder="dizqueTV"  aria-describedby="groupTitleHelp" />
+
+                        <small id='groupTitleHelp' class="text-muted" for='channelNumber'>This is used by iptv clients to categorize the channels. You can leave it as dizqueTV if you don&apos;t need this sort of classification.</small>
+                    </div>
+
                     <div>
                         <span class="pull-right text-danger">{{error.icon}}</span>
                         <label for="channelIcon" class="small">Channel Icon</label>
+
                         <div class="input-group mb-1">
                             <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon" />
+                            <div class="input-group-append">
+                                <input type="file"
+                                accept="image/*"
+                                class="form-control-file"
+                                onchange="angular.element(this).scope().logoOnChange(event)"
+                                name="logo"
+                                id="logo">
+                                </input>
+                            </div>
                         </div>
+
+                        <br />
                         <div>
-                            <h6>Channel Icon Preview</h6>
+                            <h6>Preview</h6>
                             <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
                             <span ng-if="channel.icon === ''">{{channel.name}}</span>
                         </div>
@@ -157,7 +181,7 @@
                                 <div ng-style="programSquareStyle(x)" />
 
                                 <div ng-hidden="x.isOffline" class='title' >
-                                    {{ x.type === 'episode' ? x.showTitle + ' - S' + x.season.toString().padStart(2, '0') + 'E' + x.episode.toString().padStart(2, '0') : x.title}}
+                                    {{ getProgramDisplayTitle(x) }}
                                 </div>
                                 <div style="font-weight:ligther"  ng-show="x.isOffline" class='title' >
                                     <i ng-if="x.type !== 'redirect' " >Flex</i>
@@ -425,7 +449,7 @@
                                     <p ng-show='showHelp.check'>Slides the whole schedule. The &quot;Fast-Forward&quot; button will advance the stream by the specified amount of time. The &quot;Rewind&quot; button does the opposite.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                         <button class='btn btn-sm btn-warning form-control' ng-click="onTimeSlotsButtonClick()"
                                                 title="Time Slots..."
@@ -433,7 +457,20 @@
                                                 <i class='fas fa-blender'></i> Time Slots...
                                         </button>
                                     </div>
-                                    <p ng-show='showHelp.check'>A more advanced dialog wip description.</p>
+                                    <p ng-show='showHelp.check'>This allows to schedul specific shows to run at specific time slots of the day or a week. It&apos;s recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects.</p>
+
+                                </div>
+
+                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
+                                    <div class="input-group">
+                                        <button class='btn btn-sm btn-warning form-control' ng-click="onRandomSlotsButtonClick()"
+                                                title="Random Slots..."
+                                            >
+                                                <i class='fas fa-flask'></i> Random Slots...
+                                        </button>
+                                    </div>
+                                    <p ng-show='showHelp.check'>This is similar to Time Slots, but instead of time sections, you pick a probability to play each tv show and the length of the block.</p>
+
 
                                 </div>
 
@@ -564,7 +601,7 @@
                         <h5 style="margin-top: 10px;">Filler</h5>
                         <div>
                         <label>Minimum time before replaying a filler (Minutes): </label>
-                        <input type="number" class="form-control form-control-sm"  ng-model="channel.fillerRepeatCooldownMinutes" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='1440' />
+                        <input type="number" class="form-control form-control-sm"  ng-model="channel.fillerRepeatCooldownMinutes" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='10080' />
 
                         <span class="text-danger pull-right">{{error.blockRepeats}}</span>
                         </div>
@@ -590,7 +627,7 @@
                                 <div class='form-group col-md-2' ng-if="x.id !== &apos;none&apos; " >
                                     <label ng-if="$index==0" for="cooldown{{$index}}">Cooldown (minutes)</label>
                                     <input class='form-control' id="cooldown{{$index}}" type='number' ng-model='x.cooldownMinutes' ng-pattern="/^([0-9][0-9]*)$/"
-                                    min='0' max='1440'
+                                    min='0' max='10080'
                                     data-toggle="tooltip" data-placement="bottom" title="The channel won&apos;t pick a video from this list if it played something from this list less than this amount of minutes ago."
                                     > </input>
                                 </div>
@@ -690,8 +727,19 @@
                                 <label for="overlayURL">
                                     Watermark Picture URL:
                                 </label>
+
                                 <input id='overlayURL' class='form-control' type='url' ng-model='channel.watermark.url' placeholder="Leave empty to use the channel&apos;s icon.">
                                 </input>
+                                <div class="input-group-append">
+                                    <input type="file"
+                                    accept="image/*"
+                                    class="form-control-file"
+                                    onchange="angular.element(this).scope().watermarkOnChange(event)"
+                                    name="logo"
+                                    id="logo">
+                                    </input>
+                                </div>
+
                             </div>
 
                             <div class="form-group">
@@ -771,14 +819,14 @@
     
 
                         <div class="form-group col-sm-auto">
-                            <label for="channelBitrate">Video Bitrate (k:</label>
+                            <label for="channelBitrate">Video Bitrate (K):</label>
                             <input id='channelBitrate' class='form-control' type='number' ng-model='channel.transcoding.videoBitrate' min=0 placeholder='{{videoRateDefault}}'>
                             </input>
                             <small class='text-muted form-text'>Leave unassigned to use the global setting</small>
                         </div>
 
                         <div class="form-group col-sm-auto">
-                            <label for="channelBufsize">Video Buffer Size (k):</label>
+                            <label for="channelBufsize">Video Buffer Size (K):</label>
                             <input id='channelBufsize' class='form-control' type='number' ng-model='channel.transcoding.videoBufSize' min=0 placeholder='{{videoBufSizeDefault}}'>
                             </input>
                             <small class='text-muted form-text'>Leave unassigned to use the global setting</small>
@@ -808,10 +856,11 @@
     <program-config program="_selectedProgram" on-done="finshedProgramEdit"></program-config>
     <flex-config offline-title="Modify Flex Time" program="_selectedOffline" on-done="finishedOfflineEdit"></flex-config>
     <frequency-tweak programs="_programFrequencies" message="_frequencyMessage" modified="_frequencyModified" on-done="tweakFrequencies"></frequency-tweak>
-    <remove-shows program-titles="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
+    <remove-shows program-infos="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
     <flex-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></flex-config>
     <plex-library limit="libraryLimit" height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
     <plex-library height="300" limit=1 visible="showFallbackPlexLibrary" on-finish="importFallback"></plex-library>
     <channel-redirect visible="_displayRedirect" on-done="finishRedirect" form-title="_redirectTitle" program="_selectedRedirect" ></channel-redirect>
     <time-slots-schedule-editor linker="registerTimeSlots" on-done="onTimeSlotsDone"></time-slots-schedule-editor>
+    <random-slots-schedule-editor linker="registerRandomSlots" on-done="onRandomSlotsDone"></random-slots-schedule-editor>
 </div>

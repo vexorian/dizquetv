@@ -66,6 +66,14 @@ module.exports = function (dizquetv, resolutionOptions) {
                 {id: "lanczos", description: "lanczos"},
                 {id: "spline", description: "spline"},
             ];
+            scope.deinterlaceOptions = [
+                {value: "none", description: "do not deinterlace"},
+                {value: "bwdif=0", description: "bwdif send frame"},
+                {value: "bwdif=1", description: "bwdif send field"},
+                {value: "w3fdif", description: "w3fdif"},
+                {value: "yadif=0", description: "yadif send frame"},
+                {value: "yadif=1", description: "yadif send field"}
+            ];
 
         }
     }

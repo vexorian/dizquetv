@@ -1,4 +1,4 @@
-module.exports = function ($http) {
+module.exports = function ($http, $q) {
     return {
         getVersion: () => {
             return $http.get('/api/version').then((d) => { return d.data })
@@ -137,6 +137,13 @@ module.exports = function ($http) {
             return $http.get(`/api/channel/description/${number}`).then( (d) => { return d.data } )
         },
 
+        getChannelProgramless: (number) => {
+            return $http.get(`/api/channel/programless/${number}`).then( (d) => { return d.data })
+        },
+        getChannelPrograms: (number) => {
+            return $http.get(`/api/channel/programs/${number}`).then( (d) => { return d.data } )
+        },
+
 
         getChannelNumbers: () => {
             return $http.get('/api/channelNumbers').then( (d) => { return d.data } )
@@ -148,6 +155,22 @@ module.exports = function ($http) {
                 url: '/api/channel',
                 data: angular.toJson(channel),
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            }).then((d) => { return d.data })
+        },
+        uploadImage: (file) => {
+            return $http({
+                method: 'POST',
+                url: '/api/upload/image',
+                data: file,
+                headers: { 'Content-Type': undefined }
+            }).then((d) => { return d.data })
+        },
+        addChannelWatermark: (file) => {
+            return $http({
+                method: 'POST',
+                url: '/api/channel/watermark',
+                data: file,
+                headers: { 'Content-Type': undefined }
             }).then((d) => { return d.data })
         },
         updateChannel: (channel) => {
@@ -212,6 +235,47 @@ module.exports = function ($http) {
         },
 
         /*======================================================================
+        * Custom Show stuff
+        */
+        getAllShowsInfo: async () => {
+        let f = await $http.get('/api/shows');
+            return f.data;
+        },
+
+        getShow: async (id) => {
+            let f = await $http.get(`/api/show/${id}`);
+            return f.data;
+        },
+
+        updateShow: async(id, show) => {
+        return (await $http({
+            method: "POST",
+            url : `/api/show/${id}`,
+            data: angular.toJson(show),
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        }) ).data;
+        },
+
+        createShow: async(show) => {
+        return (await $http({
+            method: "PUT",
+            url : `/api/show`,
+            data: angular.toJson(show),
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        }) ).data;
+        },
+
+        deleteShow: async(id) => {
+        return ( await $http({
+            method: "DELETE",
+            url : `/api/show/${id}`,
+            data: {},
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        }) ).data;
+        },
+
+
+        /*======================================================================
         * TV Guide endpoints
         */
         getGuideStatus: async () => {
@@ -248,8 +312,60 @@ module.exports = function ($http) {
                 headers: { 'Content-Type': 'application/json; charset=utf-8' },
             } );
             return d.data;
-        }
+        },
 
+        calculateRandomSlots: async( programs, schedule) => {
+            let d = await $http( {
+                method: "POST",
+                url : "/api/channel-tools/random-slots",
+                data: {
+                    programs: programs,
+                    schedule: schedule,
+                },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            } );
+            return d.data;
+        },
+
+        /*======================================================================
+        * Settings
+        */
+        getAllSettings: async () => {
+            var deferred = $q.defer();
+            $http({
+                method: "GET",
+                url : "/api/settings/cache",
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            }).then((response) => {
+                if(response.status === 200) {
+                    deferred.resolve(response.data);
+                } else {
+                    deferred.reject();
+                }
+            });
+
+            return deferred.promise;
+        },
+        putSetting: async (key, value) => {
+            console.warn(key, value);
+            var deferred = $q.defer();
+            $http({
+                method: "PUT",
+                url : `/api/settings/cache/${key}`,
+                data: {
+                    value
+                },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            }).then((response) => {
+                if(response.status === 200) {
+                    deferred.resolve(response.data);
+                } else {
+                    deferred.reject();
+                }
+            });
+
+            return deferred.promise;
+        }
 
     }
 }

@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 703;
+const TARGET_VERSION = 802;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -35,6 +35,13 @@ const STEPS = [
     [    601,    700, (db) => migrateWatermark(db) ],
     [    700,    701, (db) => addScalingAlgorithm(db) ],
     [    701,    703, (db,channels,dir) => reAddIcon(dir) ],
+    [    703,    800, (db) => addDeinterlaceFilter(db) ],
+    // there was a bit of thing in which for a while 1.3.x migrated 701 to 702 using
+    // the addDeinterlaceFilter step. This 702 step no longer exists as a target
+    // but we have to migrate it to 800 using the reAddIcon.
+    [    702,    800, (db,channels,dir) => reAddIcon(dir) ],
+    [    800,    801, (db) => addImageCache(db) ],
+    [    801,    802, () => addGroupTitle() ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -398,6 +405,7 @@ function ffmpeg() {
         normalizeAudio: true,
         maxFPS: 60,
         scalingAlgorithm: "bicubic",
+        deinterlaceFilter: "none",
     }
 }
 
@@ -734,7 +742,7 @@ function migrateWatermark(db, channelDB) {
         return channel;
     }
 
-    console.log("Extracting fillers from channels...");
+    console.log("Migrating watermarks...");
     let channels = path.join(process.env.DATABASE, 'channels');
     let channelFiles = fs.readdirSync(channels);
     for (let i = 0; i < channelFiles.length; i++) {
@@ -789,6 +797,44 @@ function reAddIcon(dir) {
     data = fs.readFileSync(path.resolve(path.join(dir, 'resources/loading-screen.png')))
     fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)
 }
+
+function addDeinterlaceFilter(db) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
+    ffmpegSettings.deinterlaceFilter = "none";
+    fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
+}
+
+function addImageCache(db) {
+    let xmltvSettings = db['xmltv-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'xmltv-settings.json');
+    xmltvSettings.enableImageCache = false;
+    fs.writeFileSync( f, JSON.stringify( [xmltvSettings] ) );
+}
+
+function addGroupTitle() {
+
+    function migrateChannel(channel) {
+        channel.groupTitle= "dizqueTV";
+        return channel;
+    }
+
+    console.log("Adding group title to channels...");
+    let channels = path.join(process.env.DATABASE, 'channels');
+    let channelFiles = fs.readdirSync(channels);
+    for (let i = 0; i < channelFiles.length; i++) {
+        if (path.extname( channelFiles[i] ) === '.json') {
+            console.log("Adding group title to channel : " + channelFiles[i] +"..." );
+            let channelPath = path.join(channels, channelFiles[i]);
+            let channel = JSON.parse(fs.readFileSync(channelPath, 'utf-8'));
+            channel = migrateChannel(channel);
+            fs.writeFileSync( channelPath, JSON.stringify(channel), 'utf-8');
+        }
+    }
+    console.log("Done migrating group titles in channels.");
+}
+
+
 
 
 module.exports = {

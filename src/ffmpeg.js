@@ -62,6 +62,10 @@ class FFMPEG extends events.EventEmitter {
         this.ensureResolution = this.opts.normalizeResolution;
         this.volumePercent =  this.opts.audioVolumePercent;
         this.hasBeenKilled = false;
+        this.audioOnly = false;
+    }
+    setAudioOnly(audioOnly) {
+        this.audioOnly = audioOnly;
     }
     async spawnConcat(streamUrl) {
         return await this.spawn(streamUrl, undefined, undefined, undefined, true, false, undefined, true)
@@ -107,11 +111,21 @@ class FFMPEG extends events.EventEmitter {
         let ffmpegArgs = [
              `-threads`, isConcatPlaylist? 1 : this.opts.threads,
                           `-fflags`, `+genpts+discardcorrupt+igndts`];
+        let stillImage = false;
         
-        if (limitRead === true)
-            ffmpegArgs.push(`-re`)
-              
+        if (
+            (limitRead === true)
+            &&
+            (
+                (this.audioOnly !== true)
+                ||
+                ( typeof(streamUrl.errorTitle) === 'undefined')
+            )
+        )  {
+            ffmpegArgs.push(`-re`);
+        }
         
+
         if (typeof startTime !== 'undefined')
             ffmpegArgs.push(`-ss`, startTime)
         
@@ -165,28 +179,62 @@ class FFMPEG extends events.EventEmitter {
                 currentVideo ="[fpchange]";
             }
 
+            // deinterlace if desired
+            if (streamStats.videoScanType == 'interlaced' && this.opts.deinterlaceFilter != 'none') {
+                videoComplex += `;${currentVideo}${this.opts.deinterlaceFilter}[deinterlaced]`;
+                currentVideo = "[deinterlaced]";
+            }
+
             // prepare input streams
-            if ( typeof(streamUrl.errorTitle) !== 'undefined') {
+            if  ( ( typeof(streamUrl.errorTitle) !== 'undefined') || (streamStats.audioOnly) ) {
                 doOverlay = false; //never show icon in the error screen
                 // for error stream, we have to generate the input as well
                 this.apad = false; //all of these generate audio correctly-aligned to video so there is no need for apad
                 this.audioChannelsSampleRate = true; //we'll need these
 
-                if (this.ensureResolution) {
-                    //all of the error strings already choose the resolution to
-                    //match iW x iH , so with this we save ourselves a second
-                    // scale filter
-                    iW = this.wantedW;
-                    iH = this.wantedH;
+                //all of the error strings already choose the resolution to
+                //match iW x iH , so with this we save ourselves a second
+                // scale filter
+                iW = this.wantedW;
+                iH = this.wantedH;
+
+              if (this.audioOnly !== true) {
+                ffmpegArgs.push("-r" , "24");
+                let pic = null;
+
+                //does an image to play exist?
+                if (
+                    (typeof(streamUrl.errorTitle) === 'undefined')
+                    &&
+                    (streamStats.audioOnly)
+                ) {
+                    pic = streamStats.placeholderImage;
+                } else if ( streamUrl.errorTitle == 'offline') {
+                    pic = `${this.channel.offlinePicture}`;
+                } else if ( this.opts.errorScreen == 'pic' ) {
+                    pic = `${this.errorPicturePath}`;
                 }
 
-                ffmpegArgs.push("-r" , "24");
-                if (  streamUrl.errorTitle == 'offline' ) {
+                if (pic != null) {
                     ffmpegArgs.push(
-                        '-loop', '1',
-                        '-i', `${this.channel.offlinePicture}`,
+                        '-i', pic,
                     );
-                    videoComplex = `;[${inputFiles++}:0]loop=loop=-1:size=1:start=0[looped];[looped]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
+                    if (
+                        (typeof duration === 'undefined')
+                        &&
+                        (typeof(streamStats.duration) !== 'undefined' )
+                    ) {
+                        //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
+                        duration = `${streamStats.duration + 150}ms`;
+                    }
+                    videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
+                    videoComplex +=`;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
+                    videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
+                    videoComplex += `;[padded]loop=loop=-1:size=1:start=0[looped]`;
+                    videoComplex +=`;[looped]realtime[videox]`;
+                    //this tune apparently makes the video compress better
+                    // when it is the same image
+                    stillImage = true;
                 } else if (this.opts.errorScreen == 'static') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
@@ -212,22 +260,17 @@ class FFMPEG extends events.EventEmitter {
                     inputFiles++;
 
                     videoComplex = `;drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz1}:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:text='${streamUrl.errorTitle}',drawtext=fontfile=${process.env.DATABASE}/font.ttf:fontsize=${sz2}:fontcolor=white:x=(w-text_w)/2:y=(h+text_h+${sz3})/2:text='${streamUrl.subtitle}'[videoy];[videoy]realtime[videox]`;
-                } else if (this.opts.errorScreen == 'blank') {
+                } else { //blank
                     ffmpegArgs.push(
                         '-f', 'lavfi',
                         '-i', `color=c=black:s=${iW}x${iH}`
                     );
                     inputFiles++;
                     videoComplex = `;realtime[videox]`;
-                } else {//'pic'
-                    ffmpegArgs.push(
-                        '-loop', '1',
-                        '-i', `${this.errorPicturePath}`,
-                    );
-                    inputFiles++;
-                    videoComplex = `;[${videoFile+1}:0]scale=${iW}:${iH}[videoy];[videoy]realtime[videox]`;
                 }
+              }
                 let durstr = `duration=${streamStats.duration}ms`;
+              if (typeof(streamUrl.errorTitle) !== 'undefined') {
                 //silent
                 audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
                 if ( streamUrl.errorTitle == 'offline' ) {
@@ -240,17 +283,28 @@ class FFMPEG extends events.EventEmitter {
                         // 'size' in order to make the soundtrack actually loop
                         audioComplex = `;[${inputFiles++}:a]aloop=loop=-1:size=2147483647[audioy]`;
                     }
-                } else if (this.opts.errorAudio == 'whitenoise') {
+                } else if (
+                    (this.opts.errorAudio == 'whitenoise')
+                    ||
+                    (
+                        !(this.opts.errorAudio == 'sine')
+                        &&
+                        (this.audioOnly === true)  //when it's in audio-only mode, silent stream is confusing for errors.
+                    )
+                ) {
                     audioComplex = `;aevalsrc=random(0):${durstr}[audioy]`;
                     this.volumePercent = Math.min(70, this.volumePercent);
                 } else if (this.opts.errorAudio == 'sine') {
                     audioComplex = `;sine=f=440:${durstr}[audioy]`;
                     this.volumePercent = Math.min(70, this.volumePercent);
                 }
-                ffmpegArgs.push('-pix_fmt' , 'yuv420p' );
+                if ( this.audioOnly !== true ) {
+                    ffmpegArgs.push('-pix_fmt' , 'yuv420p' );
+                }
                 audioComplex += ';[audioy]arealtime[audiox]';
-                currentVideo = "[videox]";
                 currentAudio = "[audiox]";
+              }
+                currentVideo = "[videox]";
             }
             if (doOverlay) {
                 if (watermark.animated === true) {
@@ -266,9 +320,13 @@ class FFMPEG extends events.EventEmitter {
             let algo =  this.opts.scalingAlgorithm;
             let resizeMsg = "";
             if (
+                (!streamStats.audioOnly)
+                &&
+                (
                   (this.ensureResolution && ( streamStats.anamorphic || (iW != this.wantedW || iH != this.wantedH) ) )
                   ||
                   isLargerResolution(iW, iH, this.wantedW, this.wantedH)
+                )
             ) {
                 //scaler stuff, need to change the size of the video and also add bars
                 // calculate wanted aspect ratio
@@ -320,7 +378,7 @@ class FFMPEG extends events.EventEmitter {
             }
 
             // Channel watermark:
-            if (doOverlay) {
+            if (doOverlay && (this.audioOnly !== true) ) {
                 var pW =watermark.width;
                 var w = Math.round( pW * iW / 100.0 );
                 var mpHorz = watermark.horizontalMargin;
@@ -362,7 +420,8 @@ class FFMPEG extends events.EventEmitter {
                 currentAudio = '[boosted]';
             }
             // Align audio is just the apad filter applied to audio stream
-            if (this.apad) {
+            if (this.apad &&  (this.audioOnly !== true) ) {
+                //it doesn't make much sense to pad audio when there is no video
                 audioComplex += `;${currentAudio}apad=whole_dur=${streamStats.duration}ms[padded]`;
                 currentAudio = '[padded]';
             } else if (this.audioChannelsSampleRate) {
@@ -383,11 +442,13 @@ class FFMPEG extends events.EventEmitter {
             } else {
                 console.log(resizeMsg)
             }
-            if (currentVideo != '[video]') {
-                transcodeVideo = true; //this is useful so that it adds some lines below
-                filterComplex += videoComplex;
-            } else {
-                currentVideo = `${videoFile}:${videoIndex}`;
+            if (this.audioOnly !== true) {
+                if (currentVideo != '[video]') {
+                    transcodeVideo = true; //this is useful so that it adds some lines below
+                    filterComplex += videoComplex;
+                } else {
+                    currentVideo = `${videoFile}:${videoIndex}`;
+                }
             }
             // same with audio:
             if (currentAudio != '[audio]') {
@@ -404,15 +465,21 @@ class FFMPEG extends events.EventEmitter {
                     ffmpegArgs.push('-shortest');
                 }
             }
-
+            if (this.audioOnly !== true) {
+                ffmpegArgs.push(
+                    '-map', currentVideo,
+                    `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
+                    `-sc_threshold`, `1000000000`,
+                );
+                if (stillImage) {
+                    ffmpegArgs.push('-tune', 'stillimage');
+                }
+            }
             ffmpegArgs.push(
-                '-map', currentVideo,
-                '-map', currentAudio,
-                `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
-                `-flags`, `cgop+ilme`,
-                `-sc_threshold`, `1000000000`
+                            '-map', currentAudio,
+                            `-flags`, `cgop+ilme`,
             );
-            if ( transcodeVideo ) {
+            if ( transcodeVideo && (this.audioOnly !== true) ) {
                 // add the video encoder flags
                 ffmpegArgs.push(
                             `-b:v`, `${this.opts.videoBitrate}k`,
@@ -454,8 +521,11 @@ class FFMPEG extends events.EventEmitter {
             //Concat stream is simpler and should always copy the codec
             ffmpegArgs.push(
                             `-probesize`, 32 /*`100000000`*/,
-                            `-i`, streamUrl,
-                            `-map`, `0:v`,
+                            `-i`, streamUrl );
+            if (this.audioOnly !== true) {
+                ffmpegArgs.push( `-map`, `0:v` );
+            }
+            ffmpegArgs.push(
                             `-map`, `0:${audioIndex}`,
                             `-c`, `copy`,
                             `-muxdelay`,  this.opts.concatMuxDelay, 
@@ -466,14 +536,14 @@ class FFMPEG extends events.EventEmitter {
                         `service_provider="dizqueTV"`,
                         `-metadata`,
                         `service_name="${this.channel.name}"`,
-                        `-f`, `mpegts`);
+                        );
 
-        //t should be before output
+        //t should be before -f
         if (typeof duration !== 'undefined') {
-            ffmpegArgs.push(`-t`, duration)
+            ffmpegArgs.push(`-t`, `${duration}`);
         }
             
-        ffmpegArgs.push(`pipe:1`)
+        ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`)
 
         let doLogs = this.opts.logFfmpeg && !isConcatPlaylist;
         if (this.hasBeenKilled) {
@@ -481,6 +551,7 @@ class FFMPEG extends events.EventEmitter {
         }
         this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
         if (this.hasBeenKilled) {
+            console.log("Send SIGKILL to ffmpeg");
             this.ffmpeg.kill("SIGKILL");
             return;
         }

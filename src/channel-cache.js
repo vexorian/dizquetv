@@ -4,6 +4,7 @@ let cache = {};
 let programPlayTimeCache = {};
 let fillerPlayTimeCache = {};
 let configCache = {};
+let numbers = null;
 
 async function getChannelConfig(channelDB, channelId) {
     //with lazy-loading
@@ -20,6 +21,22 @@ async function getChannelConfig(channelDB, channelId) {
     //console.log("channel=" + JSON.stringify(configCache[channelId]).slice(0,200) );
     return configCache[channelId];
 }
+
+async function getAllNumbers(channelDB) {
+    if (numbers === null) {
+        let n = channelDB.getAllChannelNumbers();
+        numbers = n;
+    }
+    return numbers;
+}
+
+async function getAllChannels(channelDB) {
+    let channelNumbers = await getAllNumbers(channelDB);
+    return await Promise.all( channelNumbers.map( async (x) => {
+        return (await getChannelConfig(channelDB, x))[0];
+    }) );
+}
+
 
 function saveChannelConfig(number, channel ) {
     configCache[number] = [channel];
@@ -127,6 +144,7 @@ function clear() {
     //it's not necessary to clear the playback cache and it may be undesirable
     configCache = {};
     cache = {};
+    numbers = null;
 }
 
 module.exports = {
@@ -134,6 +152,7 @@ module.exports = {
     recordPlayback: recordPlayback,
     clear: clear,
     getProgramLastPlayTime: getProgramLastPlayTime,
+    getAllChannels: getAllChannels,
     getChannelConfig: getChannelConfig,
     saveChannelConfig: saveChannelConfig,
     getFillerLastPlayTime: getFillerLastPlayTime,

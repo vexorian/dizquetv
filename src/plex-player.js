@@ -49,7 +49,7 @@ class PlexPlayer {
         let channel = this.context.channel;
         let server = db['plex-servers'].find( { 'name': lineupItem.serverKey } );
         if (server.length == 0) {
-            throw Error(`Unable to find server "${lineupItem.serverKey}" specied by program.`);
+            throw Error(`Unable to find server "${lineupItem.serverKey}" specified by program.`);
         }
         server = server[0];
         if (server.uri.endsWith("/")) {
@@ -62,6 +62,7 @@ class PlexPlayer {
             this.plexTranscoder = plexTranscoder;
             let watermark = this.context.watermark;
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+            ffmpeg.setAudioOnly( this.context.audioOnly );
             this.ffmpeg = ffmpeg;
             let streamDuration;
             if (typeof(lineupItem.streamDuration)!=='undefined') {
@@ -104,6 +105,7 @@ class PlexPlayer {
                 ffmpeg.removeAllListeners('error');
                 ffmpeg.removeAllListeners('close');
                 ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
+                ffmpeg.setAudioOnly(this.context.audioOnly);
                 ffmpeg.on('close', () => {
                     emitter.emit('close');
                 });
@@ -122,11 +124,7 @@ class PlexPlayer {
             return emitter;
 
         } catch(err) {
-            if (err instanceof Error) {
-                throw err;
-            } else {
-                return Error("Error when playing plex program: " + JSON.stringify(err) );
-            }
+            return Error("Error when playing plex program: " + JSON.stringify(err) );
         }
     }
 }

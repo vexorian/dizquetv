@@ -1,4 +1,4 @@
-<div ng-show="programTitles.length > 0">
+<div ng-show="programInfos.length > 0">
     <div class="modal" tabindex="-1" role="dialog" style="display: block; background-color: rgba(0, 0, 0, .5);">
         <div class="modal-dialog modal-dialog-scrollable modal-xl" role="document">
             <div class="modal-content">
@@ -10,16 +10,16 @@
     
                 <div class="modal-body container">
                     <div class="list-group list-group-root">
-                        <div class="list-group-item flex-container program-row" ng-repeat="title in programTitles" ng-click="toggleShowDeletion(title)">
+                        <div class="list-group-item flex-container program-row" ng-repeat="program in programInfos" ng-click="toggleShowDeletion(program.id)">
                             <div class='col-sm-7 col-md-9'>
-                                <span ng-show='deleted.indexOf(title) === -1'>{{title}}</span>
-                                <span class="text-muted" ng-show='deleted.indexOf(title) > -1'><strike>{{title}}</strike></span>
+                                <span ng-show='deleted.indexOf(program.id) === -1'>{{program.displayName}}</span>
+                                <span class="text-muted" ng-show='deleted.indexOf(program.id) > -1'><strike>{{program.displayName}}</strike></span>
                             </div>
                             <div class="flex-pull-right"></div>
                             <div class='col-sm-1 col-md-1'>
                                 <button class="btn btn-sm btn-link">
-                                    <i ng-show="deleted.indexOf(title) === -1" class="text-danger fa fa-trash-alt"></i>
-                                    <i ng-show="deleted.indexOf(title) > -1" class="text-success fa fa-undo"></i>
+                                    <i ng-show="deleted.indexOf(program.id) === -1" class="text-danger fa fa-trash-alt"></i>
+                                    <i ng-show="deleted.indexOf(program.id) > -1" class="text-success fa fa-undo"></i>
                                 </button>
                             </div>
                         </div>
@@ -28,9 +28,9 @@
 
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-link" ng-click="programTitles = null" ng-show="deleted.length > 0">Cancel</button>
-                    <button type="button" class="btn btn-sm btn-link" ng-click="programTitles = null" ng-show="deleted.length === 0">Close</button>
-                    <button type="button" class="btn btn-sm btn-primary" ng-click="finished(programTitles);" ng-show="deleted.length > 0" >Apply</button>
+                    <button type="button" class="btn btn-sm btn-link" ng-click="programInfos = null" ng-show="deleted.length > 0">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-link" ng-click="programInfos = null" ng-show="deleted.length === 0">Close</button>
+                    <button type="button" class="btn btn-sm btn-primary" ng-click="finished(programInfos);" ng-show="deleted.length > 0" >Apply</button>
                 </div>
             </div>
         </div>
