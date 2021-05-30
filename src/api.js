@@ -5,6 +5,7 @@ const fs = require('fs')
 const databaseMigration = require('./database-migration');
 const channelCache = require('./channel-cache')
 const constants = require('./constants');
+const JSONStream = require('JSONStream');
 const FFMPEGInfo = require('./ffmpeg-info');
 const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
@@ -232,11 +233,67 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
       try {
         let number = parseInt(req.params.number, 10);
         let channel = await channelCache.getChannelConfig(channelDB, number);
+
         if (channel.length == 1) {
-            channel = channel[0];
-            res.send(  channel );
+          channel = channel[0];
+          res.send(channel);
         } else {
             return res.status(404).send("Channel not found");
+        }
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+    router.get('/api/channel/programless/:number', async (req, res) => {
+      try {
+        let number = parseInt(req.params.number, 10);
+        let channel = await channelCache.getChannelConfig(channelDB, number);
+
+        if (channel.length == 1) {
+          channel = channel[0];
+          let copy = {};
+          Object.keys(channel).forEach( (key) => {
+            if (key != 'programs') {
+              copy[key] = channel[key];
+            }
+          } );
+          res.send(copy);
+        } else {
+            return res.status(404).send("Channel not found");
+        }
+      } catch(err) {
+        console.error(err);
+       res.status(500).send("error");
+      }
+    })
+
+    router.get('/api/channel/programs/:number', async (req, res) => {
+      try {
+        let number = parseInt(req.params.number, 10);
+        let channel = await channelCache.getChannelConfig(channelDB, number);
+
+        if (channel.length == 1) {
+          channel = channel[0];
+          let programs = channel.programs;
+          if (typeof(programs) === 'undefined') {
+            return res.status(404).send("Channel doesn't have programs?");
+          }
+          res.writeHead(200, {
+            'Content-Type': 'application.json'
+          });
+
+          let transformStream = JSONStream.stringify(); //false makes it not add 'separators'
+          transformStream.pipe(res);
+
+          for (let i = 0; i < programs.length; i++) {
+            transformStream.write( programs[i] );
+            await throttle();
+          }
+          transformStream.end();
+
+        } else {
+          return res.status(404).send("Channel not found");
         }
       } catch(err) {
         console.error(err);
@@ -1013,4 +1070,11 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
 
 
     return router
+}
+
+
+async  function throttle() {
+  return new Promise((resolve) => {
+      setImmediate(() => resolve());
+  });
 }
