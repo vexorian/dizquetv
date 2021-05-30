@@ -124,7 +124,7 @@ function video( channelDB , fillerDB, db) {
     router.get('/stream', async (req, res) => {
         // Check if channel queried is valid
         res.on("error", (e) => {
-            console.err("There was an unexpected error in stream.", e);
+            console.error("There was an unexpected error in stream.", e);
         } );
         if (typeof req.query.channel === 'undefined') {
             res.status(400).send("No Channel Specified")

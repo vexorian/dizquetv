@@ -16,6 +16,7 @@
   "author": "Dan Ferguson",
   "license": "ISC",
   "dependencies": {
+    "JSONStream": "1.0.5",
     "angular": "^1.7.9",
     "angular-router-browserify": "0.0.2",
     "angular-vs-repeat": "2.0.13",

@@ -35,6 +35,7 @@ class PlexTranscoder {
         this.updateInterval = 30000
         this.updatingPlex = undefined
         this.playState = "stopped"
+        this.mediaHasNoVideo = false;
         this.albumArt = {
             attempted : false,
             path: null,
@@ -48,23 +49,26 @@ class PlexTranscoder {
         this.log(`  deinterlace:     ${deinterlace}`)
         this.log(`  streamPath:      ${this.settings.streamPath}`)
 
+        this.setTranscodingArgs(stream.directPlay, true, false, false);
+        await this.tryToDetectAudioOnly();
+
         if (this.settings.streamPath === 'direct' || this.settings.forceDirectPlay) {
             if (this.settings.enableSubtitles) {
-                console.log("Direct play is forced, so subtitles are forcibly disabled.");
+                this.log("Direct play is forced, so subtitles are forcibly disabled.");
                 this.settings.enableSubtitles = false;
             }
             stream = {directPlay: true}
         } else {
             try {
                 this.log("Setting transcoding parameters")
-                this.setTranscodingArgs(stream.directPlay, true, deinterlace, true)
+                this.setTranscodingArgs(stream.directPlay, true, deinterlace, this.mediaHasNoVideo)
                 await this.getDecision(stream.directPlay);
                 if (this.isDirectPlay()) {
                     stream.directPlay = true;
                     stream.streamUrl = this.plexFile;
                 }
             } catch (err) {
-                this.log("Error when getting decision. 1. Check Plex connection. 2. This might also be a sign that plex direct play and transcode settings are too strict and it can't find any allowed action for the selected video.")
+                console.error("Error when getting decision. 1. Check Plex connection. 2. This might also be a sign that plex direct play and transcode settings are too strict and it can't find any allowed action for the selected video.", err)
                 stream.directPlay = true;
             }
         }
@@ -74,7 +78,7 @@ class PlexTranscoder {
             }
             this.log("Direct play forced or native paths enabled")
             stream.directPlay = true
-            this.setTranscodingArgs(stream.directPlay, true, false)
+            this.setTranscodingArgs(stream.directPlay, true, false, this.mediaHasNoVideo )
             // Update transcode decision for session
             await this.getDecision(stream.directPlay);
             stream.streamUrl = (this.settings.streamPath === 'direct') ? this.file : this.plexFile;
@@ -92,7 +96,7 @@ class PlexTranscoder {
         } else if (this.isVideoDirectStream() === false) {
                 this.log("Decision: Should transcode")
                 // Change transcoding arguments to be the user chosen transcode parameters
-                this.setTranscodingArgs(stream.directPlay, false, deinterlace)
+                this.setTranscodingArgs(stream.directPlay, false, deinterlace, this.mediaHasNoVideo)
                 // Update transcode decision for session
                 await this.getDecision(stream.directPlay);
                 stream.streamUrl = `${this.transcodeUrlBase}${this.transcodingArgs}`
@@ -114,13 +118,13 @@ class PlexTranscoder {
         return stream
     }
 
-    setTranscodingArgs(directPlay, directStream, deinterlace, firstTry) {   
+    setTranscodingArgs(directPlay, directStream, deinterlace, audioOnly) {
         let resolution = (directStream) ? this.settings.maxPlayableResolution : this.settings.maxTranscodeResolution
         let bitrate = (directStream) ? this.settings.directStreamBitrate : this.settings.transcodeBitrate
         let mediaBufferSize = (directStream) ? this.settings.mediaBufferSize : this.settings.transcodeMediaBufferSize
         let subtitles = (this.settings.enableSubtitles) ? "burn" : "none" // subtitle options: burn, none, embedded, sidecar
         let streamContainer = "mpegts" // Other option is mkv, mkv has the option of copying it's subs for later processing
-        let isDirectPlay = (directPlay) ? '1' : (firstTry? '': '0');
+        let isDirectPlay = (directPlay) ? '1' : '0';
         let hasMDE = '1';
         
         let videoQuality=`100` // Not sure how this applies, maybe this works if maxVideoBitrate is not set
@@ -137,12 +141,17 @@ class PlexTranscoder {
             vc = "av1";
         }
 
-        let clientProfile=`add-transcode-target(type=videoProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&videoCodec=${vc}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
+        let clientProfile ="";
+        if (! audioOnly ) {
+            clientProfile=`add-transcode-target(type=videoProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&videoCodec=${vc}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)+\
 add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&CopyMatroskaAttachments=true)+\
 add-transcode-target-settings(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&BreakNonKeyframes=true)+\
 add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.width&value=${resolutionArr[0]})+\
 add-limitation(scope=videoCodec&scopeName=*&type=upperBound&name=video.height&value=${resolutionArr[1]})`
-    
+        } else {
+            clientProfile=`add-transcode-target(type=musicProfile&protocol=${this.settings.streamProtocol}&container=${streamContainer}&audioCodec=${this.settings.audioCodecs}&subtitleCodec=&context=streaming&replace=true)`
+            
+        }
         // Set transcode settings per audio codec
         this.settings.audioCodecs.split(",").forEach(function (codec) {
             clientProfile+=`+add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=${this.settings.streamProtocol}&audioCodec=${codec})`
@@ -196,7 +205,7 @@ lang=en`
         try {
             return this.getVideoStats().videoDecision === "copy";
         } catch (e) {
-            console.log("Error at decision:", e);
+            console.error("Error at decision:", e);
             return false;
         }
     }
@@ -216,7 +225,7 @@ lang=en`
             }
             return this.getVideoStats().videoDecision === "copy" && this.getVideoStats().audioDecision === "copy";
         } catch (e) {
-            console.log("Error at decision:" , e);
+            console.error("Error at decision:" , e);
             return false;
         }
     }
@@ -262,7 +271,7 @@ lang=en`
                 }
             }.bind(this) )
         } catch (e) {
-            console.log("Error at decision:" , e);
+            console.error("Error at decision:" , e);
         }
         if (typeof(ret.videoCodec) === 'undefined') {
             ret.audioOnly = true;
@@ -297,11 +306,11 @@ lang=en`
                     }
                 })
             } catch (e) {
-                console.log("Error at get media info:" + e);
+                console.error("Error at get media info:" + e);
             }
         })
         .catch((err) => {
-            console.log(err);
+            console.error("Error getting audio index",err);
         });
 
         this.log(`Found audio index: ${index}`)
@@ -326,36 +335,42 @@ lang=en`
 
             // Print error message if transcode not possible
             // TODO: handle failure better
+            if (res.data.MediaContainer.mdeDecisionCode === 1000) {
+                this.log("mde decision code 1000, so it's all right?");
+                return;
+            }
+
             let transcodeDecisionCode = res.data.MediaContainer.transcodeDecisionCode;
             if (
                 ( typeof(transcodeDecisionCode) === 'undefined' )
             ) {
                 this.decisionJson.MediaContainer.transcodeDecisionCode = 'novideo';
-                console.log("Audio-only file detected");
-                await this.tryToGetAlbumArt();
+                this.log("Strange case, attempt direct play");
             } else  if (!(directPlay || transcodeDecisionCode == "1001")) {
-                console.log(`IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`)
-                console.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
+                this.log(`IMPORTANT: Recieved transcode decision code ${transcodeDecisionCode}! Expected code 1001.`)
+                this.log(`Error message: '${res.data.MediaContainer.transcodeDecisionText}'`)
             }
     }
-
-    async tryToGetAlbumArt() {
+    
+    async tryToDetectAudioOnly() {
         try {
-            if(this.albumArt.attempted ) {
-                return;
-            }
-            this.albumArt.attempted = true;
-
-            this.log("Try to get album art:");
+            this.log("Try to detect audio only:");
             let url = `${this.server.uri}${this.key}?${this.transcodingArgs}`;
             let res = await axios.get(url, {
                 headers: { Accept: 'application/json' }
             });
+
             let mediaContainer = res.data.MediaContainer;
-            if (typeof(mediaContainer) !== 'undefined') {
-                for( let i = 0; i < mediaContainer.Metadata.length; i++) {
-                    console.log("got art: " + mediaContainer.Metadata[i].thumb );
-                    this.albumArt.path = `${this.server.uri}${mediaContainer.Metadata[i].thumb}?X-Plex-Token=${this.server.accessToken}`;
+            let metadata = getOneOrUndefined( mediaContainer, "Metadata");
+            if (typeof(metadata) !== 'undefined') {
+                this.albumArt.path = `${this.server.uri}${metadata.thumb}?X-Plex-Token=${this.server.accessToken}`;
+
+                let media = getOneOrUndefined( metadata, "Media");
+                if (typeof(media) !== 'undefined') {
+                    if (typeof(media.videoCodec)==='undefined') {
+                        this.log("Audio-only file detected");
+                        this.mediaHasNoVideo = true;
+                    }
                 }
             }
         } catch (err) {
@@ -447,4 +462,19 @@ function parsePixelAspectRatio(s) {
         q: parseInt(x[1], 10),
     }
 }
+
+function getOneOrUndefined(object, field) {
+    if (typeof(object) === 'undefined') {
+        return undefined;
+    }
+    if ( typeof(object[field]) === "undefined") {
+        return undefined;
+    }
+    let x = object[field];
+    if (x.length < 1) {
+        return undefined;
+    }
+    return x[0];
+}
+
 module.exports = PlexTranscoder

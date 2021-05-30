@@ -72,36 +72,19 @@ module.exports = function ($scope, $timeout, dizquetv) {
             if ( $scope.shows[index].pending) {
                 return;
             }
-            $scope.deleteShowIndex = index;
-            $scope.shows[index].pending = true;
-            let id = $scope.shows[index].id;
-            let channels = await dizquetv.getChannelsUsingShow(id);
-            feedToDeleteShow( {
-                id: id,
-                name: $scope.shows[index].name,
-                channels : channels,
-            } );
-            $timeout();
-
-        } catch (err) {
-            console.error("Could not start delete show dialog.", err);
-        }
-
-    }
-
-    $scope.onShowDelete = async( id ) => {
-        try {
-            $scope.shows[ $scope.deleteShowIndex ].pending = false;
-            $timeout();
-            if (typeof(id) !== 'undefined') {
-                $scope.shows[ $scope.deleteShowIndex ].pending = true;
-                await dizquetv.deleteShow(id);
+            let show = $scope.shows[index];
+            if (confirm("Are you sure to delete show: " + show.name + "? This will NOT delete the show's programs from channels that are using.")) {
+                show.pending = true;
+                await dizquetv.deleteShow(show.id);
                 $timeout();
                 await $scope.refreshShow();
                 $timeout();
             }
+
         } catch (err) {
-            console.error("Error attempting to delete show", err);
+            console.error("Could not delete show.", err);
         }
+
     }
+
 }

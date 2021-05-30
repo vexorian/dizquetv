@@ -136,7 +136,7 @@ class PlexServerDB
         if (typeof(arGuide) === 'undefined') {
             arGuide = true;
         }
-        let arChannels = server.arGuide;
+        let arChannels = server.arChannels;
         if (typeof(arChannels) === 'undefined') {
             arChannels = false;
         }
