@@ -7,8 +7,8 @@
 * [ ] I have read the code of conduct.
 * [ ] I am submitting to the correct base branch
 <!--
-   * Bug fixes must go to `dev/1.2.x`.
-   * New features must go to `dev/1.4.x`.
+   * Bug fixes must go to `dev/1.4.x`.
+   * New features must go to `dev/1.5.x`.
 -->
 ### Changes that modify the db structure
 
