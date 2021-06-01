@@ -13,8 +13,8 @@
     "package": "sh ./make_dist.sh",
     "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js"
   },
-  "author": "Dan Ferguson",
-  "license": "ISC",
+  "author": "vexorian",
+  "license": "Zlib",
   "dependencies": {
     "JSONStream": "1.0.5",
     "angular": "^1.8.0",
@@ -22,7 +22,8 @@
     "angular-vs-repeat": "2.0.13",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
-    "diskdb": "^0.1.17",
+    "merge" : "2.1.1",
+    "diskdb": "0.1.17",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "node-graceful-shutdown": "1.1.0",
