@@ -21,7 +21,7 @@ const ChannelDB = require("./src/dao/channel-db");
 const M3uService = require("./src/services/m3u-service");
 const FillerDB = require("./src/dao/filler-db");
 const CustomShowDB = require("./src/dao/custom-show-db");
-const TVGuideService = require("./src/tv-guide-service");
+const TVGuideService = require("./src/services/tv-guide-service");
 const EventService = require("./src/services/event-service");
 const onShutdown = require("node-graceful-shutdown").onShutdown;
 

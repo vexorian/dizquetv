@@ -12,6 +12,7 @@ const Plex = require("./plex.js");
 
 const timeSlotsService = require('./services/time-slots-service');
 const randomSlotsService = require('./services/random-slots-service');
+const throttle = require('./services/throttle');
 
 function safeString(object) {
   let o = object;
@@ -1073,8 +1074,3 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
 }
 
 
-async  function throttle() {
-  return new Promise((resolve) => {
-      setImmediate(() => resolve());
-  });
-}
