@@ -158,7 +158,7 @@ module.exports = function ($http, $window, $interval) {
         },
         getStreams: async (server, key) => {
             var client = new Plex(server)
-            return client.Get(key).then((res) => { 
+            return client.Get(key).then((res) => {
                 let streams =  res.Metadata[0].Media[0].Part[0].Stream
                 for (let i = 0, l = streams.length; i < l; i++) {
                     if (typeof streams[i].key !== 'undefined') {
@@ -278,6 +278,29 @@ module.exports = function ($http, $window, $interval) {
                 }
                 if (typeof (res.Metadata[i].Collection) !== 'undefined') {
                     let coll = res.Metadata[i].Collection;
+                    if (coll.length == 2) {
+                        // the /all endpoint returns incomplete data, so we
+                        // might have to complete the list of collections
+                        // when there are already 2 collections there.
+                        //console.log(res.Metadata[i]);
+                        let complete = {}
+                        try {
+                            complete = await client.Get(`/library/metadata/${res.Metadata[i].ratingKey}`);
+                        } catch (err) {
+                            console.error("Error attempting to load collections", err);
+                        }
+                        if (
+                            (typeof(complete.Metadata) !== 'undefined')
+                            &&
+                            (complete.Metadata.length == 1)
+                            &&
+                            (typeof(complete.Metadata[0].Collection) !== 'undefined')
+                            &&
+                            ( complete.Metadata[0].Collection.length > 2)
+                        ) {
+                            coll = complete.Metadata[0].Collection;
+                        }
+                    }
                     for (let j = 0; j < coll.length; j++) {
                         let tag = coll[j].tag;
                         if ( (typeof(tag)!==  "undefined") && (tag.length > 0) ) {
