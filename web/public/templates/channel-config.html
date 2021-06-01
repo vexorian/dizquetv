@@ -63,7 +63,7 @@
                         <br></br>
                         <div>
                             <h6>Preview</h6>
-                            <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
+                            <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"></img>
                             <span ng-if="channel.icon === ''">{{channel.name}}</span>
                         </div>
                     </div>
@@ -318,9 +318,9 @@
                                       <div class="input-group">
                                           <div class="input-group-prepend">
                                               <select class="custom-select" ng-model="nightStart"
-                                              ng-options="o.id as o.description for o in nightStartHours" />
+                                              ng-options="o.id as o.description for o in nightStartHours" ></select>
                                               <select class="custom-select" ng-model="nightEnd"
-                                              ng-options="o.id as o.description for o in nightEndHours" />
+                                              ng-options="o.id as o.description for o in nightEndHours" ></select>
                                           </div>
                                           <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(nightStart, nightEnd)" ng-disabled="nightStart==-1 || nightEnd==-1" title='Restrict Hours' >
                                               
@@ -334,7 +334,7 @@
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <select class="custom-select" ng-model="paddingOption"
-                                            ng-options="o as o.description for o in paddingOptions" />
+                                            ng-options="o as o.description for o in paddingOptions" ></select>
 
                                         </div>
                                         <button ng-disabled="disablePadding()" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)"  title='Pad Times' >
@@ -348,11 +348,11 @@
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <select class="custom-select" style="width:5em" ng-model="breakAfter"
-                                            ng-options="o.id as o.description for o in breakAfterOptions" />
+                                            ng-options="o.id as o.description for o in breakAfterOptions" ></select>
                                             <select class="custom-select" style="width:5em" ng-model="minBreakSize"
-                                            ng-options="o.id as o.description for o in minBreakSizeOptions" />
+                                            ng-options="o.id as o.description for o in minBreakSizeOptions" ></select>
                                             <select class="custom-select" style="width:5em" ng-model="maxBreakSize"
-                                            ng-options="o.id as o.description for o in maxBreakSizeOptions" />
+                                            ng-options="o.id as o.description for o in maxBreakSizeOptions" ></select>
                                         </div>
                                         <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breaksDisabled()"  title='Add Breaks' >
                                             <i class='fa fa-coffee'></i> Add Breaks
@@ -553,7 +553,7 @@
 
                     <div class='row' ng-show="channel.offlineMode == 'pic'" >
                         <div class="col-md-3">
-                            <img ng-src="{{channel.offlinePicture}}" alt="Fallback preview" style="max-height: 120px;"/>
+                            <img ng-src="{{channel.offlinePicture}}" alt="Fallback preview" style="max-height: 120px;"></img>
                         </div>
                         <div class="col-md-9">
                             <div>

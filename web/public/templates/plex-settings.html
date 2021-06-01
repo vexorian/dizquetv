@@ -78,18 +78,18 @@
 <div class="row" >
     <div class="col-sm-3">
         <div class="form-group">
-            <input id="debugLogging" type="checkbox" ng-model="settings.debugLogging"/>
+            <input id="debugLogging" type="checkbox" ng-model="settings.debugLogging"></input>
             <label for="debugLogging">Debug logging</label>
         </div>
         <div class="form-group">
             <label>Paths</label>
             <select ng-model="settings.streamPath" 
-                ng-options="o.id as o.description for o in pathOptions" />
+                ng-options="o.id as o.description for o in pathOptions" ></select>
         </div>
     </div>
     <div class="col-sm-3">
         <div class="form-group">
-            <input id="updatePlayStatus" type="checkbox" ng-model="settings.updatePlayStatus" ria-describedby="updatePlayStatusHelp"/>
+            <input id="updatePlayStatus" type="checkbox" ng-model="settings.updatePlayStatus" ria-describedby="updatePlayStatusHelp"></input>
             <label for="updatePlayStatus">Send play status to Plex</label>
             <small id="updatePlayStatusHelp" class="form-text text-muted">Note: This affects the "on deck" for your plex account.</small>
         </div>
@@ -108,36 +108,36 @@
         <h6 style="font-weight: bold">Video Options</h6>
         <div class="form-group">
             <label>Supported Video Formats</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.videoCodecs" ria-describedby="videoCodecsHelp"/>
+            <input type="text" class="form-control form-control-sm" ng-model="settings.videoCodecs" ria-describedby="videoCodecsHelp"></input>
         </div>
         <div class="form-group">
             <label>Max Playable Resolution</label>
             <select ng-model="settings.maxPlayableResolution" 
-                ng-options="o.id as o.description for o in resolutionOptions" />
+                ng-options="o.id as o.description for o in resolutionOptions" ></select>
         </div>
         <div class="form-group">
             <label>Max Transcode Resolution</label>
             <select ng-model="settings.maxTranscodeResolution" 
-                ng-options="o.id as o.description for o in resolutionOptions "/>
+                ng-options="o.id as o.description for o in resolutionOptions "></select>
         </div>
     </div>
     <div class="col-sm-6">
         <h6 style="font-weight: bold">Audio Options</h6>
         <div class="form-group">
             <label>Supported Audio Formats</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.audioCodecs" ria-describedby="audioCodecsHelp" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.audioCodecs" ria-describedby="audioCodecsHelp" ></input>
             <small id="audioCodecsHelp" class="form-text text-muted">Comma separated list. Some possible values are 'ac3,aac,mp3'.</small>
         </div>
         <div class="form-group">
             <label>Maximum Audio Channels</label>
             <select ng-model="settings.maxAudioChannels" 
-                ng-options="o.id as o.description for o in maxAudioChannelsOptions" ria-describedby="maxAudioChannelsHelp"/>
+                ng-options="o.id as o.description for o in maxAudioChannelsOptions" ria-describedby="maxAudioChannelsHelp"></select>
             <small id="maxAudioChannelsHelp" class="form-text text-muted">Note: 7.1 audio and on some clients, 6.1, is known to cause playback issues.</small>
         </div>
         <div class="form-group">
             <label>Audio Boost</label>
             <select ng-model="settings.audioBoost" 
-                ng-options="o.id as o.description for o in audioBoostOptions" ria-describedby="audioBoostHelp"/>
+                ng-options="o.id as o.description for o in audioBoostOptions" ria-describedby="audioBoostHelp"></select>
             <small id="audioBoostHelp" class="form-text text-muted">Note: Only applies when downmixing to stereo.</small>
         </div>
     </div>
@@ -147,29 +147,29 @@
         <h6 style="font-weight: bold">Miscellaneous Options</h6>
         <div class="form-group">
             <label>Max Direct Stream Bitrate (Kbps)</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.directStreamBitrate" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.directStreamBitrate" ></input>
         </div>
         <div class="form-group">
             <label>Max Transcode Bitrate (Kbps)</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeBitrate" aria-described-by="transcodebrhelp" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeBitrate" aria-described-by="transcodebrhelp" ></input>
             <small id="transcodebrhelp" class='text-muted form-text'>Plex will decide to transcode or direct play based on these settings and if Plex transcodes, it will try to match the transcode bitrate.</small>
 
         </div>
         <div class="form-group">
             <label>Direct Stream Media Buffer Size</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.mediaBufferSize" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.mediaBufferSize" ></input>
         </div>
         <div class="form-group">
             <label>Transcode Media Buffer Size</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeMediaBufferSize" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.transcodeMediaBufferSize" ></input>
         </div>
         <div class="form-group">
             <label>Stream Protocol</label>
             <select ng-model="settings.streamProtocol" 
-                ng-options="o.id as o.description for o in streamProtocols" />
+                ng-options="o.id as o.description for o in streamProtocols" ></select>
         </div>
         <div class="form-group">
-            <input id="forceDirectPlay" type="checkbox" ng-model="settings.forceDirectPlay" />
+            <input id="forceDirectPlay" type="checkbox" ng-model="settings.forceDirectPlay" ></input>
             <label for="forceDirectPlay">Force Direct Play</label>
         </div>
     </div>
@@ -177,10 +177,10 @@
         <h6 style="font-weight: bold">Subtitle Options</h6>
         <div class="form-group">
             <label>Subtitle Size</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.subtitleSize" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.subtitleSize" ></input>
         </div>
         <div class="form-group">
-            <input class="form-check-input" id="enableSubtitles" type="checkbox" ng-model="settings.enableSubtitles" ng-disabled="shouldDisableSubtitles()"  />
+            <input class="form-check-input" id="enableSubtitles" type="checkbox" ng-model="settings.enableSubtitles" ng-disabled="shouldDisableSubtitles()"  ></input>
             <label class="form-check-label" for="enableSubtitles">Enable Subtitles (Requires Transcoding)</label>
         </div>
     </div>
@@ -190,11 +190,11 @@
         <h6 style="font-weight: bold">Path Replacements</h6>
         <div class="form-group">
             <label>Original Plex path to replace:</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.pathReplace" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.pathReplace" ></input>
         </div>
         <div class="form-group">
             <label>Replace Plex path with:</label>
-            <input type="text" class="form-control form-control-sm" ng-model="settings.pathReplaceWith" />
+            <input type="text" class="form-control form-control-sm" ng-model="settings.pathReplaceWith" ></input>
         </div>
     </div>
 </div>
