@@ -1,6 +1,7 @@
 
-const constants = require("./constants");
+const constants = require("../constants");
 const  FALLBACK_ICON = "https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png";
+const throttle = require('./throttle');
 
 class TVGuideService
 {
@@ -18,6 +19,7 @@ class TVGuideService
         this.db = db;
         this.cacheImageService = cacheImageService;
         this.eventService = eventService;
+        this._throttle = throttle;
     }
 
     async get() {
@@ -355,11 +357,6 @@ class TVGuideService
         }
     }
 
-    _throttle() {
-        return new Promise((resolve) => {
-            setImmediate(() => resolve());
-        });
-    }
 
     async refreshXML() {
         let xmltvSettings = this.db['xmltv-settings'].find()[0];
