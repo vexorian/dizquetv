@@ -12,6 +12,7 @@ const Plex = require("./plex.js");
 
 const timeSlotsService = require('./services/time-slots-service');
 const randomSlotsService = require('./services/random-slots-service');
+const throttle = require('./services/throttle');
 
 function safeString(object) {
   let o = object;
@@ -280,10 +281,10 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
             return res.status(404).send("Channel doesn't have programs?");
           }
           res.writeHead(200, {
-            'Content-Type': 'application.json'
+            'Content-Type': 'application/json'
           });
 
-          let transformStream = JSONStream.stringify(); //false makes it not add 'separators'
+          let transformStream = JSONStream.stringify();
           transformStream.pipe(res);
 
           for (let i = 0; i < programs.length; i++) {
@@ -1002,7 +1003,7 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
           console.error("time slots error: " + toolRes.userError);
           return res.status(400).send(toolRes.userError);
         }
-        res.status(200).send(toolRes);
+        await streamToolResult(toolRes, res);
       } catch(err) {
         console.error(err);
         res.status(500).send("Internal error");
@@ -1016,7 +1017,7 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
           console.error("random slots error: " + toolRes.userError);
           return res.status(400).send(toolRes.userError);
         }
-        res.status(200).send(toolRes);
+        await streamToolResult(toolRes, res);
       } catch(err) {
         console.error(err);
         res.status(500).send("Internal error");
@@ -1068,13 +1069,32 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
         channel.fallback.forEach( cleanUpProgram );
     }
 
+    async function streamToolResult(toolRes, res) {
+      let programs = toolRes.programs;
+      delete toolRes.programs;
+      let s = JSON.stringify(toolRes);
+      s = s.slice(0, -1);
+      console.log( JSON.stringify(toolRes));
+
+      res.writeHead(200, {
+        'Content-Type': 'application/json'
+      });
+
+      let transformStream = JSONStream.stringify(
+        s + ',"programs":[',
+        ',' ,
+        ']}');
+      transformStream.pipe(res);
+
+      for (let i = 0; i < programs.length; i++) {
+        transformStream.write( programs[i] );
+        await throttle();
+      }
+      transformStream.end();
+    }
+
 
     return router
 }
 
 
-async  function throttle() {
-  return new Promise((resolve) => {
-      setImmediate(() => resolve());
-  });
-}
