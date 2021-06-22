@@ -24,21 +24,21 @@
 
                     <div class='form-group'>
                         <label class='form-label' >Channel Number:</label>
-                        <input type="text" class='form-control' type='number' ng-model="channel.number" id='channelNumber'  aria-describedby="channelNumberHelp" />
+                        <input type="text" class='form-control' type='number' ng-model="channel.number" id='channelNumber'  aria-describedby="channelNumberHelp"></input>
 
                         <small id='channelNumberHelp' class="text-danger" for='channelNumber'>{{error.number}}</small>
                     </div>
 
                     <div class='form-group'>
                         <label class='form-label' >Channel Name:</label>
-                        <input type="text" class='form-control' ng-model="channel.name" id='channelName'  aria-describedby="channelNameHelp" />
+                        <input type="text" class='form-control' ng-model="channel.name" id='channelName'  aria-describedby="channelNameHelp"></input>
 
                         <small id='channelNumberHelp' class="text-danger" for='channelNumber'>{{error.name}}</small>
                     </div>
 
                     <div class='form-group'>
                         <label class='form-label' >Channel Group:</label>
-                        <input type="text" class='form-control' ng-model="channel.groupTitle" id='groupTitle' placeholder="dizqueTV"  aria-describedby="groupTitleHelp" />
+                        <input type="text" class='form-control' ng-model="channel.groupTitle" id='groupTitle' placeholder="dizqueTV"  aria-describedby="groupTitleHelp"></input>
 
                         <small id='groupTitleHelp' class="text-muted" for='channelNumber'>This is used by iptv clients to categorize the channels. You can leave it as dizqueTV if you don&apos;t need this sort of classification.</small>
                     </div>
@@ -48,7 +48,7 @@
                         <label for="channelIcon" class="small">Channel Icon</label>
 
                         <div class="input-group mb-1">
-                            <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon" />
+                            <input name="channelIcon" id="channelIcon" class="form-control form-control-sm" type="url" ng-model="channel.icon"></input>
                             <div class="input-group-append">
                                 <input type="file"
                                 accept="image/*"
@@ -60,10 +60,10 @@
                             </div>
                         </div>
 
-                        <br />
+                        <br></br>
                         <div>
                             <h6>Preview</h6>
-                            <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"/>
+                            <img ng-if="channel.icon !== ''" ng-src="{{channel.icon}}" alt="{{channel.name}}" style="max-height: 120px;"></img>
                             <span ng-if="channel.icon === ''">{{channel.name}}</span>
                         </div>
                     </div>
@@ -75,12 +75,12 @@
                     <div class='form-group row' >
                         <label for="channelStartTime" class="small col-form-label col-md-auto">Programming Start:</label>
                         <div class='col-md-auto'>
-                            <input id="channelStartTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="channel.startTime" aria-describedby="startTimeHelp" />
+                            <input id="channelStartTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="channel.startTime" aria-describedby="startTimeHelp"></input>
                             <small class="text-danger" id='startTimeHelp'>{{error.startTime}}</small>
                         </div>
                         <label for="channelEndTime" class="small col-form-label col-md-auto">Programming End:</label>
                         <div class='col-md-auto'>
-                            <input id="channelEndTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="endTime" ng-disabled="true" aria-describedby="endTimeHelp" />
+                            <input id="channelEndTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="endTime" ng-disabled="true" aria-describedby="endTimeHelp"></input>
                         </div>
                         <div class='col-md-auto'>
                             <small class="text-muted form-text" id='endTimeHelp'>Programming will restart from the beginning.</small>
@@ -99,7 +99,7 @@
                                 <div class='programming-counter' ng-show='hasFlex' style='order:4'>
                                     <span class="small"><b>Fallback:</b> {{describeFallback()}}</span>
                                 </div>
-                                <div class='flex-pull-right' ng-style="{order: (reverseTools?3:4) }" />
+                                <div class='flex-pull-right' ng-style="{order: (reverseTools?3:4) }"></div>
 
 
                                 <div class="btn-group-toggle" data-toggle="buttons" ng-show='showShuffleOptions' ng-style="{order: (reverseTools?2:4) }"
@@ -178,7 +178,7 @@
                                 <div class="program-start">
                                     {{ dateForGuide(x.start) }}
                                 </div>
-                                <div ng-style="programSquareStyle(x)" />
+                                <div ng-style="programSquareStyle(x)"></div>
 
                                 <div ng-hidden="x.isOffline" class='title' >
                                     {{ getProgramDisplayTitle(x) }}
@@ -318,9 +318,9 @@
                                       <div class="input-group">
                                           <div class="input-group-prepend">
                                               <select class="custom-select" ng-model="nightStart"
-                                              ng-options="o.id as o.description for o in nightStartHours" />
+                                              ng-options="o.id as o.description for o in nightStartHours" ></select>
                                               <select class="custom-select" ng-model="nightEnd"
-                                              ng-options="o.id as o.description for o in nightEndHours" />
+                                              ng-options="o.id as o.description for o in nightEndHours" ></select>
                                           </div>
                                           <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="nightChannel(nightStart, nightEnd)" ng-disabled="nightStart==-1 || nightEnd==-1" title='Restrict Hours' >
                                               
@@ -334,7 +334,7 @@
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <select class="custom-select" ng-model="paddingOption"
-                                            ng-options="o as o.description for o in paddingOptions" />
+                                            ng-options="o as o.description for o in paddingOptions" ></select>
 
                                         </div>
                                         <button ng-disabled="disablePadding()" class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="padTimes(paddingOption.id, paddingOption.allow5)"  title='Pad Times' >
@@ -348,11 +348,11 @@
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <select class="custom-select" style="width:5em" ng-model="breakAfter"
-                                            ng-options="o.id as o.description for o in breakAfterOptions" />
+                                            ng-options="o.id as o.description for o in breakAfterOptions" ></select>
                                             <select class="custom-select" style="width:5em" ng-model="minBreakSize"
-                                            ng-options="o.id as o.description for o in minBreakSizeOptions" />
+                                            ng-options="o.id as o.description for o in minBreakSizeOptions" ></select>
                                             <select class="custom-select" style="width:5em" ng-model="maxBreakSize"
-                                            ng-options="o.id as o.description for o in maxBreakSizeOptions" />
+                                            ng-options="o.id as o.description for o in maxBreakSizeOptions" ></select>
                                         </div>
                                         <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="addBreaks(breakAfter, minBreakSize, maxBreakSize)" ng-disabled="breaksDisabled()"  title='Add Breaks' >
                                             <i class='fa fa-coffee'></i> Add Breaks
@@ -553,18 +553,18 @@
 
                     <div class='row' ng-show="channel.offlineMode == 'pic'" >
                         <div class="col-md-3">
-                            <img ng-src="{{channel.offlinePicture}}" alt="Fallback preview" style="max-height: 120px;"/>
+                            <img ng-src="{{channel.offlinePicture}}" alt="Fallback preview" style="max-height: 120px;"></img>
                         </div>
                         <div class="col-md-9">
                             <div>
                             <label for="offlinePicture" class="small">
                                 Picture: <span class="text-danger pull-right">{{error.picture}}</span></label>
-                            <input name="offlinePicture" id="offlinePicture" class="form-control form-control-sm" type="url" ng-model="channel.offlinePicture" />
+                            <input name="offlinePicture" id="offlinePicture" class="form-control form-control-sm" type="url" ng-model="channel.offlinePicture"></input>
                             </div>
         
                             <div>
                             <label for="offlineSound" class="small">Sound Track:<span class="text-danger pull-right">{{error.sound}}</span></label>
-                            <input name="offlineSound" id="offlineSound" class="form-control form-control-sm" type="url" ng-model="channel.offlineSoundtrack"  placeholder="URL to a sound track that will loop during the offline screen, leave empty for silence." />
+                            <input name="offlineSound" id="offlineSound" class="form-control form-control-sm" type="url" ng-model="channel.offlineSoundtrack"  placeholder="URL to a sound track that will loop during the offline screen, leave empty for silence."></input>
                             </div>
 
                         </div>
@@ -580,7 +580,7 @@
                                 <div class="program-start" >
                                     {{durationString(x.duration)}}
                                 </div>
-                                <div ng-style="programSquareStyle(x, true)" />
+                                <div ng-style="programSquareStyle(x, true)"></div>
                                 <div style="margin-right: 5px;">
                                     <strong>Fallback:</strong> {{x.title}}
                                 </div>
@@ -594,14 +594,14 @@
                         <div ng-show="channel.fallback.length === 0">
                             <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="openFallbackLibrary()">Pick fallback</button>
                         </div>
-                        <hr style='margin-top:0' />
+                        <hr style='margin-top:0'></hr>
                     </div>
 
                     <div>
                         <h5 style="margin-top: 10px;">Filler</h5>
                         <div>
                         <label>Minimum time before replaying a filler (Minutes): </label>
-                        <input type="number" class="form-control form-control-sm"  ng-model="channel.fillerRepeatCooldownMinutes" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='10080' />
+                        <input type="number" class="form-control form-control-sm"  ng-model="channel.fillerRepeatCooldownMinutes" ng-pattern="/^([1-9][0-9]*)$/" min='0' max='10080'></input>
 
                         <span class="text-danger pull-right">{{error.blockRepeats}}</span>
                         </div>
@@ -609,10 +609,10 @@
                             <input id="overlayDiableIcon" type="checkbox" ng-model="channel.disableFillerOverlay">&nbsp;
                             <label class="small" for="overlayDisableIcon" style="margin-bottom: 4px;">&nbsp;Disable channel watermark when playing filler&nbsp;&nbsp;</label>
                         </div>
-                        <hr />
+                        <hr></hr>
                         <h6>Filler Lists</h6>
                         <div id='fillerContainer'>
-                            <br />
+                            <br></br>
     
                             <div class="form-row" ng-repeat = "x in channel.fillerCollections" track-by = "$index">
                                 <div class='form-group col-md-5'>
@@ -681,14 +681,14 @@
                     <br></br>
                     <div class='form-group' ng-show='! channel.stealth'>
                         <label class='form-label' >Placeholder program title:</label>
-                        <input type="text" class='form-control' ng-model="channel.guideFlexPlaceholder" placeholder="Leave empty so that it uses the channel&apos;s name" id='guideFlex'  aria-describedby="guideFlexHelp" />
+                        <input type="text" class='form-control' ng-model="channel.guideFlexPlaceholder" placeholder="Leave empty so that it uses the channel&apos;s name" id='guideFlex'  aria-describedby="guideFlexHelp"></input>
 
                         <small id='guideFlexHelp' class="text-muted" for='guideFlex'>This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide. E.g when a large Flex block is scheduled.</small>
                     </div>
 
                     <div class='form-group' ng-show='! channel.stealth'>
                         <label class='form-label'>Minimum program duration to appear in the TV guide (seconds): </label>
-                        <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([0-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp" />
+                        <input type="number" class="form-control"  ng-model="channel.guideMinimumDurationSeconds" ng-pattern="/^([0-9][0-9]*)$/" min='0' max='36288000' id='guideFlexTime' aria-describedby="guideFlexTimeHelp"></input>
                         <small id='guideFlexTimeHelp' class="text-muted" for='guideFlexTime'>Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the &quot;place holder program&quot; if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.</small>
                     </div>
                 </div>
@@ -698,7 +698,7 @@
 
                 <div class="modal-body" ng-if="tab == 'ffmpeg'">
                     <small class='text-info'>These features require ffmpeg transcoding to be enabled in FFmpeg settings</small>
-                    <hr />
+                    <hr></hr>
                     <h6>Channel Watermark</h6>
 
                     <div class='form-check'>
@@ -716,7 +716,7 @@
                             <div ng-style='getWatermarkPreviewOuter()' class='watermark-preview'>
                                 <div ng-style='getWatermarkPreviewRectangle(4,3)' class='alternate-aspect' ></div>
                                 <div ng-style='getWatermarkPreviewRectangle(16,9)' class='alternate-aspect' ></div>
-                                <img src='{{ getWatermarkSrc() }}' ng-style='getWatermarkPreviewInner()' />
+                                <img src='{{ getWatermarkSrc() }}' ng-style='getWatermarkPreviewInner()'></img>
                             </div>
                         </div>
 
@@ -804,7 +804,7 @@
 
                     </div>
 
-                    <hr />
+                    <hr></hr>
                     <h6>Transcoding settings</h6>
 
 

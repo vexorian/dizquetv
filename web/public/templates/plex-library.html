@@ -6,16 +6,16 @@
                     <h5 class="modal-title">Library</h5>
                 </div>
                 <div class="model-body">
-                    <br/>
-                    <br/>
-                    <br/>
-                    <br/>
+                    <br></br>
+                    <br></br>
+                    <br></br>
+                    <br></br>
                     <p class="text-center">Configure your Plex Server(s) in <a href="/#!/settings#plex">Settings</a></p>
-                    <br/>
-                    <br/>
-                    <br/>
-                    <br/>
-                    <br/>
+                    <br></br>
+                    <br></br>
+                    <br></br>
+                    <br></br>
+                    <br></br>
                 </div>
             </div>
 
@@ -24,18 +24,18 @@
                     <h5 class="modal-title">Library</h5>
                     <span class="pull-right">
                         <label class="small" for="displayImages">Thumbnails</label>&nbsp;
-                        <input id="displayImages" type="checkbox" ng-model="displayImages" />&nbsp;
+                        <input id="displayImages" type="checkbox" ng-model="displayImages" ></input>&nbsp;
                     </span>
                 </div>
                 <div class="modal-body">
                     <select class="form-control form-control-sm custom-select" ng-model="currentOrigin"
                         ng-options="x.name for x in origins" ng-change="selectOrigin(currentOrigin)"></select>
-                    <hr />
+                    <hr ></hr>
                     <ul ng-show="currentOrigin.type=='plex' " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
                         <li class="list-group-item" ng-repeat="a in libraries">
                             <div class="flex-container {{ displayImages ? 'w_images' : 'wo_images' }}" ng-click="getNested(a, true);">
                                 <span class="fa {{ a.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
-                                <img ng-if="displayImages" lazy-img="{{a.icon}}" />
+                                <img ng-if="displayImages" lazy-img="{{a.icon}}" ></img>
                                 <span>{{ displayTitle(a) }}</span><!-- Library -->
                                 <span ng-if="a.type === 'show' || a.type === 'movie' || a.type === 'artist'" class="flex-pull-right" ng-click='$event.stopPropagation(); selectLibrary(a)'>
                                     <span class="fa fa-plus btn"></span>
@@ -49,7 +49,7 @@
                                         <span ng-if="b.type === 'movie'" class="fa fa-plus-circle tab"></span>
                                         <span ng-if="b.type !== 'movie'" class="tab"></span>
                                         <span ng-if="b.type !== 'movie'" class="fa {{ b.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
-                                        <img ng-if="displayImages" lazy-img="{{ b.type === 'episode' ? b.episodeIcon : b.icon }}" />
+                                        <img ng-if="displayImages" lazy-img="{{ b.type === 'episode' ? b.episodeIcon : b.icon }}" ></img>
                                         {{ displayTitle(b) }}
                                         <span ng-if="b.type === 'movie'" class="flex-pull-right">
                                             {{b.durationStr}}
@@ -74,7 +74,7 @@
                                                     class="tab"></span>
                                                 <span ng-if="c.type !== 'movie' && c.type !== 'episode' && c.type !== 'track'"
                                                     class="fa {{ c.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
-                                                <img ng-if="displayImages" lazy-img="{{c.type === 'episode' ? c.episodeIcon : c.icon }}" />
+                                                <img ng-if="displayImages" lazy-img="{{c.type === 'episode' ? c.episodeIcon : c.icon }}" ></img>
                                                 {{ displayTitle(c) }}
                                                 <span ng-if="c.type === 'movie' || c.type === 'episode' || c.type === 'track' "
                                                     class="flex-pull-right">
@@ -89,7 +89,7 @@
                                                     ng-repeat="d in c.nested">
                                                     <div class="flex-container" ng-click="selectItem(d, true)">
                                                         <span class="fa fa-plus-circle tab"></span>
-                                                        <img ng-if="displayImages" lazy-img="{{d.episodeIcon}}" />
+                                                        <img ng-if="displayImages" lazy-img="{{d.episodeIcon}}" ></img>
                                                         {{ displayTitle(d) }}
                                                         <span class="flex-pull-right">{{d.durationStr}}</span>
                                                         <!-- Episode -->
@@ -112,7 +112,7 @@
                         </li>
                     </ul>
 
-                    <hr/>
+                    <hr></hr>
                     <div class="loader" ng-if="pending &gt; 0" ></div> <h6 style='display:inline-block'>Selected Items</h6>
                     
                     <div class="text-info small" ng-show='selection.length &gt; 10'>{{ selection.length }} elements added in total. Only the last 10 elements are displayed:</div>

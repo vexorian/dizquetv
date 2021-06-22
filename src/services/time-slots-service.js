@@ -3,6 +3,7 @@ const constants = require("../constants");
 
 const getShowData = require("./get-show-data")();
 const random = require('../helperFuncs').random;
+const throttle = require('./throttle');
 
 const MINUTE = 60*1000;
 const DAY = 24*60*MINUTE;
@@ -200,12 +201,6 @@ module.exports = async( programs, schedule  ) => {
 
     // throttle so that the stream is not affected negatively
     let steps = 0;
-    let throttle = async() => {
-        if (steps++ == 10) {
-            steps = 0;
-            await _wait(1);
-        }
-    }
 
     let showsById = {};
     let shows = [];

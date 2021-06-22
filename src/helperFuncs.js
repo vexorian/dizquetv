@@ -56,6 +56,7 @@ function createLineup(obj, channel, fillers, isFirst) {
     // When within 30 seconds of start time, just make the time 0 to smooth things out
     // Helps prevents loosing first few seconds of an episode upon lineup change
     let activeProgram = obj.program
+    let beginningOffset = 0;
 
     let lineup = []
 
@@ -67,7 +68,8 @@ function createLineup(obj, channel, fillers, isFirst) {
             err: activeProgram.err,
             streamDuration: remaining,
             duration: remaining,
-            start: 0
+            start: 0,
+            beginningOffset: beginningOffset,
         })
         return lineup;
     }
@@ -120,6 +122,7 @@ function createLineup(obj, channel, fillers, isFirst) {
                 streamDuration: Math.max(1, Math.min(filler.duration - fillerstart, remaining) ),
                 duration: filler.duration,
                 fillerId: filler.fillerId,
+                beginningOffset: beginningOffset,
                 serverKey: filler.serverKey
             });
             return lineup;
@@ -133,14 +136,17 @@ function createLineup(obj, channel, fillers, isFirst) {
             type: 'offline',
             title: 'Channel Offline',
             streamDuration: remaining,
+            beginningOffset: beginningOffset,
             duration: remaining,
             start: 0
         })
         return lineup;
     }
+    let originalTimeElapsed = timeElapsed;
     if (timeElapsed < 30000) {
         timeElapsed = 0
     }
+    beginningOffset = Math.max(0, originalTimeElapsed - timeElapsed);
 
     return [ {
                         type: 'program',
@@ -151,6 +157,7 @@ function createLineup(obj, channel, fillers, isFirst) {
                         ratingKey: activeProgram.ratingKey,
                         start:  timeElapsed,
                         streamDuration: activeProgram.duration - timeElapsed,
+                        beginningOffset: beginningOffset,
                         duration: activeProgram.duration,
                         serverKey: activeProgram.serverKey
     } ];
