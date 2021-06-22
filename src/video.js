@@ -254,15 +254,19 @@ function video( channelDB , fillerDB, db) {
         }
         let fillers = await fillerDB.getFillersFromChannel(brandChannel);
         let lineup = helperFuncs.createLineup(prog, brandChannel, fillers, isFirst)
-        lineupItem = lineup.shift()
+        lineupItem = lineup.shift();
       }
 
         if ( !isLoading && (lineupItem != null) ) {
             let upperBound = 1000000000;
+            let beginningOffset = 0;
+            if (typeof(lineupItem.beginningOffset) !== 'undefined') {
+                beginningOffset = lineupItem.beginningOffset;
+            }
             //adjust upper bounds and record playbacks
             for (let i = redirectChannels.length-1; i >= 0; i--) {
                 lineupItem = JSON.parse( JSON.stringify(lineupItem ));
-                let u = upperBounds[i];
+                let u = upperBounds[i] + beginningOffset;
                 if (typeof(u) !== 'undefined') {
                     let u2 = upperBound;
                     if ( typeof(lineupItem.streamDuration) !== 'undefined') {
