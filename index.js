@@ -6,8 +6,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const fileUpload = require('express-fileupload');
 const i18next = require('i18next');
-const i18nextMiddleware = require('i18next-http-middleware');
-const i18nextBackend = require('i18next-fs-backend');
+const i18nextMiddleware = require('i18next-http-middleware/cjs');
+const i18nextBackend = require('i18next-fs-backend/cjs');
 
 const api = require('./src/api')
 const dbMigration = require('./src/database-migration');
