@@ -3,4 +3,8 @@ COPY ./nexe/linux-x64-12.16.2   /var/nexe/
 COPY ./nexe/mac-x64-12.18.2     /var/nexe/
 COPY ./nexe/windows-x64-12.18.2 /var/nexe/
 COPY ./nexe/windows-x86-12.18.2 /var/nexe/
+COPY ./nexe/linux-x64-14.15.3   /var/nexe/
+COPY ./nexe/mac-x64-14.15.3     /var/nexe/
+COPY ./nexe/windows-x64-14.15.3 /var/nexe/
+COPY ./nexe/windows-x86-14.15.3 /var/nexe/
 
