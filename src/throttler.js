@@ -7,9 +7,7 @@ function equalItems(a, b) {
     if (  (typeof(a) === 'undefined') || a.isOffline || b.isOffline ) {
         return false;
     }
-    console.log("no idea how to compare this: " + JSON.stringify(a) );
-    console.log(" with this: " + JSON.stringify(b) );
-    return true;
+    return ( a.type === b.type);
 
 }
 

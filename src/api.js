@@ -26,7 +26,7 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService ) {
+function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, onDemandService, activeChannelService ) {
     let m3uService = _m3uService;
     const router = express.Router()
     const plexServerDB = new PlexServerDB(channelDB, channelCache, fillerDB, customShowDB, db);
@@ -331,10 +331,12 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
        res.status(500).send("error");
       }
     })
+    // we urgently need an actual channel service
     router.post('/api/channel', async (req, res) => {
       try {
         await m3uService.clearCache();
         cleanUpChannel(req.body);
+        onDemandService.fixupChannelBeforeSave( req.body,  activeChannelService.isActive(req.body.number) );
         await channelDB.saveChannel( req.body.number, req.body );
         channelCache.clear();
         res.send( { number: req.body.number} )
@@ -348,6 +350,7 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
       try {
         await m3uService.clearCache();
         cleanUpChannel(req.body);
+        onDemandService.fixupChannelBeforeSave( req.body,  activeChannelService.isActive(req.body.number) );
         await channelDB.saveChannel( req.body.number, req.body );
         channelCache.clear();
         res.send( { number: req.body.number} )

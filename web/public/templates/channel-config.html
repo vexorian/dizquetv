@@ -83,7 +83,7 @@
                             <input id="channelEndTime" class="form-control form-control-sm col-md-auto" type="datetime-local" ng-model="endTime" ng-disabled="true" aria-describedby="endTimeHelp"></input>
                         </div>
                         <div class='col-md-auto'>
-                            <small class="text-muted form-text" id='endTimeHelp'>Programming will restart from the beginning.</small>
+                            <small class="text-muted form-text" id='endTimeHelp'>Programming will restart from the beginning. </small><small ng-show='channel.onDemand.isOnDemand' class="text-muted form-text" id='endTimeHelp'>For on-demand channels, the times in the schedule are tentative. </small>
                         </div>
 
                     </div>
@@ -834,6 +834,38 @@
                     </div>
 
 
+
+                </div>
+
+
+                <!--
+                    ============= TAB: ON-DEMAND =========================
+                                                                             -->
+
+                <div class="modal-body" ng-if="tab == 'ondemand'">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="onDemand" aria-describedby="onDemandHelp" ng-model='channel.onDemand.isOnDemand'>
+                        <label class="form-check-label" for="onDemand">On-Demand</label>
+
+                        <span class='text-muted' id="stealthHelp">(The channel's programming will be paused when it is not being played. No programs will appear in the TV-guide while the channel is paused.)</span>
+                    </div>
+                    <br></br>
+
+                    <div class='form-group' ng-show='channel.onDemand.isOnDemand'>
+                        <label class='form-label' for="segmentLength" >Segment Length:</label>
+
+                        <select class="form-control custom-select" id="segmentLength" ng-model="channel.onDemand.modulo" convert-to-number >
+                            <option       ng-value="1">Instant</option>
+                            <option  ng-value="300000">5 minutes</option>
+                            <option  ng-value="600000">10 minutes</option>
+                            <option  ng-value="900000">15 minutes</option>
+                            <option ng-value="1800000">30 minutes</option>
+                            <option ng-value="6000000">1 hour</option>
+                        </select>
+
+                        
+                        <small id='guideFlexHelp' class="text-muted" for='guideFlex'>Channel will be divided in segments. For example, if you use padding or time slots in your channel so that everything starts at 0:00 or 0:30 , you want a 30 minutes-segment. Use no segment if you want the channel to play exactly where you left it. Flex time will be added if necessary for padding.</small>
+                    </div>
 
                 </div>
 

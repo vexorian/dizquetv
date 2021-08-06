@@ -40,6 +40,7 @@ async function getAllChannels(channelDB) {
 
 function saveChannelConfig(number, channel ) {
     configCache[number] = [channel];
+    delete cache[number];
 }
 
 function getCurrentLineupItem(channelId, t1) {
@@ -153,6 +154,7 @@ module.exports = {
     clear: clear,
     getProgramLastPlayTime: getProgramLastPlayTime,
     getAllChannels: getAllChannels,
+    getAllNumbers: getAllNumbers,
     getChannelConfig: getChannelConfig,
     saveChannelConfig: saveChannelConfig,
     getFillerLastPlayTime: getFillerLastPlayTime,

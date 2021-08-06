@@ -23,6 +23,10 @@ const FillerDB = require("./src/dao/filler-db");
 const CustomShowDB = require("./src/dao/custom-show-db");
 const TVGuideService = require("./src/services/tv-guide-service");
 const EventService = require("./src/services/event-service");
+const OnDemandService = require("./src/services/on-demand-service");
+const ProgrammingService = require("./src/services/programming-service");
+const ActiveChannelService = require('./src/services/active-channel-service')
+
 const onShutdown = require("node-graceful-shutdown").onShutdown;
 
 console.log(
@@ -171,6 +175,10 @@ let xmltvInterval = {
 xmltvInterval.updateXML()
 xmltvInterval.startInterval()
 
+onDemandService = new OnDemandService(channelCache,  channelDB,  xmltvInterval);
+programmingService = new ProgrammingService(onDemandService);
+activeChannelService = new ActiveChannelService(onDemandService, channelCache, channelDB);
+
 let hdhr = HDHR(db, channelDB)
 let app = express()
 eventService.setup(app);
@@ -208,10 +216,10 @@ app.use('/favicon.svg', express.static(
 app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.css')))
 
 // API Routers
-app.use(api.router(db, channelDB, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService ))
+app.use(api.router(db, channelDB, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, onDemandService, activeChannelService ))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 
-app.use(video.router( channelDB, fillerDB, db))
+app.use(video.router( channelDB, fillerDB, db, programmingService, activeChannelService  ))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)
@@ -303,5 +311,8 @@ onShutdown("log" , [],  async() => {
 });
 onShutdown("xmltv-writer" , [],  async() => {
     await xmltv.shutdown();
+} );
+onShutdown("active-channels", [], async() => {
+    await activeChannelService.shutdown();
 } );
 

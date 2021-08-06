@@ -7,12 +7,13 @@ const fs = require('fs')
 const ProgramPlayer = require('./program-player');
 const channelCache  = require('./channel-cache')
 const wereThereTooManyAttempts = require('./throttler');
+const constants = require('./constants');
 
 module.exports = { router: video }
 
 let StreamCount = 0;
 
-function video( channelDB , fillerDB, db) {
+function video( channelDB , fillerDB, db, programmingService, activeChannelService ) {
     var router = express.Router()
 
     router.get('/setup', (req, res) => {
@@ -181,8 +182,9 @@ function video( channelDB , fillerDB, db) {
              start: 0,
           };
       } else if (lineupItem == null) {
-        prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, channel);
-        
+        prog = programmingService.getCurrentProgramAndTimeElapsed(t0, channel);
+        activeChannelService.peekChannel(t0, channel.number);
+
         while (true) {
             redirectChannels.push( brandChannel );
             upperBounds.push( prog.program.duration - prog.timeElapsed );
@@ -223,7 +225,8 @@ function video( channelDB , fillerDB, db) {
                 lineupItem = JSON.parse( JSON.stringify(lineupItem)) ;
                 break;
             } else {
-                prog = helperFuncs.getCurrentProgramAndTimeElapsed(t0, newChannel);
+                prog = programmingService.getCurrentProgramAndTimeElapsed(t0, newChannel);
+                activeChannelService.peekChannel(t0, newChannel.number);
             }
         }
       }
@@ -332,8 +335,12 @@ function video( channelDB , fillerDB, db) {
             'Content-Type': 'video/mp2t'
         });
 
+        let t1;
+
         try {
             playerObj = await player.play(res);
+            t1 = (new Date()).getTime();
+            console.log("Latency: (" + (t1- t0) );
         } catch (err) {
             console.log("Error when attempting to play video: " +err.stack);
             try {
@@ -345,7 +352,35 @@ function video( channelDB , fillerDB, db) {
             return;
         }
 
+        if (! isLoading) {
+            //setup end event to mark the channel as not playing anymore
+            let t0 = new Date().getTime();
+            let b = 0;
+            let stopDetected = false;
+            if (typeof(lineupItem.beginningOffset) !== 'undefined') {
+                b = lineupItem.beginningOffset;
+                t0 -= b;
+            }
 
+            // we have to do it for every single redirected channel...
+
+            for (let i = redirectChannels.length-1; i >= 0; i--) {
+                activeChannelService.registerChannelActive(t0,  redirectChannels[i].number);
+            }
+            
+            let oldStop = stop;
+            stop = () => {
+                if (!stopDetected) {
+                    stopDetected = true;
+                    let t1 = new Date().getTime();
+                    t1 =  Math.max( t0 + 1, t1  - constants.FORGETFULNESS_BUFFER - b );
+                    for (let i = redirectChannels.length-1; i >= 0; i--) {
+                        activeChannelService.registerChannelStopped(t1,  redirectChannels[i].number);
+                    }
+                }
+                oldStop();
+            };
+        }
         let stream = playerObj;
 
 
@@ -354,9 +389,13 @@ function video( channelDB , fillerDB, db) {
 
 
         stream.on("end", () => {
+            let t2 = (new Date()).getTime();
+            console.log("Played video for: " + (t2 - t1) + " ms");
             stop();
         });
         res.on("close", () => {
+            let t2 = (new Date()).getTime();
+            console.log("Played video for: " + (t2 - t1) + " ms");
             console.log("Client Closed");
             stop();
         });
