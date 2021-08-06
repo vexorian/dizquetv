@@ -5,6 +5,9 @@ const path = require('path')
 const express = require('express')
 const bodyParser = require('body-parser')
 const fileUpload = require('express-fileupload');
+const i18next = require('i18next');
+const i18nextMiddleware = require('i18next-http-middleware/cjs');
+const i18nextBackend = require('i18next-fs-backend/cjs');
 
 const api = require('./src/api')
 const dbMigration = require('./src/database-migration');
@@ -92,8 +95,23 @@ eventService = new EventService();
 initDB(db, channelDB)
 
 
-const guideService = new TVGuideService(xmltv, db, cacheImageService);
+i18next
+    .use(i18nextBackend)
+    .use(i18nextMiddleware.LanguageDetector)
+    .init({
+        // debug: true,
+        initImmediate: false,
+        backend: {
+            loadPath: path.join(__dirname, '/locales/server/{{lng}}.json'),
+            addPath: path.join(__dirname, '/locales/server/{{lng}}.json')
+        },
+        lng: 'en',
+        fallbackLng: 'en',
+        preload: ['en'],
+    });
 
+
+const guideService = new TVGuideService(xmltv, db, cacheImageService, null, i18next);
 
 
 let xmltvInterval = {
@@ -182,6 +200,10 @@ activeChannelService = new ActiveChannelService(onDemandService, channelCache, c
 let hdhr = HDHR(db, channelDB)
 let app = express()
 eventService.setup(app);
+
+app.use(
+    i18nextMiddleware.handle(i18next, {})
+);
 
 app.use(fileUpload({
     createParentPath: true
@@ -279,7 +301,7 @@ async function sendEventAfterTime() {
     eventService.push(
         "lifecycle",
         {
-            "message": `Server Started`,
+            "message": i18next.t("event.server_started"),
             "detail" : {
                 "time": t,
             },
@@ -298,7 +320,7 @@ onShutdown("log" , [],  async() => {
     eventService.push(
         "lifecycle",
         {
-            "message": `Initiated Server Shutdown`,
+            "message": i18next.t("event.server_shutdown"),
             "detail" : {
                 "time": t,
             },
