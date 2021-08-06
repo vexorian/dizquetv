@@ -86,6 +86,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 scope.channel.transcoding = {
                     targetResolution: "",
                 }
+                scope.channel.onDemand = {
+                    isOnDemand : false,
+                    modulo: 1,
+                }
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
 
@@ -142,6 +146,16 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     scope.channel.transcoding.targetResolution = "";
                 }
 
+                if (typeof(scope.channel.onDemand) === 'undefined') {
+                    scope.channel.onDemand = {};
+                }
+                if (typeof(scope.channel.onDemand.isOnDemand) !== 'boolean') {
+                    scope.channel.onDemand.isOnDemand = false;
+                }
+                if (typeof(scope.channel.onDemand.modulo) !== 'number') {
+                    scope.channel.onDemand.modulo = 1;
+                }
+
                 
                 adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
@@ -163,6 +177,22 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 let t = Date.now();
                 let originalStart = scope.channel.startTime.getTime();
                 let n = scope.channel.programs.length;
+
+                if (
+                    (scope.channel.onDemand.isOnDemand === true)
+                    &&
+                    (scope.channel.onDemand.paused === true)
+                ) {
+                    originalStart = new Date().getTime();
+                    originalStart -= scope.channel.onDemand.playedOffset;
+                    let m = scope.channel.onDemand.firstProgramModulo;
+                    let n = originalStart % scope.channel.onDemand.modulo;
+                    if (n < m) {
+                        originalStart += (m - n);
+                    } else if (n > m) {
+                        originalStart -= (n - m) - scope.channel.onDemand.modulo;
+                    }
+                }
                 //scope.channel.totalDuration might not have been initialized
                 let totalDuration = 0;
                 for (let i = 0; i < n; i++) {
@@ -220,6 +250,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 { name: "Flex", id: "flex" },
                 { name: "EPG", id: "epg" },
                 { name: "FFmpeg", id: "ffmpeg" },
+                { name: "On-demand", id: "ondemand" },
             ];
             scope.setTab = (tab) => {
                 scope.tab = tab;

@@ -81,6 +81,17 @@ class TVGuideService
 
     async getCurrentPlayingIndex(channel, t) {
         let s = (new Date(channel.startTime)).getTime();
+        if ( (typeof(channel.onDemand) !== 'undefined') && channel.onDemand.isOnDemand && channel.onDemand.paused ) {
+            // it's as flex
+            return {
+                index : -1,
+                start : t,
+                program : {
+                    isOffline : true,
+                    duration : 12*60*1000,
+                }
+            }
+        }
         if (t < s) {
             //it's flex time
             return {
