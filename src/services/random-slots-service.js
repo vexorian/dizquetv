@@ -405,10 +405,14 @@ module.exports = async( programs, schedule  ) => {
             }
         } else if (flexBetween) {
             //just distribute it equitatively
-            let div = rem / pads.length;
+            let div = Math.floor( rem / pads.length );
+            let totalAdded = 0;
             for (let i = 0; i < pads.length; i++) {
                 pads[i].pad += div;
+                totalAdded += div;
             }
+            pads[0].pad += rem - totalAdded;
+
         } else {
             //also add div to the latest item
             pads[ pads.length - 1].pad += rem;
