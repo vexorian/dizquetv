@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 802;
+const TARGET_VERSION = 803;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -42,6 +42,7 @@ const STEPS = [
     [    702,    800, (db,channels,dir) => reAddIcon(dir) ],
     [    800,    801, (db) => addImageCache(db) ],
     [    801,    802, () => addGroupTitle() ],
+    [    802,    803, () => fixNonIntegerDurations() ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -834,6 +835,48 @@ function addGroupTitle() {
     console.log("Done migrating group titles in channels.");
 }
 
+function fixNonIntegerDurations() {
+
+    function migrateChannel(channel) {
+        let programs = channel.programs;
+        let fixedCount = 0;
+        channel.duration = 0;
+        for (let i = 0; i < programs.length; i++) {
+            let program = programs[i];
+            if ( ! Number.isInteger(program.duration) ) {
+                fixedCount++;
+                program.duration = Math.ceil(program.duration);
+                programs[i] = program;
+            }
+            channel.duration += program.duration;
+        }
+        if (fixedCount != 0) {
+            console.log(`Found ${fixedCount} non-integer durations in channel ${channel.number}, they were fixed but you should consider running random slots again so that the milliseconds are accurate.`);
+        }
+
+        return {
+            fixed: (fixedCount != 0),
+            newChannel: channel,
+        };
+    }
+
+    console.log("Checking channels to make sure they weren't corrupted by random slots bug #350...");
+    let channels = path.join(process.env.DATABASE, 'channels');
+    let channelFiles = fs.readdirSync(channels);
+    for (let i = 0; i < channelFiles.length; i++) {
+        if (path.extname( channelFiles[i] ) === '.json') {
+            console.log("Checking durations in channel : " + channelFiles[i] +"..." );
+            let channelPath = path.join(channels, channelFiles[i]);
+            let channel = JSON.parse(fs.readFileSync(channelPath, 'utf-8'));
+            let { fixed, newChannel } = migrateChannel(channel);
+            
+            if (fixed) {
+                fs.writeFileSync( channelPath, JSON.stringify(newChannel), 'utf-8');
+            }
+        }
+    }
+    console.log("Done checking channels.");
+}
 
 
 

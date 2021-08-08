@@ -1053,6 +1053,19 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
         delete program.streams;
         delete program.durationStr;
         delete program.commercials;
+        if (
+          (typeof(program.duration) === 'undefined')
+          ||
+          (program.duration <= 0)
+        ) {
+          console.error(`Input contained a program with invalid duration: ${program.duration}. This program has been deleted`);
+          return [];
+        }
+        if (! Number.isInteger(program.duration) ) {
+          console.error(`Input contained a program with invalid duration: ${program.duration}. Duration got fixed to be integer.`);
+          program.duration = Math.ceil(program.duration);
+        }
+        return [ program ];
     }
 
     function cleanUpChannel(channel) {
@@ -1063,10 +1076,15 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
         ) {
           channel.groupTitle = "dizqueTV";
         }
-        channel.programs.forEach( cleanUpProgram );
+        channel.programs = channel.programs.flatMap( cleanUpProgram );
         delete channel.fillerContent;
         delete channel.filler;
-        channel.fallback.forEach( cleanUpProgram );
+        channel.fallback = channel.fallback.flatMap( cleanUpProgram );
+        channel.duration = 0;
+        for (let i = 0; i < channel.programs.length; i++) {
+          channel.duration += channel.programs[i].duration;
+        }
+
     }
 
     async function streamToolResult(toolRes, res) {
