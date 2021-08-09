@@ -4,20 +4,21 @@ const ICON_REGEX = /https?:\/\/.*(\/library\/metadata\/\d+\/thumb\/\d+).X-Plex-T
 
 const ICON_FIELDS = ["icon", "showIcon", "seasonIcon", "episodeIcon"];
 
+// DB is a misnomer here, this is closer to a service
 class PlexServerDB
 {
-    constructor(channelDB, channelCache, fillerDB, showDB, db) {
-        this.channelDB = channelDB;
+    constructor(channelService, fillerDB, showDB, db) {
+        this.channelService = channelService;
         this.db = db;
-        this.channelCache = channelCache;
+
         this.fillerDB = fillerDB;
         this.showDB = showDB;
     }
 
     async fixupAllChannels(name, newServer) {
-        let channelNumbers = await this.channelDB.getAllChannelNumbers();
+        let channelNumbers = await this.channelService.getAllChannelNumbers();
         let report = await Promise.all( channelNumbers.map( async (i) => {
-            let channel = await this.channelDB.getChannel(i);
+            let channel = await this.channelService.getChannel(i);
             let channelReport = {
                 channelNumber : channel.number,
                 channelName : channel.name,
@@ -38,10 +39,10 @@ class PlexServerDB
                 }
             }
             this.fixupProgramArray(channel.fallback, name,newServer, channelReport);
-            await this.channelDB.saveChannel(i, channel);
+            await this.channelService.saveChannel(i, channel);
             return channelReport;
         }) );
-        this.channelCache.clear();
+
         return report;
     }
 

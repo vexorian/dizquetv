@@ -5,6 +5,12 @@ module.exports = {
     TVGUIDE_MAXIMUM_FLEX_DURATION : 6 * 60 * 60 * 1000,
     TOO_FREQUENT: 100,
 
+    //when a channel is forcibly stopped due to an update, let's mark it as active
+    // for a while during the transaction just in case.
+    CHANNEL_STOP_SHIELD : 5000,
+
+    START_CHANNEL_GRACE_PERIOD: 15 * 1000,
+
     // if a channel is stopped while something is playing, subtract
     // this amount of milliseconds from the last-played timestamp, because
     // video playback has latency and also because maybe the user wants

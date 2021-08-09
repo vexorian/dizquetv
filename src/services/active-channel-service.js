@@ -10,12 +10,11 @@ class ActiveChannelService
     /****
      *
      **/
-    constructor(onDemandService, channelCache, channelDB) {
-        console.log("DEFINE THIS.CACHE");
+    constructor(onDemandService, channelService ) {
         this.cache = {};
-        this.channelDB = channelDB;
         this.onDemandService = onDemandService;
-        this.channelCache = channelCache;
+        this.onDemandService.setActiveChannelService(this);
+        this.channelService = channelService;
         this.timeNoDelta = new Date().getTime();
 
         this.loadChannelsForFirstTry();
@@ -25,7 +24,7 @@ class ActiveChannelService
     loadChannelsForFirstTry() {
         let fun = async() => {
             try {
-                let numbers = await this.channelCache.getAllNumbers(this.channelDB);
+                let numbers = await this.channelService.getAllChannelNumbers();
                 numbers.forEach( (number) => {
                     this.ensure(this.timeNoDelta, number);
                 } );
@@ -86,20 +85,29 @@ class ActiveChannelService
 
     registerChannelActive(t, channelNumber) {
         this.ensure(t, channelNumber);
-        console.log("Register that channel is being played: " + channelNumber );
+        if (this.cache[channelNumber].active === 0) {
+            console.log("Channel is being played: " + channelNumber );
+        }
         this.cache[channelNumber].active++;
+        //console.log(channelNumber + " ++active=" + this.cache[channelNumber].active );
         this.cache[channelNumber].stopTime = 0;
         this.cache[channelNumber].lastUpdate =  new Date().getTime();
     }
 
     registerChannelStopped(t, channelNumber) {
         this.ensure(t, channelNumber);
-        console.log("Register that channel is no longer being played: " + channelNumber );
+        if (this.cache[channelNumber].active === 1) {
+            console.log("Register that channel is no longer being played: " + channelNumber );
+        }
         if (this.cache[channelNumber].active === 0) {
             console.error("Serious issue with channel active service, double delete");
         } else {
             this.cache[channelNumber].active--;
-            this.cache[channelNumber].stopTime = t;
+            //console.log(channelNumber + " --active=" + this.cache[channelNumber].active );
+            let s = this.cache[channelNumber].stopTime;
+            if ( (typeof(s) === 'undefined') || (s < t) ) {
+                this.cache[channelNumber].stopTime = t;
+            }
             this.cache[channelNumber].lastUpdate = new Date().getTime();
         }
     }
@@ -131,7 +139,6 @@ class ActiveChannelService
 
     isActive(channelNumber) {
         let bol = this.isActiveWrapped(channelNumber);
-        console.log( "channelNumber = " + channelNumber + " active? " + bol);
         return bol;
         
 

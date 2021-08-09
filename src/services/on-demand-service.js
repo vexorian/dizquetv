@@ -9,10 +9,14 @@ class OnDemandService
     /****
      *
      **/
-    constructor(channelCache, channelDB, xmltvInterval) {
-        this.channelCache = channelCache;
-        this.channelDB = channelDB;
-        this.xmltvInterval = xmltvInterval;
+    constructor(channelService) {
+        this.channelService = channelService;
+        this.channelService.setOnDemandService(this);
+        this.activeChannelService = null;
+    }
+
+    setActiveChannelService(activeChannelService) {
+        this.activeChannelService = activeChannelService;
     }
 
     activateChannelIfNeeded(moment, channel) {
@@ -25,12 +29,12 @@ class OnDemandService
 
     async registerChannelStopped(channelNumber, stopTime, waitForSave) {
         try {
-            let channel = await this.channelCache.getChannelConfig( this.channelDB, channelNumber);
-            if (channel.length === 0) {
+            let channel = await this.channelService.getChannel(channelNumber);
+            if (channel == null) {
                 console.error("Could not stop channel " + channelNumber + " because it apparently no longer exists"); // I guess if someone deletes the channel just in the grace period?
                 return
             }
-            channel = channel[0];
+
             if ( (typeof(channel.onDemand) !== 'undefined') && channel.onDemand.isOnDemand && ! channel.onDemand.paused) {
                 //pause the channel
                 channel = this.pauseOnDemandChannel( channel , stopTime );
@@ -46,10 +50,6 @@ class OnDemandService
     
     }
 
-    updateXmltv() {
-        this.xmltvInterval.updateXML()
-        this.xmltvInterval.restartInterval()
-    }
 
 
     pauseOnDemandChannel(originalChannel, stopTime) {
@@ -98,20 +98,26 @@ class OnDemandService
 
     async updateChannelSync(channel) {
         try {
-            this.channelCache.saveChannelConfig(channel.number, channel );
-            await this.channelDB.saveChannel(channel.number, channel);
+            await this.channelService.saveChannel(
+                channel.number,
+                channel,
+                {ignoreOnDemand: true}
+            );
             console.log("Channel " + channel.number + " saved by on-demand service...");
-        } catch (err)  {
+        } catch (err) {
             console.error("Error saving resumed channel: " + channel.number, err);
         }
     }
 
     updateChannelAsync(channel) {
         this.updateChannelSync(channel);
-        this.updateXmltv();
     }
 
-    fixupChannelBeforeSave(channel, isActive) {
+    fixupChannelBeforeSave(channel) {
+        let isActive = false;
+        if (this.activeChannelService != null && this.activeChannelService.isActive(channel.number) ) {
+            isActive = true;
+        }
         if (typeof(channel.onDemand) === 'undefined') {
             channel.onDemand = {};
         }
