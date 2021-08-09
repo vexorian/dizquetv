@@ -2,6 +2,7 @@ module.exports = {
     getCurrentProgramAndTimeElapsed: getCurrentProgramAndTimeElapsed,
     createLineup: createLineup,
     getWatermark: getWatermark,
+    generateChannelContext: generateChannelContext,
 }
 
 let channelCache = require('./channel-cache');
@@ -9,6 +10,17 @@ const SLACK = require('./constants').SLACK;
 const randomJS = require("random-js");
 const Random = randomJS.Random;
 const random = new Random( randomJS.MersenneTwister19937.autoSeed() );
+
+const CHANNEL_CONTEXT_KEYS = [
+    "disableFillerOverlay",
+    "watermark",
+    "icon",
+    "offlinePicture",
+    "offlineSoundtrack",
+    "name",
+    "transcoding",
+    "number",
+];
 
 module.exports.random = random;
 
@@ -260,6 +272,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
     }
 }
 
+// any channel thing used here should be added to channel context
 function getWatermark(  ffmpegSettings, channel, type) {
     if (! ffmpegSettings.enableFFMPEGTranscoding || ffmpegSettings.disableChannelOverlay ) {
         return null;
@@ -301,3 +314,12 @@ function getWatermark(  ffmpegSettings, channel, type) {
     return result;
 }
 
+
+function generateChannelContext(channel) {
+    let channelContext = {};
+    for (let i = 0; i < CHANNEL_CONTEXT_KEYS.length; i++) {
+        let key = CHANNEL_CONTEXT_KEYS[i];
+        channelContext[key] = JSON.parse( JSON.stringify(channel[key] ) );
+    }
+    return channelContext;
+}

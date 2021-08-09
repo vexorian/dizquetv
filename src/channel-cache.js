@@ -24,7 +24,7 @@ async function getChannelConfig(channelDB, channelId) {
 
 async function getAllNumbers(channelDB) {
     if (numbers === null) {
-        let n = channelDB.getAllChannelNumbers();
+        let n = await channelDB.getAllChannelNumbers();
         numbers = n;
     }
     return numbers;
@@ -32,15 +32,41 @@ async function getAllNumbers(channelDB) {
 
 async function getAllChannels(channelDB) {
     let channelNumbers = await getAllNumbers(channelDB);
-    return await Promise.all( channelNumbers.map( async (x) => {
+    return (await Promise.all( channelNumbers.map( async (x) => {
         return (await getChannelConfig(channelDB, x))[0];
-    }) );
+    }) )).filter( (channel) => {
+        if (channel == null) {
+            console.error("Found a null channel " + JSON.stringify(channelNumbers) );
+            return false;
+        }
+        if ( typeof(channel) === "undefined") {
+            console.error("Found a undefined channel " + JSON.stringify(channelNumbers) );
+            return false;
+        }
+        if ( typeof(channel.number) === "undefined") {
+            console.error("Found a channel without number " + JSON.stringify(channelNumbers) );
+            return false;
+        }
+
+        return true;
+    } );
 }
 
 
 function saveChannelConfig(number, channel ) {
     configCache[number] = [channel];
-    delete cache[number];
+    
+    // flush the item played cache for the channel and any channel in its
+    // redirect chain
+    if (typeof(cache[number]) !== 'undefined') {
+        let lineupItem = cache[number].lineupItem;
+        for (let i = 0; i < lineupItem.redirectChannels.length; i++) {
+            delete cache[ lineupItem.redirectChannels[i].number ];
+        }
+        delete cache[number];
+
+    }
+    numbers = null;
 }
 
 function getCurrentLineupItem(channelId, t1) {

@@ -49,6 +49,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
             scope.episodeMemory = {
                 saved : false,
             };
+            scope.fixedOnDemand = false;
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
@@ -182,7 +183,11 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     (scope.channel.onDemand.isOnDemand === true)
                     &&
                     (scope.channel.onDemand.paused === true)
+                    &&
+                    ! scope.fixedOnDemand
                 ) {
+                    //this should only happen once per channel
+                    scope.fixedOnDemand = true;
                     originalStart = new Date().getTime();
                     originalStart -= scope.channel.onDemand.playedOffset;
                     let m = scope.channel.onDemand.firstProgramModulo;
