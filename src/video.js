@@ -308,7 +308,7 @@ function video( channelDB , fillerDB, db, programmingService, activeChannelServi
             };
         }
         
-        let combinedChannel = JSON.parse( JSON.stringify(brandChannel) );
+        let combinedChannel = helperFuncs.generateChannelContext(brandChannel);
         combinedChannel.transcoding = channel.transcoding;
 
         let playerContext = {
