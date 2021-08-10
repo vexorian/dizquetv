@@ -16,17 +16,19 @@ class ChannelService extends events.EventEmitter {
     async saveChannel(number, channelJson, options) {
         
         let channel = cleanUpChannel(channelJson);
+        let ignoreOnDemand = true;
         if (
             (this.onDemandService != null)
             &&
             ( (typeof(options) === 'undefined') || (options.ignoreOnDemand !== true) )
         ) {
+            ignoreOnDemand = false;
             this.onDemandService.fixupChannelBeforeSave( channel );
         }
         channelCache.saveChannelConfig( number, channel);
         await channelDB.saveChannel( number, channel );
 
-        this.emit('channel-update', { channelNumber: number,  channel: channel} );
+        this.emit('channel-update', { channelNumber: number,  channel: channel, ignoreOnDemand: ignoreOnDemand} );
     }
 
     async deleteChannel(number) {

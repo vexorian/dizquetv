@@ -196,6 +196,8 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
           };
       } else if (lineupItem != null) {
           redirectChannels = lineupItem.redirectChannels;
+          upperBounds = lineupItem.upperBounds;
+          brandChannel = redirectChannels[ redirectChannels.length -1];
       } else {
         prog = programmingService.getCurrentProgramAndTimeElapsed(t0, channel);
         activeChannelService.peekChannel(t0, channel.number);
@@ -284,6 +286,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             for (let i = redirectChannels.length-1; i >= 0; i--) {
                 lineupItem = JSON.parse( JSON.stringify(lineupItem ));
                 lineupItem.redirectChannels = redirectChannels;
+                lineupItem.upperBounds = upperBounds;
                 let u = upperBounds[i] + beginningOffset;
                 if (typeof(u) !== 'undefined') {
                     let u2 = upperBound;
@@ -385,6 +388,10 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
                 activeChannelService.registerChannelActive(t0,  redirectChannels[i].number);
             }
             let listener = (data) => {
+                if (data.ignoreOnDemand) {
+                    console.log("Ignore channel update because it is from on-demand service");
+                    return;
+                }
                 let shouldStop = false;
                 try {
                     for (let i = 0; i < redirectChannels.length; i++) {
