@@ -43,7 +43,7 @@ class M3uService {
 
 
         channels.sort((a, b) => {
-            return a.number < b.number ? -1 : 1
+            return parseInt(a.number) < parseInt(b.number) ? -1 : 1
         });
 
         const tvg = `{{host}}/api/xmltv.xml`;
