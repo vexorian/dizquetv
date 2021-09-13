@@ -123,8 +123,19 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
 
             }
             scope.fillNestedIfNecessary = async (x, isLibrary) => {
-                if ( (typeof(x.nested) === 'undefined') && (x.type !== 'collection') ) {
+                if (typeof(x.nested) === 'undefined') {
                     x.nested = await plex.getNested(scope.plexServer, x, isLibrary, scope.errors);
+                    if (x.type === "collection" && x.collectionType === "show") {
+                        let nested = x.nested;
+                        x.nested = [];
+                        for (let i = 0; i < nested.length; i++) {
+                            let subNested = await plex.getNested(scope.plexServer, nested[i], false, scope.errors);
+                            for (let j = 0; j < subNested.length; j++) {
+                                subNested[j].title = nested[i].title + " - " + subNested[j].title;
+                                x.nested.push( subNested[j] );
+                            }
+                        }
+                    }
                 }
             }
             scope.getNested = (list, isLibrary) => {
