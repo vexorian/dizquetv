@@ -172,13 +172,13 @@ module.exports = function ($http, $window, $interval) {
             var client = new Plex(server)
             const key = lib.key
             const res = await client.Get(key)
-            const size = res.Metadata !== 'undefined' ? res.Metadata.length : 0;
+
+            const size = (typeof(res.Metadata) !== 'undefined') ? res.Metadata.length : 0;
             var nested = []
             if (typeof (lib.genres) !== 'undefined') {
                 nested = Array.from(lib.genres)
             }
             var seenFiles = {};
-            var collections = {};
 
             let albumKeys = {};
             let albums = {};
@@ -276,43 +276,6 @@ module.exports = function ($http, $window, $interval) {
                     program.episode = 1
                     program.season = 1
                 }
-                if (typeof (res.Metadata[i].Collection) !== 'undefined') {
-                    let coll = res.Metadata[i].Collection;
-                    if (coll.length == 2) {
-                        // the /all endpoint returns incomplete data, so we
-                        // might have to complete the list of collections
-                        // when there are already 2 collections there.
-                        //console.log(res.Metadata[i]);
-                        let complete = {}
-                        try {
-                            complete = await client.Get(`/library/metadata/${res.Metadata[i].ratingKey}`);
-                        } catch (err) {
-                            console.error("Error attempting to load collections", err);
-                        }
-                        if (
-                            (typeof(complete.Metadata) !== 'undefined')
-                            &&
-                            (complete.Metadata.length == 1)
-                            &&
-                            (typeof(complete.Metadata[0].Collection) !== 'undefined')
-                            &&
-                            ( complete.Metadata[0].Collection.length > 2)
-                        ) {
-                            coll = complete.Metadata[0].Collection;
-                        }
-                    }
-                    for (let j = 0; j < coll.length; j++) {
-                        let tag = coll[j].tag;
-                        if ( (typeof(tag)!==  "undefined") && (tag.length > 0) ) {
-                            let collection = collections[tag];
-                            if (typeof(collection) === 'undefined') {
-                                collection = [];
-                                collections[tag] = collection;
-                            }
-                            collection.push( program );
-                        }
-                    }
-                }
                 nested.push(program)
               } catch(err) {
                   let msg = "Error when attempting to read nested data for " + key + " " + res.Metadata[i].title;
@@ -320,40 +283,27 @@ module.exports = function ($http, $window, $interval) {
                   console.error(msg , err);
               }
             }
-            if (includeCollections === true) {
+            if ( (includeCollections === true) && (res.viewGroup !== "artist" ) ) {
+                let k = res.librarySectionID;
+
+                k = `/library/sections/${k}/collection`;
+                let collections = await client.Get(k);
+                let directories = collections.Directory;
                 let nestedCollections = [];
-                let keys = [];
-                Object.keys(collections).forEach(function(key,index) {
-                    keys.push(key);
-                });
-                for (let k = 0; k < keys.length; k++) {
-                    let key = keys[k];
-                    if ( !(collections[key].length >= 1) ) {
-                        //it's pointless to include it.
-                        continue;
+                for (let i = 0; i < directories.length; i++) {
+                    let title;
+                    if (res.viewGroup === "show") {
+                        title = directories[i].title + " Collection"
+                    } else {
+                        title = directories[i].title;
                     }
-                    let collection = {
-                        title: key,
-                        key: "#collection",
-                        icon : "",
-                        type : "collection",
-                        nested: collections[key],
-                    }
-                    if (res.viewGroup === 'show') {
-                        collection.title = collection.title + " Collection";
-                        //nest the seasons directly because that's way too many depth levels already
-                        let shows = collection.nested;
-                        let collectionContents = [];
-                        for (let i = 0; i < shows.length; i++) {
-                            let seasons = await exported.getNested(server, shows[i], false);
-                            for (let j = 0; j < seasons.length; j++) {
-                                seasons[j].title = shows[i].title + " - " + seasons[j].title;
-                                collectionContents.push(seasons[j]);
-                            }
-                        }
-                        collection.nested = collectionContents;
-                    }
-                    nestedCollections.push( collection );
+
+                    nestedCollections.push( {
+                        key : directories[i].fastKey,
+                        title : title,
+                        type: "collection",
+                        collectionType : res.viewGroup,
+                    } );
                 }
                 nested = nestedCollections.concat(nested);
             }
