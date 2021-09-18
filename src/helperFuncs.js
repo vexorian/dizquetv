@@ -243,10 +243,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
             let w = s + d;
             n += w;
             if (weighedPick(w,n)) {
-                console.log(`${s} ${d} ${clip.title} picked `);
                 pick1 = clip;
-            } else {
-                console.log(`${s} ${d} ${clip.title} not picked `);
             }
         }
       }
