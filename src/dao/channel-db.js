@@ -29,10 +29,8 @@ class ChannelDB {
     }
     
     async saveChannel(number, json) {
-        if (typeof(number) === 'undefined') {
-            throw Error("Mising channel number");
-        }
-        let f = path.join(this.folder, `${number}.json` );
+        await this.validateChannelJson(number, json);
+        let f = path.join(this.folder, `${json.number}.json` );
         return await new Promise( (resolve, reject) => {
             let data = undefined;
             try {
@@ -50,10 +48,28 @@ class ChannelDB {
     }
 
     saveChannelSync(number, json) {
-        json.number = number;
+        this.validateChannelJson(number, json);
+        
         let data = JSON.stringify(json);
-        let f = path.join(this.folder, `${number}.json` );
+        let f = path.join(this.folder, `${json.number}.json` );
         fs.writeFileSync( f, data );
+    }
+
+    validateChannelJson(number, json) {
+        json.number = number;
+        if (typeof(json.number) === 'undefined') {
+            throw Error("Expected a channel.number");
+        }
+        if (typeof(json.number) === 'string') {
+            try {
+                json.number = parseInt(json.number);
+            } catch (err) {
+                console.error("Error parsing channel number.", err);
+            }
+        }
+        if ( isNaN(json.number)) {
+            throw Error("channel.number must be a integer");
+        }
     }
 
     async deleteChannel(number) {

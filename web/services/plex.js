@@ -286,9 +286,12 @@ module.exports = function ($http, $window, $interval) {
             if ( (includeCollections === true) && (res.viewGroup !== "artist" ) ) {
                 let k = res.librarySectionID;
 
-                k = `/library/sections/${k}/collection`;
+                k = `/library/sections/${k}/collections`;
                 let collections = await client.Get(k);
-                let directories = collections.Directory;
+                if ( typeof(collections.Metadata) === 'undefined') {
+                    collections.Metadata = [];
+                }
+                let directories = collections.Metadata;
                 let nestedCollections = [];
                 for (let i = 0; i < directories.length; i++) {
                     let title;
@@ -299,7 +302,7 @@ module.exports = function ($http, $window, $interval) {
                     }
 
                     nestedCollections.push( {
-                        key : directories[i].fastKey,
+                        key : directories[i].key,
                         title : title,
                         type: "collection",
                         collectionType : res.viewGroup,

@@ -192,7 +192,7 @@ module.exports = function (plex, dizquetv, $timeout) {
                                 accessToken: server.accessToken,
                             }
                         }
-                        connection.arGuide = true
+                        connection.arGuide = false
                         connection.arChannels = false // should not be enabled unless dizqueTV tuner already added to plex
                         await dizquetv.addPlexServer(connection);
                     } catch (err) {

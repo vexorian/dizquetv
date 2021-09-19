@@ -36,7 +36,15 @@ class TVGuideService extends events.EventEmitter
         let t = (new Date()).getTime();
         this.updateTime = t;
         this.updateLimit = t + limit;
-        let channels = inputChannels;
+
+        let channels = [];
+        for (let i = 0; i < inputChannels.length; i++) {
+            if (typeof(inputChannels[i]) !== 'undefined') {
+                channels.push(inputChannels[i]);
+            } else {
+                console.error(`There is an issue with one of the channels provided to TV-guide service, it will be ignored: ${i}` );
+            }
+        }
         this.updateChannels = channels;
         return t;
     }
