@@ -485,7 +485,7 @@ function splitServersSingleChannels(db, channelDB ) {
 
     let saveServer = (name, uri, accessToken, arGuide, arChannels) => {
         if (typeof(arGuide) === 'undefined') {
-            arGuide = true;
+            arGuide = false;
         }
         if (typeof(arChannels) === 'undefined') {
             arChannels = false;

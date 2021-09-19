@@ -134,7 +134,7 @@ class PlexServerDB
         s = s[0];
         let arGuide = server.arGuide;
         if (typeof(arGuide) === 'undefined') {
-            arGuide = true;
+            arGuide = false;
         }
         let arChannels = server.arChannels;
         if (typeof(arChannels) === 'undefined') {
@@ -176,7 +176,7 @@ class PlexServerDB
         name = resultName;
         let arGuide = server.arGuide;
         if (typeof(arGuide) === 'undefined') {
-            arGuide = true;
+            arGuide = false;
         }
         let arChannels = server.arGuide;
         if (typeof(arChannels) === 'undefined') {
