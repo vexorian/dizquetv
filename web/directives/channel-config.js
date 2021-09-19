@@ -953,7 +953,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     scope.error.any = true;
 
    
-                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "") {
+                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "" ) {
                         scope.error.number = "Select a channel number"
                         scope.error.tab = "basic";
                     } else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) { // we need the parseInt for indexOf to work properly
@@ -961,6 +961,9 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                         scope.error.tab = "basic";
                     } else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1) {
                         scope.error.number = "Channel number already in use."
+                        scope.error.tab = "basic";
+                    } else if ( ! checkChannelNumber(channel.number) ) {
+                        scope.error.number = "Invalid channel number.";
                         scope.error.tab = "basic";
                     } else if (channel.number < 0 || channel.number > 9999) {
                         scope.error.name = "Enter a valid number (0-9999)"
@@ -1669,4 +1672,13 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
 }
 function validURL(url) {
     return /^(ftp|http|https):\/\/[^ "]+$/.test(url);
+}
+
+function checkChannelNumber(number) {
+    if ( /^[1-9][0-9]+$/.test(number) ) {
+        let x = parseInt(number);
+        return (0 <= x && x < 10000);
+    } else {
+        return false;
+    }
 }

@@ -11,6 +11,7 @@ class TVGuideService
     constructor(xmltv, db, cacheImageService, eventService) {
         this.cached = null;
         this.lastUpdate = 0;
+        this.lastBackoff = 100;
         this.updateTime = 0;
         this.currentUpdate = -1;
         this.currentLimit = -1;
@@ -34,7 +35,15 @@ class TVGuideService
         let t = (new Date()).getTime();
         this.updateTime = t;
         this.updateLimit = t + limit;
-        let channels = inputChannels;
+
+        let channels = [];
+        for (let i = 0; i < inputChannels.length; i++) {
+            if (typeof(inputChannels[i]) !== 'undefined') {
+                channels.push(inputChannels[i]);
+            } else {
+                console.error(`There is an issue with one of the channels provided to TV-guide service, it will be ignored: ${i}` );
+            }
+        }
         this.updateChannels = channels;
         return t;
     }
@@ -345,10 +354,13 @@ class TVGuideService
             this.cached = await this.buildItManaged();
             console.log("Internal TV Guide data refreshed at " + (new Date()).toLocaleString() );
             await this.refreshXML();
+            this.lastBackoff = 100;
         } catch(err) {
             console.error("Unable to update internal guide data", err);
-            await _wait(100);
-            console.error("Retrying TV guide...");
+            let w = Math.min(this.lastBackoff * 2, 300000);
+            await _wait(w);
+            this.lastBackoff = w;
+            console.error(`Retrying TV guide after ${w} milliseconds wait...`);
             await this.buildIt();
 
         } finally {
