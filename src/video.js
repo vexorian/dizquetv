@@ -2,7 +2,7 @@ const express = require('express')
 const helperFuncs = require('./helperFuncs')
 const FFMPEG = require('./ffmpeg')
 const FFMPEG_TEXT = require('./ffmpegText')
-const PlexTranscoder = require('./plexTranscoder')
+const constants = require('./constants')
 const fs = require('fs')
 const ProgramPlayer = require('./program-player');
 const channelCache  = require('./channel-cache')
@@ -121,7 +121,7 @@ function video( channelDB , fillerDB, db) {
     } );
 
     // Stream individual video to ffmpeg concat above. This is used by the server, NOT the client
-    router.get('/stream', async (req, res) => {
+    let streamFunction = async (req, res, t0, allowSkip) => {
         // Check if channel queried is valid
         res.on("error", (e) => {
             console.error("There was an unexpected error in stream.", e);
@@ -166,7 +166,6 @@ function video( channelDB , fillerDB, db) {
 
 
         // Get video lineup (array of video urls with calculated start times and durations.)
-      let t0 = (new Date()).getTime();
       let lineupItem = channelCache.getCurrentLineupItem( channel.number, t0);
       let prog = null;
       let brandChannel = channel;
@@ -242,12 +241,15 @@ function video( channelDB , fillerDB, db) {
                 duration: t,
                 isOffline : true,
             };
-        } else if (prog.program.isOffline && prog.program.duration - prog.timeElapsed <= 10000) {
+        } else if ( allowSkip && (prog.program.isOffline && prog.program.duration - prog.timeElapsed <= constants.SLACK + 1) ) {
             //it's pointless to show the offline screen for such a short time, might as well
             //skip to the next program
-            prog.programIndex = (prog.programIndex + 1) % channel.programs.length;
-            prog.program = channel.programs[prog.programIndex ];
-            prog.timeElapsed = 0;
+            let dt = prog.program.duration - prog.timeElapsed;
+            for (let i = 0; i < redirectChannels.length; i++) {
+                channelCache.clearPlayback(redirectChannels[i].number );
+            }
+            console.log("Too litlle time before the filler ends, skip to next slot");
+            return await streamFunction(req, res, t0 + dt + 1, false);
         }
         if ( (prog == null) || (typeof(prog) === 'undefined') || (prog.program == null) || (typeof(prog.program) == "undefined") ) {
             throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted."
@@ -360,6 +362,11 @@ function video( channelDB , fillerDB, db) {
             console.log("Client Closed");
             stop();
         });
+    };
+
+    router.get('/stream', async (req, res) => {
+        let t0 = (new Date).getTime();
+        return await streamFunction(req, res, t0, true);
     });
 
 
