@@ -140,6 +140,10 @@ function recordPlayback(channelId, t0, lineupItem) {
     }
 }
 
+function clearPlayback(channelId) {
+    delete cache[channelId];
+}
+
 function clear() {
     //it's not necessary to clear the playback cache and it may be undesirable
     configCache = {};
@@ -156,4 +160,5 @@ module.exports = {
     getChannelConfig: getChannelConfig,
     saveChannelConfig: saveChannelConfig,
     getFillerLastPlayTime: getFillerLastPlayTime,
+    clearPlayback: clearPlayback,
 }
