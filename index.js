@@ -35,6 +35,12 @@ console.log(
 '------------'
 `);
 
+const NODE = parseInt( process.version.match(/^[^0-9]*(\d+)\..*$/)[1] );
+
+if (NODE < 12) {
+    console.error(`WARNING: Your nodejs version ${process.version} is lower than supported. dizqueTV has been tested best on nodejs 12.16.`);
+}
+
 
 for (let i = 0, l = process.argv.length; i < l; i++) {
     if ((process.argv[i] === "-p" || process.argv[i] === "--port") && i + 1 !== l)
