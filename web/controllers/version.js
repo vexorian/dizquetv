@@ -4,6 +4,7 @@ module.exports = function ($scope, dizquetv) {
     dizquetv.getVersion().then((version) => {
         $scope.version = version.dizquetv;
         $scope.ffmpegVersion = version.ffmpeg;
+        $scope.nodejs = version.nodejs;
     })
 
     

@@ -1711,7 +1711,7 @@ function validURL(url) {
 }
 
 function checkChannelNumber(number) {
-    if ( /^[1-9][0-9]+$/.test(number) ) {
+    if ( /^(([1-9][0-9]*)|(0))$/.test(number) ) {
         let x = parseInt(number);
         return (0 <= x && x < 10000);
     } else {
