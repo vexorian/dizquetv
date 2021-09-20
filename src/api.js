@@ -1038,7 +1038,6 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
       delete toolRes.programs;
       let s = JSON.stringify(toolRes);
       s = s.slice(0, -1);
-      console.log( JSON.stringify(toolRes));
 
       res.writeHead(200, {
         'Content-Type': 'application/json'

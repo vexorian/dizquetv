@@ -12,6 +12,7 @@ module.exports = function () {
                 showId : "custom." + program.customShowId,
                 showDisplayName : program.customShowName,
                 order : program.customOrder,
+                shuffleOrder : program.shuffleOrder,
             }
         } else if (program.isOffline && program.type === 'redirect') {
             return {
@@ -35,6 +36,7 @@ module.exports = function () {
                 showId : "movie.",
                 showDisplayName : "Movies",
                 order : movieTitleOrder[key],
+                shuffleOrder : program.shuffleOrder,
             }
         } else if ( (program.type === 'episode') || (program.type === 'track') ) {
             let s = 0;
@@ -54,6 +56,7 @@ module.exports = function () {
                 showId : prefix + program.showTitle,
                 showDisplayName : program.showTitle,
                 order : s * 1000000 + e,
+                shuffleOrder : program.shuffleOrder,
             }
         } else {
             return {
