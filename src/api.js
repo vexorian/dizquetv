@@ -38,6 +38,7 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
         res.send( {
             "dizquetv" : constants.VERSION_NAME,
             "ffmpeg" : v,
+            "nodejs" : process.version,
         } );
       } catch(err) {
           console.error(err);
