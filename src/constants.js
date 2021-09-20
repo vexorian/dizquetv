@@ -5,5 +5,5 @@ module.exports = {
     TVGUIDE_MAXIMUM_FLEX_DURATION : 6 * 60 * 60 * 1000,
     TOO_FREQUENT: 100,
 
-    VERSION_NAME: "1.4.4"
+    VERSION_NAME: "1.4.5-development"
 }
