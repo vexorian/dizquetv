@@ -300,6 +300,7 @@ function video( channelDB , fillerDB, db) {
             channelCache.recordPlayback(channel.number, t0, lineupItem);
         }
         if (wereThereTooManyAttempts(session, lineupItem)) {
+            console.error("There are too many attempts to play the same item in a short period of time, playing the error stream instead.");
             lineupItem = {
                 isOffline: true,
                 err: Error("Too many attempts, throttling.."),
