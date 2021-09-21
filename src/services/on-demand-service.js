@@ -197,7 +197,9 @@ class OnDemandService
         } else {
             let o = (tm - pm);
             startTime = startTime - o;
-            if (o >= SLACK) {
+            //It looks like it is convenient to make the on-demand a bit more lenient SLACK-wise tha
+            //other parts of the schedule process. So SLACK*2 instead of just SLACK
+            if (o >= SLACK*2) {
                 startTime += onDemand.modulo;
             }
         }

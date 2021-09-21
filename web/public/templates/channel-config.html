@@ -197,23 +197,29 @@
                             <small class='text-info'>There are no programs in the channel, use the <i class='fas fa-plus'></i> button to add programs from your media library or use the Tools to add Flex time or a Channel Redirect</small>
                         </div>
 
-                        <div class='col-md-4 col-sm-12 col-xl-6  col-lg-5 programming-pane tools-pane' ng-show="showShuffleOptions"
+                        <div ng-class='{
+                            "col-md-4"  : true,
+                            "col-sm-12" : true,
+                            "col-xl-6"  : hasAdvancedTools(),
+                            "col-lg-5"  : hasAdvancedTools(),
+                            "col-xl-4"  : !hasAdvancedTools(),
+                            "col-lg-3"  : !hasAdvancedTools()
+                        }'   class='programming-pane tools-pane' ng-show="showShuffleOptions"
                             ng-style="{'max-height':programmingHeight()}"
                         >
 
                             <div class="row">
-                                <div class="col-xl-6 col-md-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div ng-class="toolWide()" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <input type="number" class="form-control form-control-sm" placeholder="Desired number of consecutive TV shows." min="1" max="10" ng-model="blockCount" style="width:5em">
                                             </input>
                                         </div>
                                         <div class="input-group-prepend">
-                                            <div class="input-group-text" style="padding: 0;">
-                                                <label class="small" for="randomizeBlockShuffle" style="margin-bottom: 2px;">&nbsp;Randomize&nbsp;&nbsp;</label>
-                                                <input id="randomizeBlockShuffle" type="checkbox" ng-model="randomizeBlockShuffle"></input>
-                                                &nbsp;
-                                            </div>
+                                            <select class="custom-select" ng-model="randomizeBlockShuffle">
+                                                <option ng-value="false" label="Fixed" />
+                                                <option ng-value="true" label="Random" />
+                                            </select>
                                         </div>
                                         <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="blockShuffle(blockCount, randomizeBlockShuffle)">
                                             <i class='fa fa-random' title='Block Shuffle' ></i> Block Shuffle
@@ -223,7 +229,7 @@
     
                                 </div>
 
-                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div ng-class="toolThin()" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="randomShuffle()" aria-describedby="randomShuffleHelp" title='Random Shuffle'>
                                           <i class='fa fa-random'></i> Random Shuffle
@@ -234,7 +240,7 @@
                                     </p>
                                 </div>
 
-                                <div class='col-xl-3 col-lg-6' style="padding: 5px;"  ng-show="hasPrograms()" >
+                                <div ng-class="toolThin()" style="padding: 5px;"  ng-show="hasPrograms()" >
                                     <div class="input-group">
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="cyclicShuffle()" title='Cyclic Shuffle' >
                                           <i class='fa fa-random'></i> Cyclic Shuffle
@@ -243,7 +249,7 @@
                                     <p ng-show='showHelp.check'>Like Random Shuffle, but tries to preserve the sequence of episodes for each TV show. If a TV show has multiple instances of its episodes, they are also cycled appropriately.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div ng-class="toolWide()" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="replicaCount" style="width:5em">
@@ -255,7 +261,7 @@
                                     <p ng-show='showHelp.check'>Makes multiple copies of the schedule and plays them in sequence. Normally this isn&apos;t necessary, because dizqueTV will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div ng-class="toolWide()" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <input type="number" class="form-control form-control-sm" placeholder="Repeats" min="1" max="{{maxReplicas()}}" ng-model="randomReplicaCount" style="width:5em">
@@ -267,7 +273,7 @@
                                     <p ng-show='showHelp.check'>Like &quot;Replicate&quot;, it will make multiple copies of the programming. In addition it will shuffle the programs, but it will make sure not to have too small a distance between two identical programs.</p>
                                 </div>
 
-                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()" >
+                                <div ng-class="toolThin()" style="padding: 5px;"  ng-show="hasPrograms()" >
                                     <div class='input-group'>
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortShows()" title='Sort TV Shows' >
                                           <i class='fa fa-sort-alpha-down'></i> Sort TV Shows
@@ -278,7 +284,7 @@
                                     </p>
                                 </div>
 
-                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()" >
+                                <div ng-class="toolThin()" style="padding: 5px;"  ng-show="hasPrograms()" >
                                     <div class="input-group">
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortByDate()" title='Sort Release Dates' >
                                           <i class='fa fa-sort-numeric-down'></i> Sort Release Dates
@@ -287,7 +293,7 @@
                                     <p ng-show='showHelp.check'>Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom.</p>
                                 </div>
 
-                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()" >
+                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()" >
                                     <div class="input-group">
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="equalizeShows()" title='Balance Shows' >
                                           <i class='fa fa-balance-scale'></i> Balance Shows
@@ -296,7 +302,7 @@
                                     <p ng-show='showHelp.check'>Will replicate some TV shows or delete duplicates of other TV shows in an effort to make it so the total durations of all episodes of each episode are as similar as possible. It&apos;s usually impossible to make the shows perfectly balanced without creating a really high number of duplicates, but it will try to get close. Movies are treated as a single show.</p>
                                 </div>
 
-                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()" >
+                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()" >
                                     <div class='input-group'>
                                       <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="startFrequencyTweak()" title='Tweak Weights...'>
                                           <i class='fa fa-balance-scale'></i> Tweak Weights...
@@ -314,7 +320,7 @@
                                     <p ng-show='showHelp.check'>Programs a Flex time slot. Normally you&apos;d use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases.</p>
                                 </div>
   
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                       <div class="input-group">
                                           <div class="input-group-prepend">
                                               <select class="custom-select" ng-model="nightStart"
@@ -330,7 +336,7 @@
                                       <p ng-show='showHelp.check'>The channel's regular programming between the specified hours. Flex time will fill up the remaining hours.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <select class="custom-select" ng-model="paddingOption"
@@ -344,7 +350,7 @@
                                     <p ng-show='showHelp.check'>Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <select class="custom-select" style="width:5em" ng-model="breakAfter"
@@ -361,7 +367,7 @@
                                     <p ng-show='showHelp.check'>Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes. This button might be disabled if the channel is already too large.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                     <div class="input-group">
                                       <div class="input-group-prepend">
                                           <select class="custom-select" ng-model="rerunStart"
@@ -381,7 +387,7 @@
                                     <p ng-show='showHelp.check'>Divides the programming in blocks of 6, 8 or 12 hours then repeats each of the blocks the specified number of times. For example,  you can make a channel that plays exactly the same channels in the morning and in the afternoon. This button might be disabled if the channel is already too large.</p>
                                   </div>
   
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                     <div class="input-group" >
                                       <div class="input-group-prepend">
                                           <button class="btn btn-sm btn-secondary form-control form-control-sm" type="button" ng-click="savePositions()">
@@ -407,7 +413,7 @@
                                     <p ng-show='showHelp.check'>Adds a channel redirect. During this period of time, the channel will redirect to another channel.</p>
                                 </div>
   
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                       <div class="input-group">
                                           <div class="input-group-prepend">
                                               <div class='loader' ng-hide='channelsDownloaded'></div>
@@ -425,7 +431,7 @@
                                       <p ng-show='showHelp.check'>Will redirect to another channel while between the selected hours.</p>
                                 </div>
 
-                                <div class="col-xl-6 col-lg-12" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div ng-class="toolWide()" style="padding: 5px;"  ng-show="hasPrograms()">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <button class='btn btn-sm btn-warning form-control' ng-click="slideAllPrograms(-slide.value)"
@@ -449,27 +455,51 @@
                                     <p ng-show='showHelp.check'>Slides the whole schedule. The &quot;Fast-Forward&quot; button will advance the stream by the specified amount of time. The &quot;Rewind&quot; button does the opposite.</p>
                                 </div>
 
-                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
-                                    <div class="input-group">
+                                <div ng-class="toolThin()" style="padding: 5px;"  ng-show="hasPrograms()">
+                                    <div class="input-group" >
+                                        <div class="input-group-prepend">
+                                            <button class="btn btn-sm btn-warning form-control"
+                                                type="button"
+                                                ng-click="rerollTimeSlots()"
+                                                ng-disabled="hasNoTimeSlots()"
+                                                title = "Regenerate time slots..."
+                                            >
+                                                <i class='fas fa-redo'></i>
+                                            </button>
+                                        </div>
+    
                                         <button class='btn btn-sm btn-warning form-control' ng-click="onTimeSlotsButtonClick()"
                                                 title="Time Slots..."
                                             >
                                                 <i class='fas fa-blender'></i> Time Slots...
                                         </button>
                                     </div>
-                                    <p ng-show='showHelp.check'>This allows to schedul specific shows to run at specific time slots of the day or a week. It&apos;s recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects.</p>
+                                    <p ng-show='showHelp.check'>This allows to schedule specific shows to run at specific time slots of the day or a week. It&apos;s recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects.</p>
 
                                 </div>
 
-                                <div class="col-xl-3 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
-                                    <div class="input-group">
+                                <div ng-class="toolThin()" style="padding: 5px;"  ng-show="hasPrograms()">
+
+
+                                    <div class="input-group" >
+                                        <div class="input-group-prepend">
+                                            <button class="btn btn-sm btn-warning form-control"
+                                                type="button"
+                                                ng-click="rerollRandomSlots()"
+                                                ng-disabled="hasNoRandomSlots()"
+                                                title = "Regenerate random slots..."
+                                            >
+                                                <i class='fas fa-redo'></i>
+                                            </button>
+                                        </div>
+    
                                         <button class='btn btn-sm btn-warning form-control' ng-click="onRandomSlotsButtonClick()"
                                                 title="Random Slots..."
                                             >
                                                 <i class='fas fa-flask'></i> Random Slots...
                                         </button>
                                     </div>
-                                    <p ng-show='showHelp.check'>This is similar to Time Slots, but instead of time sections, you pick a probability to play each tv show and the length of the block.</p>
+                                    <p ng-show='showHelp.check'>This is similar to Time Slots, but instead of time sections, you pick a probability to play each tv show and the length of the block. Once a channel has been configured with random slots, the reload button can re-evaluate them again, with the saved settings.</p>
 
 
                                 </div>
@@ -493,7 +523,7 @@
                                       <p ng-show='showHelp.check'>Removes any Flex periods from the schedule.</p>
                                 </div>
 
-                                <div class="col-md-auto" style="padding: 5px;"  ng-show="hasPrograms()">
+                                <div class="col-md-auto" style="padding: 5px;"  ng-show="hasPrograms() && hasAdvancedTools()">
                                       <div class='input-group'>
                                           <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="wipeSpecials()" title='Remove Specials' >
                                               <i class='fa fa-trash-alt'></i> Specials
@@ -518,6 +548,24 @@
                                           </button>
                                       </div>
                                       <p ng-show='showHelp.check'>Wipes out the schedule so that you can start over.</p>
+                                </div>
+
+
+                                <br />
+                                <div class="col-xl-6 col-lg-6" style="padding: 5px;"  ng-show="hasPrograms()">
+
+
+                                    <div class="input-group" >
+    
+                                        <button class='btn btn-sm btn-outline-secondary form-control' ng-click="toggleAdvanced()"
+                                                title="Toggle extra tools..."
+                                            >
+                                                <i class='fas fa-tools'></i> {{ hasAdvancedTools() ? "Less" : "More"}} Tools...
+                                        </button>
+                                    </div>
+                                    <p ng-show='showHelp.check'>Use this button to show or hide a bunch of additional tools that might be useful.</p>
+
+
                                 </div>
                             </div>
 

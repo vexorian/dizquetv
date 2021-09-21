@@ -148,7 +148,8 @@
                 <div class="modal-footer" ng-show='!loading'>
                     <div class='text-danger small'>{{error}}</div>
                     <button type="button" class="btn btn-sm btn-link" ng-click="finished(true)">Cancel</button>
-                    <button ng-disabled='disableCreateLineup()' type="button" class="btn btn-sm btn-primary" ng-click="finished(false);">Create Lineup</button>
+                    <button ng-show='! hideCreateLineup()' ng-disabled='disableCreateLineup()' type="button" class="btn btn-sm btn-primary" ng-click="finished(false);">Create Lineup</button>
+                    <button ng-show='showResetSlots()' type="button" class="btn btn-sm btn-danger" ng-click="finished(false);">Reset Slots</button>
                 </div>
             </div>
         </div>

@@ -68,7 +68,6 @@ npm run dev-server
 ## Contribute
 
 * Pull requests welcome but please read the [Code of Conduct](CODE_OF_CONDUCT.md) and the [Pull Request Template](pull_request_template.md) first.
-* We use [Conventional Commits](https://www.conventionalcommits.org/), a specification for adding human and machine readable meaning to commit messages. Add files with `git add` and call `git commit` to use your command line utility and create a commit.
 * Tip Jar: https://buymeacoffee.com/vexorian
 
 ## License

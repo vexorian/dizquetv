@@ -3,7 +3,7 @@ module.exports = {
     TVGUIDE_MAXIMUM_PADDING_LENGTH_MS:    30*60*1000,
     DEFAULT_GUIDE_STEALTH_DURATION: 5 * 60* 1000,
     TVGUIDE_MAXIMUM_FLEX_DURATION : 6 * 60 * 60 * 1000,
-    TOO_FREQUENT: 100,
+    TOO_FREQUENT: 1000,
 
     //when a channel is forcibly stopped due to an update, let's mark it as active
     // for a while during the transaction just in case.

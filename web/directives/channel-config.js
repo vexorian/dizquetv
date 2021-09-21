@@ -989,7 +989,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     scope.error.any = true;
 
    
-                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "") {
+                    if (typeof channel.number === "undefined" || channel.number === null || channel.number === "" ) {
                         scope.error.number = "Select a channel number"
                         scope.error.tab = "basic";
                     } else if (channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1 && scope.isNewChannel) { // we need the parseInt for indexOf to work properly
@@ -997,6 +997,9 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                         scope.error.tab = "basic";
                     } else if (!scope.isNewChannel && channel.number !== scope.beforeEditChannelNumber && channelNumbers.indexOf(parseInt(channel.number, 10)) !== -1) {
                         scope.error.number = "Channel number already in use."
+                        scope.error.tab = "basic";
+                    } else if ( ! checkChannelNumber(channel.number) ) {
+                        scope.error.number = "Invalid channel number.";
                         scope.error.tab = "basic";
                     } else if (channel.number < 0 || channel.number > 9999) {
                         scope.error.name = "Enter a valid number (0-9999)"
@@ -1462,6 +1465,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
             scope.videoRateDefault = "(Use global setting)";
             scope.videoBufSizeDefault = "(Use global setting)";
 
+            scope.randomizeBlockShuffle = false;
+
+            scope.advancedTools = (localStorage.getItem("channel-programming-advanced-tools" ) === "show");
+
             let refreshScreenResolution = async () => {
 
                
@@ -1650,13 +1657,21 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
 
             
             scope.onTimeSlotsDone = (slotsResult) => {
-                scope.channel.scheduleBackup = slotsResult.schedule;
-                readSlotsResult(slotsResult);
+                if (slotsResult === null) {
+                    delete scope.channel.scheduleBackup;
+                } else {
+                    scope.channel.scheduleBackup = slotsResult.schedule;
+                    readSlotsResult(slotsResult);
+                }
             }
 
             scope.onRandomSlotsDone = (slotsResult) => {
-                scope.channel.randomScheduleBackup = slotsResult.schedule;
-                readSlotsResult(slotsResult);
+                if (slotsResult === null) {
+                    delete scope.channel.randomScheduleBackup;
+                } else {
+                    scope.channel.randomScheduleBackup = slotsResult.schedule;
+                    readSlotsResult(slotsResult);
+                }
             }
 
 
@@ -1668,6 +1683,73 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
                 scope.randomSlots.startDialog(progs, scope.maxSize, scope.channel.randomScheduleBackup );
             }
+
+            scope.rerollRandomSlots = () => {
+                let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
+                scope.randomSlots.startDialog(
+                    progs, scope.maxSize, scope.channel.randomScheduleBackup,
+                    true
+                );
+            }
+            scope.hasNoRandomSlots = () => {
+                return (
+                    (typeof(scope.channel.randomScheduleBackup) === 'undefined' )
+                    ||
+                    (scope.channel.randomScheduleBackup == null)
+                );
+            }
+
+            scope.rerollTimeSlots = () => {
+                let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
+                scope.timeSlots.startDialog(
+                    progs, scope.maxSize, scope.channel.scheduleBackup,
+                    true
+                );
+            }
+            scope.hasNoTimeSlots = () => {
+                return (
+                    (typeof(scope.channel.scheduleBackup) === 'undefined' )
+                    ||
+                    (scope.channel.scheduleBackup == null)
+                );
+            }
+            scope.toggleAdvanced = () => {
+                scope.advancedTools = ! scope.advancedTools;
+                localStorage.setItem("channel-programming-advanced-tools" , scope.advancedTools ? "show" : "hide");
+            }
+            scope.hasAdvancedTools = () => {
+                return scope.advancedTools;
+            }
+
+            scope.toolWide = () => {
+                if ( scope.hasAdvancedTools()) {
+                    return {
+                        "col-xl-6": true,
+                        "col-md-12" : true
+                    }
+                } else {
+                    return {
+                        "col-xl-12": true,
+                        "col-lg-12" : true
+                    }
+                }
+            }
+
+            scope.toolThin = () => {
+                if ( scope.hasAdvancedTools()) {
+                    return {
+                        "col-xl-3": true,
+                        "col-lg-6" : true
+                    }
+                } else {
+                    return {
+                        "col-xl-6": true,
+                        "col-lg-6" : true
+                    }
+                }
+            }
+
+
 
             scope.logoOnChange = (event) => {
                 const formData = new FormData();
@@ -1705,4 +1787,13 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
 }
 function validURL(url) {
     return /^(ftp|http|https):\/\/[^ "]+$/.test(url);
+}
+
+function checkChannelNumber(number) {
+    if ( /^(([1-9][0-9]*)|(0))$/.test(number) ) {
+        let x = parseInt(number);
+        return (0 <= x && x < 10000);
+    } else {
+        return false;
+    }
 }

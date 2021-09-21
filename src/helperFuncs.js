@@ -29,7 +29,6 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
     if (channelStartTime > date) {
         let t0 = date;
         let t1 = channelStartTime;
-        console.log(t0, t1);
         console.log("Channel start time is above the given date. Flex time is picked till that.");
         return {
             program: {
@@ -185,10 +184,11 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
         list = list.concat(fillers[i].content);
     }
     let pick1 = null;
-    let pick2 = null;
+
     let t0 = (new Date()).getTime();
     let minimumWait = 1000000000;
     const D = 7*24*60*60*1000;
+    const E = 5*60*60*1000;
     if (typeof(channel.fillerRepeatCooldown) === 'undefined') {
         channel.fillerRepeatCooldown = 30*60*1000;
     }
@@ -198,14 +198,13 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
       list = fillers[j].content;
       let pickedList = false;
       let n = 0;
-      let m = 0;
+
       for (let i = 0; i < list.length; i++) {
         let clip = list[i];
         // a few extra milliseconds won't hurt anyone, would it? dun dun dun
         if (clip.duration <= maxDuration + SLACK ) {
             let t1 = channelCache.getProgramLastPlayTime( channel.number, clip );
             let timeSince = ( (t1 == 0) ?  D :  (t0 - t1) );
-
 
             if (timeSince < channel.fillerRepeatCooldown - SLACK) {
                 let w = channel.fillerRepeatCooldown - timeSince;
@@ -223,6 +222,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
                     if ( weighedPick(fillers[j].weight, listM) ) {
                         pickedList = true;
                         fillerId = fillers[j].id;
+                        n = 0;
                     } else {
                         break;
                     }
@@ -235,29 +235,20 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
                     break;
                 }
             }
-            if (timeSince >= D) {
-                let p = 200, q = Math.max( maxDuration - clip.duration, 1 );
-                let pq = Math.min( Math.ceil(p / q), 10 );
-                let w =  pq;
-                n += w;
-                if (  weighedPick(w, n) ) {
-                    pick1 = clip;
-                }
-            } else {
-                let adjust = Math.floor(timeSince / (60*1000));
-                if (adjust > 0) {
-                    adjust = adjust * adjust;
-                    //weighted
-                    m += adjust;
-                    if (  weighedPick(adjust, m) )  {
-                        pick2 = clip;
-                    }
-                }
+            if (timeSince <= 0) {
+                continue;
+            }
+            let s = norm_s( (timeSince >= E) ?  E : timeSince );
+            let d = norm_d( clip.duration);
+            let w = s + d;
+            n += w;
+            if (weighedPick(w,n)) {
+                pick1 = clip;
             }
         }
       }
     }
-    let pick = (pick1 == null) ? pick2: pick1;
+    let pick = pick1;
     let pickTitle = "null";
     if (pick != null) {
         pickTitle = pick.title;
@@ -271,6 +262,22 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
         minimumWait : minimumWait,
     }
 }
+
+function norm_d(x) {
+    x /= 60 * 1000;
+    if (x >= 3.0) {
+        x = 3.0 + Math.log(x);
+    }
+    let y = 10000 * ( Math.ceil(x * 1000) + 1 );
+    return Math.ceil(y / 1000000) + 1;
+}
+
+function norm_s(x) {
+    let y = Math.ceil(x / 600) + 1;
+    y = y*y;
+    return Math.ceil(y / 1000000) + 1;
+}
+
 
 // any channel thing used here should be added to channel context
 function getWatermark(  ffmpegSettings, channel, type) {
@@ -319,7 +326,10 @@ function generateChannelContext(channel) {
     let channelContext = {};
     for (let i = 0; i < CHANNEL_CONTEXT_KEYS.length; i++) {
         let key = CHANNEL_CONTEXT_KEYS[i];
-        channelContext[key] = JSON.parse( JSON.stringify(channel[key] ) );
+
+        if (typeof(channel[key]) !== 'undefined') {
+            channelContext[key] = JSON.parse( JSON.stringify(channel[key] ) );
+        }
     }
     return channelContext;
 }

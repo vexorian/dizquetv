@@ -59,7 +59,9 @@ module.exports = function (getShowData) {
                 let data = getShowData(progs[i]);
                 if (data.hasShow) {
                     let key = data.showId + "|" + data.order;
-                    tmpProgs[key] = progs[i];
+                    if (typeof(tmpProgs[key]) === 'undefined') {
+                        tmpProgs[key] = progs[i];
+                    }
                 }
             }
         }

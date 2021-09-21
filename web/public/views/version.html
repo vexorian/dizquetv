@@ -20,7 +20,12 @@
             <td>FFMPEG</td>
             <td><div class='loader' ng-if="version.length &lt;= 0"></div>{{ffmpegVersion}}</td>
         </tr>
-        <!-- coming soon, ffmpeg version, nodejs version, plex version, whatever can be used to help debug things-->
+        <tr>
+            <td>nodejs</td>
+            <td><div class='loader' ng-if="version.length &lt;= 0"></div>{{nodejs}}</td>
+        </tr>
+
+        <!-- coming soon: plex version, whatever can be used to help debug things-->
     </table>
 
 </div>
