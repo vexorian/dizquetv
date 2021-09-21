@@ -13,29 +13,38 @@ function equalItems(a, b) {
 
 
 function wereThereTooManyAttempts(sessionId, lineupItem) {
-    let obj = cache[sessionId];
+
     let t1 =  (new Date()).getTime();
-    if (typeof(obj) === 'undefined') {
+
+    let previous = cache[sessionId];
+    if (typeof(previous) === 'undefined') {
         previous = cache[sessionId] = {
-            t0: t1 - constants.TOO_FREQUENT * 5
+            t0: t1 - constants.TOO_FREQUENT * 5,
+            lineupItem: null,
         };
-
-    } else {
-        clearTimeout(obj.timer);
     }
-    previous.timer = setTimeout( () => {
-            cache[sessionId].timer = null;
-            delete cache[sessionId];
-    },  constants.TOO_FREQUENT*5 );
-
+    
     let result = false;
-
-    if (previous.t0 + constants.TOO_FREQUENT >= t1) {
+    if (t1 - previous.t0 < constants.TOO_FREQUENT) {
         //certainly too frequent
         result = equalItems( previous.lineupItem, lineupItem );
     }
-    cache[sessionId].t0 = t1;
-    cache[sessionId].lineupItem = lineupItem;
+
+    cache[sessionId] = {
+        t0: t1,
+        lineupItem : lineupItem,
+    };
+
+    setTimeout( () => {
+        if (
+            (typeof(cache[sessionId]) !== 'undefined')
+            &&
+            (cache[sessionId].t0 === t1)
+        ) {
+            delete cache[sessionId];
+        }
+    }, constants.TOO_FREQUENT * 5 );
+
     return result;
     
 }
