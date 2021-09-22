@@ -10,6 +10,7 @@ npm run build || exit 1
 npm run compile  || exit 1
 cp -R ./web ./dist/web
 cp -R ./resources ./dist/
+cp -R ./locales/ ./dist/locales/
 cd dist
 if [ "$MODE" == "all" ]; then
     nexe --temp /var/nexe -r "./**/*" -t windows-x64-12.18.2 --output $WIN64

@@ -4,11 +4,10 @@ let fs = require('fs');
  
 class FillerDB {
 
-    constructor(folder, channelDB, channelCache) {
+    constructor(folder,  channelService) {
         this.folder = folder;
         this.cache = {};
-        this.channelDB = channelDB;
-        this.channelCache = channelCache;
+        this.channelService = channelService;
 
 
     }
@@ -79,10 +78,10 @@ class FillerDB {
     }
 
     async getFillerChannels(id) {
-        let numbers = await this.channelDB.getAllChannelNumbers();
+        let numbers = await this.channelService.getAllChannelNumbers();
         let channels = [];
         await Promise.all( numbers.map( async(number) => {
-            let ch = await this.channelDB.getChannel(number);
+            let ch = await this.channelService.getChannel(number);
             let name = ch.name;
             let fillerCollections = ch.fillerCollections;
             for (let i = 0 ; i < fillerCollections.length; i++) {
@@ -105,13 +104,13 @@ class FillerDB {
             let channels = await this.getFillerChannels(id);
             await Promise.all( channels.map( async(channel) => {
                 console.log(`Updating channel ${channel.number} , remove filler: ${id}`);
-                let json = await channelDB.getChannel(channel.number);
+                let json = await channelService.getChannel(channel.number);
                 json.fillerCollections = json.fillerCollections.filter( (col) => {
                     return col.id != id;
                 } );
-                await this.channelDB.saveChannel( channel.number, json );
+                await this.channelService.saveChannel( channel.number, json );
             } ) );
-            this.channelCache.clear();
+
             let f = path.join(this.folder, `${id}.json` );
             await new Promise( (resolve, reject) => {
                 fs.unlink(f, function (err) {

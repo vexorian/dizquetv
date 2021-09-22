@@ -4,11 +4,13 @@
  * @class M3uService
  */
 class M3uService {
-    constructor(dataBase, fileCacheService, channelCache) {
-        this.dataBase = dataBase;
+    constructor(fileCacheService, channelService) {
+        this.channelService = channelService;
         this.cacheService = fileCacheService;
-        this.channelCache = channelCache;
         this.cacheReady = false;
+        this.channelService.on("channel-update", (data) => {
+            this.clearCache();
+        } );
     }
 
     /**
@@ -37,7 +39,7 @@ class M3uService {
                 return this.replaceHostOnM3u(host, cachedM3U);
             }
         }
-        let channels = await this.channelCache.getAllChannels(this.dataBase);
+        let channels = await this.channelService.getAllChannels();
 
 
         channels.sort((a, b) => {

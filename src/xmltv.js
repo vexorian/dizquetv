@@ -51,7 +51,7 @@ function writePromise(json, xmlSettings, throttle, cacheImageService) {
 function _writeDocStart(xw) {
     xw.startDocument()
     xw.startElement('tv')
-    xw.writeAttribute('generator-info-name', 'psuedotv-plex')
+    xw.writeAttribute('generator-info-name', 'dizquetv')
 }
 function _writeDocEnd(xw, ws) {
     xw.endElement()

@@ -1,4 +1,4 @@
-FROM node:12.18-alpine3.12
+FROM node:14-alpine3.14
 WORKDIR /home/node/app
 COPY package*.json ./
 RUN npm install && npm install -g browserify nexe@3.3.7

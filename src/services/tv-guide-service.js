@@ -1,17 +1,17 @@
-
+const events = require('events')
 const constants = require("../constants");
 const  FALLBACK_ICON = "https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png";
 const throttle = require('./throttle');
 
-class TVGuideService
+class TVGuideService extends events.EventEmitter
 {
     /****
      *
      **/
-    constructor(xmltv, db, cacheImageService, eventService) {
+    constructor(xmltv, db, cacheImageService, eventService, i18next) {
+        super();
         this.cached = null;
         this.lastUpdate = 0;
-        this.lastBackoff = 100;
         this.updateTime = 0;
         this.currentUpdate = -1;
         this.currentLimit = -1;
@@ -21,6 +21,7 @@ class TVGuideService
         this.cacheImageService = cacheImageService;
         this.eventService = eventService;
         this._throttle = throttle;
+        this.i18next = i18next;
     }
 
     async get() {
@@ -50,7 +51,8 @@ class TVGuideService
 
     async refresh(t) {
         while( this.lastUpdate < t) {
-            if (this.currentUpdate == -1) {
+            await _wait(5000);
+            if ( ( this.lastUpdate < t) && (this.currentUpdate == -1) ) {
                 this.currentUpdate = this.updateTime;
                 this.currentLimit = this.updateLimit;
                 this.currentChannels = this.updateChannels;
@@ -69,7 +71,6 @@ class TVGuideService
         
                 await this.buildIt();
             }
-            await _wait(100);
         }
         return await this.get();
     }
@@ -82,7 +83,17 @@ class TVGuideService
         let arr = new Array( channel.programs.length + 1);
         arr[0] = 0;
         for (let i = 0; i < n; i++) {
-            arr[i+1] =  arr[i] + channel.programs[i].duration;
+            let d = channel.programs[i].duration;
+            if (d == 0) {
+                console.log("Found program with duration 0, correcting it");
+                d = 1;
+            }
+            if (! Number.isInteger(d) ) {
+                console.log( `Found program in channel ${channel.number} with non-integer duration ${d}, correcting it`);
+                d = Math.ceil(d);
+            }
+            channel.programs[i].duration = d;
+            arr[i+1] =  arr[i] + d;
             await this._throttle();
         }
         return arr;
@@ -90,6 +101,17 @@ class TVGuideService
 
     async getCurrentPlayingIndex(channel, t) {
         let s = (new Date(channel.startTime)).getTime();
+        if ( (typeof(channel.onDemand) !== 'undefined') && channel.onDemand.isOnDemand && channel.onDemand.paused ) {
+            // it's as flex
+            return {
+                index : -1,
+                start : t,
+                program : {
+                    isOffline : true,
+                    duration : 12*60*1000,
+                }
+            }
+        }
         if (t < s) {
             //it's flex time
             return {
@@ -105,6 +127,17 @@ class TVGuideService
             if (typeof(accumulate) === 'undefined') {
                 throw Error(channel.number + " wasn't preprocesed correctly???!?");
             }
+            if (accumulate[channel.programs.length] === 0) {
+                console.log("[tv-guide] for some reason the total channel length is 0");
+                return {
+                    index : -1,
+                    start: t,
+                    program: {
+                        isOffline: true,
+                        duration: 15*60*1000,
+                    }
+                }
+            }
             let hi = channel.programs.length;
             let lo = 0;
             let d = (t - s) % (accumulate[channel.programs.length]);
@@ -118,9 +151,18 @@ class TVGuideService
                 }
             }
 
-            if (epoch + accumulate[lo+1] <= t) {
-                throw Error("General algorithm error, completely unexpected");
+            if ( (lo < 0) || (lo >= channel.programs.length) || (accumulate[lo+1] <= d) ) {
+                console.log("[tv-guide] The binary search algorithm is messed up. Replacing with flex...");
+                return {
+                    index : -1,
+                    start: t,
+                    program: {
+                        isOffline: true,
+                        duration: 15*60*1000,
+                    }
+                }
             }
+
             await this._throttle();
             return {
                 index: lo,
@@ -174,11 +216,24 @@ class TVGuideService
                     console.error("Redirrect to an unknown channel found! Involved channels = " + JSON.stringify(depth) );
                 } else {
                     let otherPlaying = await this.getChannelPlaying( channel2, undefined, t, depth );
-                    let start = Math.max(playing.start, otherPlaying.start);
-                    let duration = Math.min(
-                        (playing.start + playing.program.duration) - start,
-                        (otherPlaying.start + otherPlaying.program.duration) - start
-                    );
+                    let a1 =  playing.start;
+                    let b1 =  a1 + playing.program.duration;
+
+                    let a2 =  otherPlaying.start;
+                    let b2 =  a2 + otherPlaying.program.duration;
+
+                    if ( !(a1 <= t && t < b1) ) {
+                        console.error("[tv-guide] algorithm error1 : " + a1 + ", " + t + ", " + b1 );
+                    }
+                    if ( !(a2 <= t && t < b2) ) {
+                        console.error("[tv-guide] algorithm error2 : " + a2 + ", " + t + ", " + b2 );
+                    }
+
+                    let a = Math.max( a1, a2 );
+                    let b = Math.min( b1, b2 );
+
+                    let start = a;
+                    let duration = b - a;
                     let program2 = clone( otherPlaying.program );
                     program2.duration = duration;
                     playing = {
@@ -263,7 +318,12 @@ class TVGuideService
                 x.program.duration -= d;
             }
             if (x.program.duration == 0) {
-                console.error("There's a program with duration 0?");
+                console.error(channel.number + " There's a program with duration 0? " + JSON.stringify(x.program) + " ; " + t1 );
+                x.program.duration = 5 * 60 * 1000;
+            } else if ( !  Number.isInteger( x.program.duration ) ) {
+                console.error(channel.number + " There's a program with non-integer duration?? " + JSON.stringify(x.program) + " ; " + t1 );
+                x.program = JSON.parse( JSON.stringify(x.program) );
+                x.program.duration = Math.ceil(x.program.duration );
             }
         }
         result.programs = [];
@@ -331,9 +391,9 @@ class TVGuideService
                         program: {
                             duration: 24*60*60*1000,
                             icon: FALLBACK_ICON,
-                            showTitle: "No channels configured",
+                            showTitle: this.i18next.t("tvGuide.no_channels"),
                             date: formatDateYYYYMMDD(new Date()),
-                            summary : "Use the dizqueTV web UI to configure channels."
+                            summary : this.i18next.t("tvGuide.no_channels_summary")
                         }
                       } )
                 ]
@@ -349,18 +409,19 @@ class TVGuideService
         return result;
     }
 
-    async buildIt() {
+    async buildIt(lastRetry) {
         try {
             this.cached = await this.buildItManaged();
             console.log("Internal TV Guide data refreshed at " + (new Date()).toLocaleString() );
             await this.refreshXML();
-            this.lastBackoff = 100;
         } catch(err) {
             console.error("Unable to update internal guide data", err);
-            let w = Math.min(this.lastBackoff * 2, 300000);
+            let w = 100;
+            if (typeof(lastRetry) !== 'undefined') {
+                w = Math.min(w*2, 5 * 60 * 1000);
+            }
             await _wait(w);
-            this.lastBackoff = w;
-            console.error(`Retrying TV guide after ${w} milliseconds wait...`);
+            console.error("Retrying TV guide...");
             await this.buildIt();
 
         } finally {
@@ -374,10 +435,11 @@ class TVGuideService
         let xmltvSettings = this.db['xmltv-settings'].find()[0];
         await this.xmltv.WriteXMLTV(this.cached, xmltvSettings, async() => await this._throttle(), this.cacheImageService);
         let t = "" + ( (new Date()) );
+        this.emit("xmltv-updated", { time: t } );
         eventService.push(
             "xmltv",
             {
-                "message": `XMLTV updated at server time = ${t}`,
+                "message": this.i18next.t("tvGuide.xmltv_updated", {t}),
                 "module" : "xmltv",
                 "detail" : {
                     "time": new Date(),

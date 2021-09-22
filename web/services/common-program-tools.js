@@ -30,6 +30,15 @@ module.exports = function (getShowData) {
             })
             newProgs = newProgs.concat(shows[keys[i]])
         }
+        movies.sort( (a,b) => {
+            if (a.title === b.title) {
+                return 0;
+            } else if (a.title < b.title) {
+                return -1;
+            } else {
+                return 1;
+            }
+        } );
         return newProgs.concat(movies);
     }
 
@@ -59,7 +68,9 @@ module.exports = function (getShowData) {
                 let data = getShowData(progs[i]);
                 if (data.hasShow) {
                     let key = data.showId + "|" + data.order;
-                    tmpProgs[key] = progs[i];
+                    if (typeof(tmpProgs[key]) === 'undefined') {
+                        tmpProgs[key] = progs[i];
+                    }
                 }
             }
         }

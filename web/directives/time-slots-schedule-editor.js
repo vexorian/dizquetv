@@ -203,9 +203,23 @@ module.exports = function ($timeout, dizquetv, getShowData ) {
                 { id: "shuffle", description: "Shuffle" },
             ];
 
-            let doIt = async() => {
+            let doWait = (millis) => {
+                return new Promise( (resolve) => {
+                    $timeout( resolve, millis );
+                } );
+            }
+
+            let doIt = async(fromInstant) => {
                 scope.schedule.timeZoneOffset =  (new Date()).getTimezoneOffset();
+                let t0 = new Date().getTime();
                 let res = await dizquetv.calculateTimeSlots(scope.programs, scope.schedule  );
+                let t1 = new Date().getTime();
+
+                let w = Math.max(0, 250 - (t1 - t0) );
+                if (fromInstant && (w > 0) ) {
+                    await doWait(w);
+                }
+
                 res.schedule = scope.schedule;
                 delete res.schedule.fake;
                 return res;
@@ -214,7 +228,7 @@ module.exports = function ($timeout, dizquetv, getShowData ) {
 
 
             
-            let startDialog = (programs, limit, backup) => {
+            let startDialog = (programs, limit, backup, instant) => {
                 scope.limit = limit;
                 scope.programs = programs;
 
@@ -238,11 +252,15 @@ module.exports = function ($timeout, dizquetv, getShowData ) {
                     id: "flex.",
                     description: "Flex",
                 } );
-                if (typeof(backup) !== 'undefined') {
+                scope.hadBackup = (typeof(backup) !== 'undefined');
+                if (scope.hadBackup) {
                     loadBackup(backup);
                 }
 
                 scope.visible = true;
+                if (instant) {
+                    scope.finished(false, true);
+                }
             }
 
 
@@ -250,13 +268,19 @@ module.exports = function ($timeout, dizquetv, getShowData ) {
                 startDialog: startDialog,
             } );
 
-            scope.finished = async (cancel) => {
+            scope.finished = async (cancel, fromInstant) => {
                 scope.error = null;
                 if (!cancel) {
+                    if ( scope.schedule.slots.length === 0) {
+                        scope.onDone(null);
+                        scope.visible = false;
+                        return;
+                    }
+
                     try {
                         scope.loading = true;
                         $timeout();
-                        scope.onDone( await doIt() );
+                        scope.onDone( await doIt(fromInstant) );
                         scope.visible = false;
                     } catch(err) {
                         console.error("Unable to generate channel lineup", err);
@@ -290,6 +314,18 @@ module.exports = function ($timeout, dizquetv, getShowData ) {
                     return true;
                 }
                 return false;
+            }
+
+            scope.hideCreateLineup = () => {
+                return (
+                    scope.disableCreateLineup()
+                    && (scope.schedule.slots.length == 0)
+                    && scope.hadBackup
+                );
+            }
+                       
+            scope.showResetSlots = () => {
+                return scope.hideCreateLineup();
             }
 
             scope.canShowSlot = (slot) => {

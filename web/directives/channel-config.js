@@ -49,6 +49,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
             scope.episodeMemory = {
                 saved : false,
             };
+            scope.fixedOnDemand = false;
             if (typeof scope.channel === 'undefined' || scope.channel == null) {
                 scope.channel = {}
                 scope.channel.programs = []
@@ -85,6 +86,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 scope.showRotatedNote = false;
                 scope.channel.transcoding = {
                     targetResolution: "",
+                }
+                scope.channel.onDemand = {
+                    isOnDemand : false,
+                    modulo: 1,
                 }
             } else {
                 scope.beforeEditChannelNumber = scope.channel.number
@@ -142,6 +147,16 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     scope.channel.transcoding.targetResolution = "";
                 }
 
+                if (typeof(scope.channel.onDemand) === 'undefined') {
+                    scope.channel.onDemand = {};
+                }
+                if (typeof(scope.channel.onDemand.isOnDemand) !== 'boolean') {
+                    scope.channel.onDemand.isOnDemand = false;
+                }
+                if (typeof(scope.channel.onDemand.modulo) !== 'number') {
+                    scope.channel.onDemand.modulo = 1;
+                }
+
                 
                 adjustStartTimeToCurrentProgram();
                 updateChannelDuration();
@@ -163,6 +178,26 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 let t = Date.now();
                 let originalStart = scope.channel.startTime.getTime();
                 let n = scope.channel.programs.length;
+
+                if (
+                    (scope.channel.onDemand.isOnDemand === true)
+                    &&
+                    (scope.channel.onDemand.paused === true)
+                    &&
+                    ! scope.fixedOnDemand
+                ) {
+                    //this should only happen once per channel
+                    scope.fixedOnDemand = true;
+                    originalStart = new Date().getTime();
+                    originalStart -= scope.channel.onDemand.playedOffset;
+                    let m = scope.channel.onDemand.firstProgramModulo;
+                    let n = originalStart % scope.channel.onDemand.modulo;
+                    if (n < m) {
+                        originalStart += (m - n);
+                    } else if (n > m) {
+                        originalStart -= (n - m) - scope.channel.onDemand.modulo;
+                    }
+                }
                 //scope.channel.totalDuration might not have been initialized
                 let totalDuration = 0;
                 for (let i = 0; i < n; i++) {
@@ -220,6 +255,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 { name: "Flex", id: "flex" },
                 { name: "EPG", id: "epg" },
                 { name: "FFmpeg", id: "ffmpeg" },
+                { name: "On-demand", id: "ondemand" },
             ];
             scope.setTab = (tab) => {
                 scope.tab = tab;
@@ -1429,6 +1465,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
             scope.videoRateDefault = "(Use global setting)";
             scope.videoBufSizeDefault = "(Use global setting)";
 
+            scope.randomizeBlockShuffle = false;
+
+            scope.advancedTools = (localStorage.getItem("channel-programming-advanced-tools" ) === "show");
+
             let refreshScreenResolution = async () => {
 
                
@@ -1617,13 +1657,21 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
 
             
             scope.onTimeSlotsDone = (slotsResult) => {
-                scope.channel.scheduleBackup = slotsResult.schedule;
-                readSlotsResult(slotsResult);
+                if (slotsResult === null) {
+                    delete scope.channel.scheduleBackup;
+                } else {
+                    scope.channel.scheduleBackup = slotsResult.schedule;
+                    readSlotsResult(slotsResult);
+                }
             }
 
             scope.onRandomSlotsDone = (slotsResult) => {
-                scope.channel.randomScheduleBackup = slotsResult.schedule;
-                readSlotsResult(slotsResult);
+                if (slotsResult === null) {
+                    delete scope.channel.randomScheduleBackup;
+                } else {
+                    scope.channel.randomScheduleBackup = slotsResult.schedule;
+                    readSlotsResult(slotsResult);
+                }
             }
 
 
@@ -1635,6 +1683,73 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
                 scope.randomSlots.startDialog(progs, scope.maxSize, scope.channel.randomScheduleBackup );
             }
+
+            scope.rerollRandomSlots = () => {
+                let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
+                scope.randomSlots.startDialog(
+                    progs, scope.maxSize, scope.channel.randomScheduleBackup,
+                    true
+                );
+            }
+            scope.hasNoRandomSlots = () => {
+                return (
+                    (typeof(scope.channel.randomScheduleBackup) === 'undefined' )
+                    ||
+                    (scope.channel.randomScheduleBackup == null)
+                );
+            }
+
+            scope.rerollTimeSlots = () => {
+                let progs = commonProgramTools.removeDuplicates( scope.channel.programs );
+                scope.timeSlots.startDialog(
+                    progs, scope.maxSize, scope.channel.scheduleBackup,
+                    true
+                );
+            }
+            scope.hasNoTimeSlots = () => {
+                return (
+                    (typeof(scope.channel.scheduleBackup) === 'undefined' )
+                    ||
+                    (scope.channel.scheduleBackup == null)
+                );
+            }
+            scope.toggleAdvanced = () => {
+                scope.advancedTools = ! scope.advancedTools;
+                localStorage.setItem("channel-programming-advanced-tools" , scope.advancedTools ? "show" : "hide");
+            }
+            scope.hasAdvancedTools = () => {
+                return scope.advancedTools;
+            }
+
+            scope.toolWide = () => {
+                if ( scope.hasAdvancedTools()) {
+                    return {
+                        "col-xl-6": true,
+                        "col-md-12" : true
+                    }
+                } else {
+                    return {
+                        "col-xl-12": true,
+                        "col-lg-12" : true
+                    }
+                }
+            }
+
+            scope.toolThin = () => {
+                if ( scope.hasAdvancedTools()) {
+                    return {
+                        "col-xl-3": true,
+                        "col-lg-6" : true
+                    }
+                } else {
+                    return {
+                        "col-xl-6": true,
+                        "col-lg-6" : true
+                    }
+                }
+            }
+
+
 
             scope.logoOnChange = (event) => {
                 const formData = new FormData();

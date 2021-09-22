@@ -2,7 +2,7 @@ const constants = require("../constants");
 const getShowData = require("./get-show-data")();
 const random = require('../helperFuncs').random;
 const throttle = require('./throttle');
-
+const orderers = require("./show-orderers");
 
 const MINUTE = 60*1000;
 const DAY = 24*60*MINUTE;
@@ -20,29 +20,6 @@ function getShow(program) {
         d.id = d.showId;
         return d;
     }
-}
-
-
-function shuffle(array, lo, hi ) {
-    if (typeof(lo) === 'undefined') {
-        lo = 0;
-        hi = array.length;
-    }
-    let currentIndex = hi, temporaryValue, randomIndex
-    while (lo !== currentIndex) {
-        randomIndex =  random.integer(lo, currentIndex-1);
-        currentIndex -= 1
-        temporaryValue = array[currentIndex]
-        array[currentIndex] = array[randomIndex]
-        array[randomIndex] = temporaryValue
-    }
-    return array
-}
-
-function _wait(t) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, t);
-    });
 }
 
 function getProgramId(program) {
@@ -67,78 +44,6 @@ function addProgramToShow(show, program) {
         show.programs.push(program);
         show.programs[id] = true
     }
-}
-
-function getShowOrderer(show) {
-    if (typeof(show.orderer) === 'undefined') {
-
-        let sortedPrograms = JSON.parse( JSON.stringify(show.programs) );
-        sortedPrograms.sort((a, b) => {
-            let showA = getShowData(a);
-            let showB = getShowData(b);
-            return showA.order - showB.order;
-        });
-
-        let position = 0;
-        while (
-            (position + 1 < sortedPrograms.length )
-            &&
-            (
-                getShowData(show.founder).order
-                !==
-                getShowData(sortedPrograms[position]).order
-            )
-        ) {
-            position++;
-        }
-
-
-        show.orderer = {
-
-            current : () => {
-                return sortedPrograms[position];
-            },
-
-            next: () => {
-                position = (position + 1) % sortedPrograms.length;
-            },
-
-        }
-    }
-    return show.orderer;
-}
-
-
-function getShowShuffler(show) {
-    if (typeof(show.shuffler) === 'undefined') {
-        if (typeof(show.programs) === 'undefined') {
-            throw Error(show.id + " has no programs?")
-        }
-
-        let randomPrograms = JSON.parse( JSON.stringify(show.programs) );
-        let n = randomPrograms.length;
-        shuffle( randomPrograms, 0, n);
-        let position = 0;
-
-        show.shuffler  = {
-
-            current : () => {
-                return randomPrograms[position];
-            },
-
-            next: () => {
-                position++;
-                if (position == n) {
-                    let a = Math.floor(n / 2);
-                    shuffle(randomPrograms, 0, a );
-                    shuffle(randomPrograms, a, n );
-                    position = 0;
-                }
-            },
-
-        }
-    }
-    return show.shuffler;
 }
 
 module.exports = async( programs, schedule  ) => {
@@ -192,9 +97,6 @@ module.exports = async( programs, schedule  ) => {
     }
     let flexBetween = ( schedule.flexPreference !== "end" );
 
-    // throttle so that the stream is not affected negatively
-    let steps = 0;
-
     let showsById = {};
     let shows = [];
 
@@ -216,9 +118,9 @@ module.exports = async( programs, schedule  ) => {
                 channel: show.channel,
             }
         } else if (slot.order === 'shuffle') {
-            return getShowShuffler(show).current();
+            return orderers.getShowShuffler(show).current();
         } else if (slot.order === 'next') {
-            return getShowOrderer(show).current();
+            return orderers.getShowOrderer(show).current();
         }
     }
     
@@ -228,9 +130,9 @@ module.exports = async( programs, schedule  ) => {
         }
         let show = shows[ showsById[slot.showId] ];
         if (slot.order === 'shuffle') {
-            return getShowShuffler(show).next();
+            return orderers.getShowShuffler(show).next();
         } else if (slot.order === 'next') {
-            return getShowOrderer(show).next();
+            return orderers.getShowOrderer(show).next();
         }
     }
 

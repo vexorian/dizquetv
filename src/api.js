@@ -3,7 +3,6 @@ const express = require('express')
 const path = require('path')
 const fs = require('fs')
 const databaseMigration = require('./database-migration');
-const channelCache = require('./channel-cache')
 const constants = require('./constants');
 const JSONStream = require('JSONStream');
 const FFMPEGInfo = require('./ffmpeg-info');
@@ -26,10 +25,10 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService ) {
+function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService ) {
     let m3uService = _m3uService;
     const router = express.Router()
-    const plexServerDB = new PlexServerDB(channelDB, channelCache, fillerDB, customShowDB, db);
+    const plexServerDB = new PlexServerDB(channelService, fillerDB, customShowDB, db);
 
     router.get('/api/version', async (req, res) => {
       try {
@@ -63,7 +62,7 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
             name: req.body.name,
         });
         if (servers.length != 1) {
-            return res.status(404).send("Plex server not found.");
+            return res.status(404).send(req.t("api.plex_server_not_found"));
         }
         let plex = new Plex(servers[0]);
         let s = await Promise.race( [
@@ -223,7 +222,7 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
     // Channels
     router.get('/api/channels', async (req, res) => {
       try {
-        let channels = await channelDB.getAllChannels();
+        let channels = await channelService.getAllChannelNumbers();
         channels.sort((a, b) => { return a.number < b.number ? -1 : 1 })
         res.send(channels)
       } catch(err) {
@@ -234,10 +233,9 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
     router.get('/api/channel/:number', async (req, res) => {
       try {
         let number = parseInt(req.params.number, 10);
-        let channel = await channelCache.getChannelConfig(channelDB, number);
+        let channel = await channelService.getChannel(number);
 
-        if (channel.length == 1) {
-          channel = channel[0];
+        if (channel != null) {
           res.send(channel);
         } else {
             return res.status(404).send("Channel not found");
@@ -250,10 +248,9 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
     router.get('/api/channel/programless/:number', async (req, res) => {
       try {
         let number = parseInt(req.params.number, 10);
-        let channel = await channelCache.getChannelConfig(channelDB, number);
+        let channel = await channelService.getChannel(number);
 
-        if (channel.length == 1) {
-          channel = channel[0];
+        if (channel != null) {
           let copy = {};
           Object.keys(channel).forEach( (key) => {
             if (key != 'programs') {
@@ -273,10 +270,9 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
     router.get('/api/channel/programs/:number', async (req, res) => {
       try {
         let number = parseInt(req.params.number, 10);
-        let channel = await channelCache.getChannelConfig(channelDB, number);
+        let channel = await channelService.getChannel(number);
 
-        if (channel.length == 1) {
-          channel = channel[0];
+        if (channel != null) {
           let programs = channel.programs;
           if (typeof(programs) === 'undefined') {
             return res.status(404).send("Channel doesn't have programs?");
@@ -305,9 +301,8 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
     router.get('/api/channel/description/:number', async (req, res) => {
       try {
         let number = parseInt(req.params.number, 10);
-        let channel = await channelCache.getChannelConfig(channelDB, number);
-        if (channel.length == 1) {
-            channel = channel[0];
+        let channel = await channelService.getChannel(number);
+        if (channel != null) {
             res.send({
                 number: channel.number,
                 icon: channel.icon,
@@ -324,7 +319,7 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
     })
     router.get('/api/channelNumbers', async (req, res) => {
       try {
-        let channels = await channelDB.getAllChannelNumbers();
+        let channels = await channelService.getAllChannelNumbers();
         channels.sort( (a,b) => { return parseInt(a) - parseInt(b) } );
         res.send(channels)
       } catch(err) {
@@ -332,39 +327,30 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
        res.status(500).send("error");
       }
     })
+    // we urgently need an actual channel service
     router.post('/api/channel', async (req, res) => {
       try {
-        await m3uService.clearCache();
-        cleanUpChannel(req.body);
-        await channelDB.saveChannel( req.body.number, req.body );
-        channelCache.clear();
+        await channelService.saveChannel( req.body.number, req.body );
         res.send( { number: req.body.number} )
-        updateXmltv()
       } catch(err) {
         console.error(err);
-       res.status(500).send("error");
+        res.status(500).send("error");
       }
     })
     router.put('/api/channel', async (req, res) => {
       try {
-        await m3uService.clearCache();
-        cleanUpChannel(req.body);
-        await channelDB.saveChannel( req.body.number, req.body );
-        channelCache.clear();
+        await channelService.saveChannel( req.body.number, req.body );
         res.send( { number: req.body.number} )
-        updateXmltv()
       } catch(err) {
         console.error(err);
-       res.status(500).send("error");
+        res.status(500).send("error");
       }
+
     })
     router.delete('/api/channel', async (req, res) => {
       try {
-        await m3uService.clearCache();
-        await channelDB.deleteChannel( req.body.number  );
-        channelCache.clear();
+        await channelService.deleteChannel(req.body.number);
         res.send( { number: req.body.number} )
-        updateXmltv()
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
@@ -1047,53 +1033,11 @@ function api(db, channelDB, fillerDB, customShowDB, xmltvInterval,  guideService
         xmltvInterval.updateXML()
         xmltvInterval.restartInterval()
     }
-
-    function cleanUpProgram(program) {
-        delete program.start
-        delete program.stop
-        delete program.streams;
-        delete program.durationStr;
-        delete program.commercials;
-        if (
-          (typeof(program.duration) === 'undefined')
-          ||
-          (program.duration <= 0)
-        ) {
-          console.error(`Input contained a program with invalid duration: ${program.duration}. This program has been deleted`);
-          return [];
-        }
-        if (! Number.isInteger(program.duration) ) {
-          console.error(`Input contained a program with invalid duration: ${program.duration}. Duration got fixed to be integer.`);
-          program.duration = Math.ceil(program.duration);
-        }
-        return [ program ];
-    }
-
-    function cleanUpChannel(channel) {
-        if (
-          (typeof(channel.groupTitle) === 'undefined')
-          ||
-          (channel.groupTitle === '')
-        ) {
-          channel.groupTitle = "dizqueTV";
-        }
-        channel.programs = channel.programs.flatMap( cleanUpProgram );
-        delete channel.fillerContent;
-        delete channel.filler;
-        channel.fallback = channel.fallback.flatMap( cleanUpProgram );
-        channel.duration = 0;
-        for (let i = 0; i < channel.programs.length; i++) {
-          channel.duration += channel.programs[i].duration;
-        }
-
-    }
-
     async function streamToolResult(toolRes, res) {
       let programs = toolRes.programs;
       delete toolRes.programs;
       let s = JSON.stringify(toolRes);
       s = s.slice(0, -1);
-      console.log( JSON.stringify(toolRes));
 
       res.writeHead(200, {
         'Content-Type': 'application/json'
