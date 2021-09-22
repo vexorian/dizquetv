@@ -37,16 +37,23 @@
                         <div ng-show="showTools">
                             <div class="row">
                                 <div class="input-group col-md-3" style="padding: 5px;">
-                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortFillers()">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortFillersCorrectly()">
+                                        <i class='fa fa-sort-alpha-down'></i> Sort Clips
+                                    </button>
+                                </div>
+
+                                <div class="input-group col-md-3" style="padding: 5px;">
+                                    <button class="btn btn-sm btn-warning form-control form-control-sm" type="button" ng-click="sortFillersByLength()">
                                         <i class='fa fa-sort-amount-down-alt'></i> Sort Lengths
                                     </button>
                                 </div>
+
                                 <div class="input-group col-md-3" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="fillerRemoveDuplicates()">
                                         <i class='fa fa-trash-alt'></i> Remove Duplicates
                                     </button>
                                 </div>
-                                <div class="input-group col-md-6" style="padding: 5px;">
+                                <div class="input-group col-md-3" style="padding: 5px;">
                                     <button class="btn btn-sm btn-danger form-control form-control-sm" type="button" ng-click="fillerRemoveAllFiller()">
                                         <i class='fa fa-trash-alt'></i> Remove All Filler
                                     </button>
@@ -79,7 +86,7 @@
                         </div>
                         <div ng-style="programSquareStyle(x, false)" ></div>
                         <div class="title" >
-                            {{x.title}}
+                            {{ getText(x) }}
                         </div>
                         <div class="flex-pull-right">
                             <button class="btn btn-sm btn-link" ng-click="contentSplice(x.$index,1)">

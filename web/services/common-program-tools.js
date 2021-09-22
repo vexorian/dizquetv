@@ -30,6 +30,15 @@ module.exports = function (getShowData) {
             })
             newProgs = newProgs.concat(shows[keys[i]])
         }
+        movies.sort( (a,b) => {
+            if (a.title === b.title) {
+                return 0;
+            } else if (a.title < b.title) {
+                return -1;
+            } else {
+                return 1;
+            }
+        } );
         return newProgs.concat(movies);
     }
 
