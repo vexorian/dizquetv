@@ -1,4 +1,4 @@
-module.exports = function ($timeout) {
+module.exports = function ($timeout, commonProgramTools, getShowData) {
     return {
         restrict: 'E',
         templateUrl: 'templates/filler-config.html',
@@ -92,13 +92,26 @@ module.exports = function ($timeout) {
                     id: scope.id,
                 } );
             }
+            scope.getText = (clip) => {
+                let show = getShowData(clip);
+                if (show.hasShow && show.showId !== "movie." ) {
+                    return show.showDisplayName + " - " + clip.title;
+                } else {
+                    return clip.title;
+                }
+            }
             scope.showList = () => {
                 return ! scope.showPlexLibrary;
             }
-            scope.sortFillers = () => {
+            scope.sortFillersByLength = () => {
                 scope.content.sort( (a,b) => { return a.duration - b.duration } );
                 refreshContentIndexes();
             }
+            scope.sortFillersCorrectly = () => {
+                scope.content = commonProgramTools.sortShows(scope.content);
+                refreshContentIndexes();
+            }
+
             scope.fillerRemoveAllFiller = () => {
                 scope.content = [];
                 refreshContentIndexes();
