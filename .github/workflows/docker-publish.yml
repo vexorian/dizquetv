@@ -1,0 +1,43 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - dev-rpi-docker
+
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  PLATFORM: linux/arm/v7
+  IMAGE_NAME: dizquetv:arm7
+
+jobs:
+  # Run tests.
+  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
+
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  push:
+    # Ensure test job passes before pushing image.
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push image
+        run: |
+          docker buildx build --platform "${{PLATFORM}}" --tag $IMAGE_NAME --file ./Dockerfile-rpi --output type=image,push=true .
