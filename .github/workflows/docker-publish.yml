@@ -5,10 +5,6 @@ on:
     branches:
       - dev-rpi-docker
 
-    tags:
-      - v*
-
-  # Run tests for any PRs.
   pull_request:
 
 env:
@@ -16,14 +12,7 @@ env:
   IMAGE_NAME: dizquetv:arm7
 
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-
-  # Push image to GitHub Packages.
-  # See also https://docs.docker.com/docker-hub/builds/
   push:
-    # Ensure test job passes before pushing image.
-
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
 
