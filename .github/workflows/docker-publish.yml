@@ -29,4 +29,4 @@ jobs:
 
       - name: Build and Push image
         run: |
-          docker buildx build --platform "${{PLATFORM}}" --tag $IMAGE_NAME --file ./Dockerfile-rpi --output type=image,push=true .
+          docker buildx build --platform "linux/arm/v7" --tag $IMAGE_NAME --file ./Dockerfile-rpi --output type=image,push=true .
