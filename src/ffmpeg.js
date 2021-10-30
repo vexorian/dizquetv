@@ -227,7 +227,7 @@ class FFMPEG extends events.EventEmitter {
                         //add 150 milliseconds just in case, exact duration seems to cut out the last bits of music some times.
                         duration = `${streamStats.duration + 150}ms`;
                     }
-                    videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
+                    videoComplex = `;[${inputFiles++}:0]format=nv12[formatted]`;
                     videoComplex +=`;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
                     videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
                     videoComplex += `;[padded]loop=loop=-1:size=1:start=0[looped]`;
