@@ -1,6 +1,6 @@
 ### Explanation of the changes, problem that they are intended to fix.
 
-...
+Make DizqueTV for Emby media
 
 ### All Submissions:
 
