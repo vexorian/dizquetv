@@ -313,7 +313,7 @@ module.exports = function ($scope, $timeout, dizquetv) {
             ch.programs.push( {
                 duration: addDuration(b - a),
                 altTitle: altTitle,
-                showTitle: program.title,
+                showTitle: program.title,  // movie title, episode title or track title
                 subTitle: subTitle,
                 episodeTitle : episodeTitle,
                 start: hasStart,
