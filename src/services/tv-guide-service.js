@@ -562,6 +562,9 @@ function makeEntry(channel, x) {
                 episode: x.program.episode,
                 title: x.program.title,
             }
+        } else if (x.program.type === 'track') {
+            title = x.program.title;
+            // TODO: Add sub data for tracks here for XML writing
         }
     }
     if (typeof(title)==='undefined') {

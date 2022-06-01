@@ -98,6 +98,7 @@ async function _writeProgramme(channel, program, xw, xmlSettings, cacheImageServ
     xw.writeRaw('\n        <previously-shown/>')
 
     //sub-title
+    // TODO: Add support for track data (artist, album) here
     if ( typeof(program.sub) !== 'undefined') {
         xw.startElement('sub-title')
         xw.writeAttribute('lang', 'en')
