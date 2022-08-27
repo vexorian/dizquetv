@@ -167,6 +167,8 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             isFirst = true;
         }
 
+        let isBetween = ( (typeof req.query.between !== 'undefined') && (req.query.between=='1') );
+
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
 
         // Check if ffmpeg path is valid
@@ -180,20 +182,35 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
 
 
         // Get video lineup (array of video urls with calculated start times and durations.)
-      let lineupItem = channelCache.getCurrentLineupItem( channel.number, t0);
+
       let prog = null;
       let brandChannel = channel;
       let redirectChannels = [];
       let upperBounds = [];
 
+      const GAP_DURATION = 750;
       if (isLoading) {
           lineupItem = {
              type: 'loading',
-             streamDuration: 40,
-             duration: 40,
+             title: "Loading Screen",
+             streamDuration: GAP_DURATION,
+             duration: GAP_DURATION,
+             redirectChannels: [channel],
              start: 0,
           };
-      } else if (lineupItem != null) {
+      } else if (isBetween) {
+        lineupItem = {
+            type: 'interlude',
+            title: "Interlude Screen",
+            streamDuration: GAP_DURATION,
+            duration: GAP_DURATION,
+            redirectChannels: [channel],
+            start: 0,
+        };
+      } else {
+        lineupItem = channelCache.getCurrentLineupItem( channel.number, t0);
+      }
+      if (lineupItem != null) {
           redirectChannels = lineupItem.redirectChannels;
           upperBounds = lineupItem.upperBounds;
           brandChannel = redirectChannels[ redirectChannels.length -1];
@@ -278,7 +295,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         lineupItem = lineup.shift();
       }
 
-        if ( !isLoading && (lineupItem != null) ) {
+        if ( !isBetween && !isLoading && (lineupItem != null) ) {
             let upperBound = 1000000000;
             let beginningOffset = 0;
             if (typeof(lineupItem.beginningOffset) !== 'undefined') {
@@ -317,7 +334,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         }
         console.log("=========================================================");
 
-        if (! isLoading) {
+        if (! isLoading && ! isBetween) {
             channelCache.recordPlayback(channel.number, t0, lineupItem);
         }
         if (wereThereTooManyAttempts(session, lineupItem)) {
@@ -553,8 +570,12 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
         }
         data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
+
+        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+
         for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
         }
 
         res.send(data)

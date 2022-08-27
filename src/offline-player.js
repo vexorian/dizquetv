@@ -18,6 +18,11 @@ class OfflinePlayer {
             context.channel.offlinePicture = `http://localhost:${process.env.PORT}/images/loading-screen.png`;
             context.channel.offlineSoundtrack = undefined;
         }
+        if (context.isInterlude === true) {
+            context.channel = JSON.parse( JSON.stringify(context.channel) );
+            context.channel.offlinePicture = `http://localhost:${process.env.PORT}/images/black.png`;
+            context.channel.offlineSoundtrack = undefined;
+        }
         this.ffmpeg = new FFMPEG(context.ffmpegSettings, context.channel);
         this.ffmpeg.setAudioOnly(this.context.audioOnly);
     }
