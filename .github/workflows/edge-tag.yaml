@@ -1,0 +1,13 @@
+name: Edge Tag
+
+on:
+  push:
+    branches:
+      - edge
+
+jobs:
+  docker:
+    uses: ./.github/workflows/docker-build.yaml
+    with:
+      tag: edge
+    secrets: inherit
