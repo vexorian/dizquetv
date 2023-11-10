@@ -1,0 +1,13 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  binaries:
+    uses: ./.github/workflows/binaries-build.yaml
+    with:
+      release: ${{ github.ref_name }}
+    secrets: inherit
