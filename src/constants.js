@@ -28,5 +28,5 @@ module.exports = {
     // staying active, it checks every 5 seconds
     PLAYED_MONITOR_CHECK_FREQUENCY: 5*1000,
 
-    VERSION_NAME: "1.5.0-development"
+    VERSION_NAME: "1.5.1-development"
 }
