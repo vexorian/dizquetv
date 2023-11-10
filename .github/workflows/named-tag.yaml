@@ -1,0 +1,13 @@
+name: Named Tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  docker:
+    uses: ./.github/workflows/docker-build.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit

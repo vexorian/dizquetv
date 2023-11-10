@@ -1,0 +1,13 @@
+name: Development Tag
+
+on:
+  push:
+    branches:
+      - dev/1.5.x
+
+jobs:
+  docker:
+    uses: ./.github/workflows/docker-build.yaml
+    with:
+      tag: development
+    secrets: inherit
