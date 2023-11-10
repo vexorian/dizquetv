@@ -1,0 +1,13 @@
+name: Latest Tag
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker:
+    uses: ./.github/workflows/docker-build.yaml
+    with:
+      tag: latest
+    secrets: inherit
