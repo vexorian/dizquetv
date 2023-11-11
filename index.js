@@ -309,6 +309,10 @@ function initDB(db, channelDB) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/loading-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)
     }
+    if (!fs.existsSync(process.env.DATABASE + '/images/black.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/black.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/black.png', data)
+    }
     if (!fs.existsSync( path.join(process.env.DATABASE, 'custom.css') )) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources', 'default-custom.css')))
         fs.writeFileSync( path.join(process.env.DATABASE, 'custom.css'), data)

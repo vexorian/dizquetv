@@ -471,7 +471,8 @@ class FFMPEG extends events.EventEmitter {
                     `-c:v`, (transcodeVideo ? this.opts.videoEncoder : 'copy'),
                     `-sc_threshold`, `1000000000`,
                 );
-                if (stillImage) {
+                // do not use -tune stillimage for nv
+                if (stillImage && ! this.opts.videoEncoder.toLowerCase().includes("nv") ) {
                     ffmpegArgs.push('-tune', 'stillimage');
                 }
             }
@@ -482,7 +483,6 @@ class FFMPEG extends events.EventEmitter {
             if ( transcodeVideo && (this.audioOnly !== true) ) {
                 // add the video encoder flags
                 ffmpegArgs.push(
-                            `-b:v`, `${this.opts.videoBitrate}k`,
                             `-maxrate:v`, `${this.opts.videoBitrate}k`,
                             `-bufsize:v`, `${this.opts.videoBufSize}k`
                 );

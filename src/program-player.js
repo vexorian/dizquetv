@@ -42,6 +42,11 @@ class ProgramPlayer {
             /* loading */
             context.isLoading = true;
             this.delegate = new OfflinePlayer(false, context);
+        } else if (program.type === 'interlude') {
+            console.log("About to play interlude stream");
+            /* interlude */
+            context.isInterlude = true;
+            this.delegate = new OfflinePlayer(false, context);
         } else if (program.type === 'offline') {
             console.log("About to play offline stream");
             /* offline */
