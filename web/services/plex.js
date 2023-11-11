@@ -283,7 +283,7 @@ module.exports = function ($http, $window, $interval) {
                   console.error(msg , err);
               }
             }
-            if ( (includeCollections === true) && (res.viewGroup !== "artist" ) ) {
+            if (includeCollections === true) {
                 let k = res.librarySectionID;
 
                 k = `/library/sections/${k}/collections`;

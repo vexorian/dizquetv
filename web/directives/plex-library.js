@@ -69,7 +69,7 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
                         }
             }
             scope.selectLibrary = async (library) => {
-              await scope.fillNestedIfNecessary(library);
+              await scope.fillNestedIfNecessary(library, true);
               let p = library.nested.length;
               scope.pending += library.nested.length;
               try {
