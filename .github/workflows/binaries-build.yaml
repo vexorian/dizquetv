@@ -31,6 +31,8 @@ jobs:
         file: Dockerfile-builder
         load: true
         tags: builder
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Run dist docker
       run: |

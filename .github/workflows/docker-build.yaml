@@ -39,11 +39,5 @@ jobs:
         context: .
         push: true
         tags: vexorian/dizquetv:${{ inputs.tag }}${{ matrix.suffix }}
-
-    - name: Build and push nvidia
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ${{ matrix.Dockerfile }}
-        push: true
-        tags: vexorian/dizquetv:${{ inputs.tag }}${{ matrix.suffix }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
