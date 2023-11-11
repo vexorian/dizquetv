@@ -6,7 +6,7 @@ on:
       - dev/1.5.x
 
 jobs:
-  bianries:
+  binaries:
     uses: ./.github/workflows/binaries-build.yaml
     with:
       release: development-binaries
