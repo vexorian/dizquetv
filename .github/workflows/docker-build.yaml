@@ -10,6 +10,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: Default
+            Dockerfile: Dockerfile
+            suffix: ""
+          - name: nvidia
+            Dockerfile: Dockerfile-nvidia
+            suffix: "-nvidia"
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
@@ -28,4 +38,12 @@ jobs:
       with:
         context: .
         push: true
-        tags: vexorian/dizquetv:${{ inputs.tag }}
+        tags: vexorian/dizquetv:${{ inputs.tag }}${{ matrix.suffix }}
+
+    - name: Build and push nvidia
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ${{ matrix.Dockerfile }}
+        push: true
+        tags: vexorian/dizquetv:${{ inputs.tag }}${{ matrix.suffix }}
