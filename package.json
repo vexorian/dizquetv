@@ -11,8 +11,7 @@
     "dev-server": "nodemon index.js --ignore ./web/ --ignore ./db/ --ignore ./xmltv.xml",
     "compile": "babel index.js -d dist && babel src -d dist/src",
     "package": "sh ./make_dist.sh",
-    "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js",
-    "prepare": "husky install"
+    "clean": "del-cli --force ./bin ./dist ./.dizquetv ./web/public/bundle.js"
   },
   "author": "vexorian",
   "license": "Zlib",
@@ -35,10 +34,10 @@
     "ng-i18next": "^1.0.7",
     "node-graceful-shutdown": "1.1.0",
     "node-ssdp": "^4.0.0",
+    "quickselect": "2.0.0",
     "random-js": "2.1.0",
     "request": "^2.88.2",
-    "quickselect": "2.0.0",
-    "uuid" : "9.0.1",
+    "uuid": "9.0.1",
     "xml-writer": "^1.7.0"
   },
   "bin": "dist/index.js",
@@ -51,9 +50,7 @@
     "@commitlint/config-conventional": "^12.1.4",
     "browserify": "^16.5.1",
     "copyfiles": "^2.2.0",
-    "cz-conventional-changelog": "^3.3.0",
     "del-cli": "^3.0.0",
-    "husky": "^7.0.0",
     "nexe": "^3.3.7",
     "nodemon": "^2.0.3",
     "watchify": "^3.11.1"
@@ -62,10 +59,5 @@
     "plugins": [
       "@babel/plugin-proposal-class-properties"
     ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   }
 }
