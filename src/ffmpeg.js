@@ -198,8 +198,9 @@ class FFMPEG extends events.EventEmitter {
                 iW = this.wantedW;
                 iH = this.wantedH;
 
+                let durstr = `duration=${streamStats.duration}ms`;
+
               if (this.audioOnly !== true) {
-                ffmpegArgs.push("-r" , "24");
                 let pic = null;
 
                 //does an image to play exist?
@@ -216,6 +217,7 @@ class FFMPEG extends events.EventEmitter {
                 }
 
                 if (pic != null) {
+                    ffmpegArgs.push("-r" , "24");
                     ffmpegArgs.push(
                         '-i', pic,
                     );
@@ -235,6 +237,8 @@ class FFMPEG extends events.EventEmitter {
                     //this tune apparently makes the video compress better
                     // when it is the same image
                     stillImage = true;
+                    this.volumePercent = Math.min(70, this.volumePercent);
+
                 } else if (this.opts.errorScreen == 'static') {
                     ffmpegArgs.push(
                         '-f', 'lavfi',
@@ -269,7 +273,7 @@ class FFMPEG extends events.EventEmitter {
                     videoComplex = `;realtime[videox]`;
                 }
               }
-                let durstr = `duration=${streamStats.duration}ms`;
+
               if (typeof(streamUrl.errorTitle) !== 'undefined') {
                 //silent
                 audioComplex = `;aevalsrc=0:${durstr}[audioy]`;
@@ -549,6 +553,7 @@ class FFMPEG extends events.EventEmitter {
         if (this.hasBeenKilled) {
             return ;
         }
+        //console.log(this.ffmpegPath + " " + ffmpegArgs.join(" ") );
         this.ffmpeg = spawn(this.ffmpegPath, ffmpegArgs, { stdio: ['ignore', 'pipe', (doLogs?process.stderr:"ignore") ] } );
         if (this.hasBeenKilled) {
             console.log("Send SIGKILL to ffmpeg");

@@ -188,7 +188,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
       let redirectChannels = [];
       let upperBounds = [];
 
-      const GAP_DURATION = 750;
+      const GAP_DURATION = constants.GAP_DURATION;
       if (isLoading) {
           lineupItem = {
              type: 'loading',

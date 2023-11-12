@@ -5,6 +5,11 @@ module.exports = {
     TVGUIDE_MAXIMUM_FLEX_DURATION : 6 * 60 * 60 * 1000,
     TOO_FREQUENT: 1000,
 
+    // Duration of things like the loading screen and the interlude (the black
+    // frame that appears between videos). The theory is that we don't need 
+    // it to last longer than one frame, but I am not so sure.
+    GAP_DURATION: 83,
+
     //when a channel is forcibly stopped due to an update, let's mark it as active
     // for a while during the transaction just in case.
     CHANNEL_STOP_SHIELD : 5000,
