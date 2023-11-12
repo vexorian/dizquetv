@@ -37,7 +37,8 @@
     "node-ssdp": "^4.0.0",
     "random-js": "2.1.0",
     "request": "^2.88.2",
-    "uuid": "^8.0.0",
+    "quickselect": "2.0.0",
+    "uuid" : "9.0.1",
     "xml-writer": "^1.7.0"
   },
   "bin": "dist/index.js",

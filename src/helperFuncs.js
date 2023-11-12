@@ -8,6 +8,7 @@ module.exports = {
 let channelCache = require('./channel-cache');
 const SLACK = require('./constants').SLACK;
 const randomJS = require("random-js");
+const quickselect = require("quickselect");
 const Random = randomJS.Random;
 const random = new Random( randomJS.MersenneTwister19937.autoSeed() );
 
@@ -194,7 +195,11 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
     }
     let listM = 0;
     let fillerId = undefined;
-    for (let j = 0; j < fillers.length; j++) {
+
+    let median = getMedian(channelCache, channel, fillers);
+
+    for (let medianCheck = 1; medianCheck >= 0; medianCheck--) {
+     for (let j = 0; j < fillers.length; j++) {
       list = fillers[j].content;
       let pickedList = false;
       let n = 0;
@@ -204,6 +209,9 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
         // a few extra milliseconds won't hurt anyone, would it? dun dun dun
         if (clip.duration <= maxDuration + SLACK ) {
             let t1 = channelCache.getProgramLastPlayTime( channel.number, clip );
+            if ( (medianCheck==1) && (t1 > median) ) {
+                continue;
+            }
             let timeSince = ( (t1 == 0) ?  D :  (t0 - t1) );
 
             if (timeSince < channel.fillerRepeatCooldown - SLACK) {
@@ -247,11 +255,13 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
             }
         }
       }
+     }
+     if (pick1 != null) {
+        break;
+     }
     }
     let pick = pick1;
-    let pickTitle = "null";
     if (pick != null) {
-        pickTitle = pick.title;
         pick = JSON.parse( JSON.stringify(pick) );
         pick.fillerId = fillerId;
     }
@@ -321,6 +331,24 @@ function getWatermark(  ffmpegSettings, channel, type) {
     return result;
 }
 
+
+function getMedian(channelCache, channel, fillers) {
+    let times = [];
+    for (let j = 0; j < fillers.length; j++) {
+        list = fillers[j].content;
+        for (let i = 0; i < list.length; i++) {
+            let clip = list[i];
+            let t = channelCache.getProgramLastPlayTime( channel.number, clip);
+            times.push(t);
+        }
+    }
+    if (times.length == 0) {
+        return null;
+    }
+    quickselect(times, times.length / 2)
+    return times[times.length / 2];
+
+}
 
 function generateChannelContext(channel) {
     let channelContext = {};

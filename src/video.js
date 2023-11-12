@@ -291,8 +291,17 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted."
         }
         let fillers = await fillerDB.getFillersFromChannel(brandChannel);
-        let lineup = helperFuncs.createLineup(prog, brandChannel, fillers, isFirst)
-        lineupItem = lineup.shift();
+        try {
+            let lineup = helperFuncs.createLineup(prog, brandChannel, fillers, isFirst)
+            lineupItem = lineup.shift();
+        } catch (err) {
+            console.log("Error when attempting to pick video: " +err.stack);
+            lineupItem = {
+                isOffline: true,
+                err: err,
+                duration : 60000,
+            };
+        }
       }
 
         if ( !isBetween && !isLoading && (lineupItem != null) ) {
