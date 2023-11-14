@@ -51,7 +51,10 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         })
     })
     // Continuously stream video to client. Leverage ffmpeg concat for piecing together videos
-    let concat = async (req, res, audioOnly) => {
+    let concat = async (req, res, audioOnly, step) => {
+        if ( typeof(step) === 'undefined') {
+            step = 0;
+        }
         if (stopPlayback) {
             res.status(503).send("Server is shutting down.")
             return;
@@ -78,9 +81,11 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             return
         }
 
-        res.writeHead(200, {
-            'Content-Type': 'video/mp2t'
-        })
+        if (step == 0) {
+            res.writeHead(200, {
+                'Content-Type': 'video/mp2t'
+            })
+        }
 
         console.log(`\r\nStream starting. Channel: ${channel.number} (${channel.name})`)
 
@@ -107,7 +112,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             return;
         })
 
-        ffmpeg.on('close', stop)
+        //ffmpeg.on('close', stop)
         
         res.on('close', () => { // on HTTP close, kill ffmpeg
             console.log(`\r\nStream ended. Channel: ${channel.number} (${channel.name})`);
@@ -115,13 +120,13 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         })
 
         ffmpeg.on('end', () => {
-            console.log("Video queue exhausted. Either you played 100 different clips in a row or there were technical issues that made all of the possible 100 attempts fail.")
-            stop();
+            console.log("Queue exhausted so we are appending the channel stream again to the http output.")
+            concat(req, res, audioOnly, step+1);
         })
 
         let channelNum = parseInt(req.query.channel, 10)
-        let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}&audioOnly=${audioOnly}`);
-        ff.pipe(res );
+        let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}&audioOnly=${audioOnly}&stepNumber={step}`);
+        ff.pipe(res,  { end: false}  );
     };
     router.get('/video', async(req, res) => {
         return await concat(req, res, false);
@@ -328,6 +333,9 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             }
         }
  
+        let t2 = (new Date()).getTime();
+        console.log( `Decision Latency: (${t2-t0})ms` );
+
 
         console.log("=========================================================");
         console.log("! Start playback");
@@ -389,7 +397,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         try {
             playerObj = await player.play(res);
             t1 = (new Date()).getTime();
-            console.log("Latency: (" + (t1- t0) );
+            console.log( `Player Latency: (${t1-t0})ms` );
         } catch (err) {
             console.log("Error when attempting to play video: " +err.stack);
             try {
@@ -549,6 +557,10 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             return
         }
 
+        let stepNumber = parseInt(req.query.stepNumber, 10)
+        if (isNaN(stepNumber)) {
+            stepNumber = 0;
+        }
         let channelNum = parseInt(req.query.channel, 10)
         let channel = await channelService.getChannel(channelNum );
         if (channel == null) {
@@ -574,15 +586,20 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             && (ffmpegSettings.normalizeResolution === true)
             && (ffmpegSettings.normalizeAudio === true)
             && (audioOnly !== true) /* loading screen is pointless in audio mode (also for some reason it makes it fail when codec is aac, and I can't figure out why) */
+            && (stepNumber == 0)
         ) {
             //loading screen
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
         }
-        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
+        let remaining = maxStreamsToPlayInARow;
+        if (stepNumber == 0) {
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
 
-        data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+            remaining--;
+        }
 
-        for (var i = 0; i < maxStreamsToPlayInARow - 1; i++) {
+        for (var i = 0; i < remaining; i++) {
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
         }
