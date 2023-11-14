@@ -34,6 +34,7 @@ class ProgramPlayer {
             // people might want the codec normalization to stay because of player support
             context.ffmpegSettings.normalizeResolution = false;
         }
+        context.ffmpegSettings.noRealTime = program.noRealTime;
         if ( typeof(program.err) !== 'undefined') {
             console.log("About to play error stream");
             this.delegate = new OfflinePlayer(true, context);

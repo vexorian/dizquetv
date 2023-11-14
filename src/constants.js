@@ -6,9 +6,11 @@ module.exports = {
     TOO_FREQUENT: 1000,
 
     // Duration of things like the loading screen and the interlude (the black
-    // frame that appears between videos). The theory is that we don't need 
-    // it to last longer than one frame, but I am not so sure.
-    GAP_DURATION: 83,
+    // frame that appears between videos). The goal of these things is to
+    // prevent the video from getting stuck on the last second, which looks bad
+    // for some reason ~750 works well. I raised the fps to 60 and now 420 works
+    // but I wish it was lower.
+    GAP_DURATION: 10*42,
 
     //when a channel is forcibly stopped due to an update, let's mark it as active
     // for a while during the transaction just in case.

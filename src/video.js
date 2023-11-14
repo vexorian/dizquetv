@@ -198,6 +198,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
           lineupItem = {
              type: 'loading',
              title: "Loading Screen",
+             noRealTime: true,
              streamDuration: GAP_DURATION,
              duration: GAP_DURATION,
              redirectChannels: [channel],
@@ -207,6 +208,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         lineupItem = {
             type: 'interlude',
             title: "Interlude Screen",
+            noRealTime: true,
             streamDuration: GAP_DURATION,
             duration: GAP_DURATION,
             redirectChannels: [channel],

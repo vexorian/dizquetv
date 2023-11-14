@@ -217,7 +217,11 @@ class FFMPEG extends events.EventEmitter {
                 }
 
                 if (pic != null) {
-                    ffmpegArgs.push("-r" , "24");
+                    if (this.opts.noRealTime === true) {
+                        ffmpegArgs.push("-r" , "60");
+                    } else {
+                        ffmpegArgs.push("-r" , "24");
+                    }
                     ffmpegArgs.push(
                         '-i', pic,
                     );
@@ -232,8 +236,12 @@ class FFMPEG extends events.EventEmitter {
                     videoComplex = `;[${inputFiles++}:0]format=yuv420p[formatted]`;
                     videoComplex +=`;[formatted]scale=w=${iW}:h=${iH}:force_original_aspect_ratio=1[scaled]`;
                     videoComplex += `;[scaled]pad=${iW}:${iH}:(ow-iw)/2:(oh-ih)/2[padded]`;
-                    videoComplex += `;[padded]loop=loop=-1:size=1:start=0[looped]`;
-                    videoComplex +=`;[looped]realtime[videox]`;
+                    videoComplex += `;[padded]loop=loop=-1:size=1:start=0`;
+                    if (this.opts.noRealTime !== true) {
+                        videoComplex +=`[looped];[looped]realtime[videox]`;
+                    } else {
+                        videoComplex +=`[videox]`
+                    }
                     //this tune apparently makes the video compress better
                     // when it is the same image
                     stillImage = true;
