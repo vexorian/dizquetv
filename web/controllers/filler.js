@@ -8,13 +8,14 @@ module.exports = function ($scope, $timeout, dizquetv) {
         $scope.fillers = [ { id: '?', pending: true} ]
         $timeout();
         let fillers = await dizquetv.getAllFillersInfo();
+        fillers.sort( (a,b) => {
+            return a.name > b.name;
+        } );
         $scope.fillers = fillers;
         $timeout();
     }
     $scope.refreshFiller();
 
-    
-    
     let feedToFillerConfig = () => {};
     let feedToDeleteFiller = feedToFillerConfig;
 
