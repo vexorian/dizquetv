@@ -170,6 +170,7 @@
                             ng-init="setUpWatcher()"
                             ng-if="true"
                             ng-style="{'max-height':programmingHeight()}"
+                            id="channelConfigProgramList"
                         >
                             <div ng-repeat="x in channel.programs track by x.$index"
                                 ng-click="selectProgram(x.$index)"
@@ -938,7 +939,7 @@
     <frequency-tweak programs="_programFrequencies" message="_frequencyMessage" modified="_frequencyModified" on-done="tweakFrequencies"></frequency-tweak>
     <remove-shows program-infos="_removablePrograms" on-done="removeShows" deleted="_deletedProgramNames"></remove-shows>
     <flex-config offline-title="Add Flex Time" program="_addingOffline" on-done="finishedAddingOffline"></flex-config>
-    <plex-library limit="libraryLimit" height="300" visible="displayPlexLibrary" on-finish="importPrograms"></plex-library>
+    <plex-library limit="libraryLimit" height="300" visible="displayPlexLibrary" position-choice=true on-finish="importPrograms"></plex-library>
     <plex-library height="300" limit=1 visible="showFallbackPlexLibrary" on-finish="importFallback"></plex-library>
     <channel-redirect visible="_displayRedirect" on-done="finishRedirect" form-title="_redirectTitle" program="_selectedRedirect" ></channel-redirect>
     <time-slots-schedule-editor linker="registerTimeSlots" on-done="onTimeSlotsDone"></time-slots-schedule-editor>

@@ -11,7 +11,7 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
         },
         link: {
 
-          post: function (scope, element, attrs) {
+          post: function (scope, $element, attrs) {
             scope.screenW = 1920;
             scope.screenh = 1080;
 
@@ -326,9 +326,10 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     duration: duration,
                     isOffline: true
                 }
-                scope.channel.programs.splice(scope.minProgramIndex, 0, program);
+                scope.channel.programs.splice(scope.channel.programs.length, 0, program);
                 scope._selectedOffline = null
                 scope._addingOffline = null;
+                scrollToLast();
                 updateChannelDuration()
             }
 
@@ -1077,11 +1078,37 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 }
             }
 
-            scope.importPrograms = (selectedPrograms) => {
+
+            function getAllMethods(object) {
+
+                return Object.getOwnPropertyNames(object).filter(function (p) {
+                    return typeof object[p] == 'function';
+                });
+            }
+            function scrollToLast() {
+                var programListElement = document.getElementById("channelConfigProgramList");
+                $timeout(() => { programListElement.scrollTo(0, 2000000); }, 0)
+            }
+            scope.importPrograms = (selectedPrograms, insertPoint) => {
                 for (let i = 0, l = selectedPrograms.length; i < l; i++) {
                     delete selectedPrograms[i].commercials;
                 }
-                scope.channel.programs = scope.channel.programs.concat(selectedPrograms)
+
+                var programListElement = document.getElementById("channelConfigProgramList");
+                if (insertPoint === "start") {
+                    scope.channel.programs = selectedPrograms.concat(scope.channel.programs);
+                    programListElement.scrollTo(0, 0);
+                } else if (insertPoint === "current") {
+                    scope.channel.programs = [
+                        ...scope.channel.programs.slice(0, scope.currentStartIndex),
+                        ...selectedPrograms,
+                        ...scope.channel.programs.slice(scope.currentStartIndex)
+                    ];
+                } else {
+                    scope.channel.programs = scope.channel.programs.concat(selectedPrograms)
+
+                    scrollToLast();
+                }
                 updateChannelDuration()
                 setTimeout(
                     () => {
@@ -1093,7 +1120,9 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
             }
             scope.finishRedirect = (program) => {
                 if (scope.selectedProgram == -1) {
-                    scope.channel.programs.splice(scope.minProgramIndex, 0, program);
+                    scope.channel.programs.splice(scope.channel.programs.length, 0, program);
+                    scrollToLast();
+
                 } else {
                     scope.channel.programs[ scope.selectedProgram ] = program;
                 }

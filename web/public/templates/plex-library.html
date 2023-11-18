@@ -145,9 +145,21 @@
                     </ul>
                 </div>
                 <div class='text-danger'>{{error}}</div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-link" ng-click="_onFinish([])">Cancel</button>
-                    <button type="button" class="btn btn-sm btn-primary" ng-click="_onFinish(selection);">Done</button>
+
+                <div class="modal-footer flex">
+
+                    <div class="flex-grow-1" ng-show="positionChoice === true"">
+                        <select class="form-select form-select-sm custom-select" ng-model="insertPoint"
+                        id="position-selector">
+                            <option value="end">Insert at the end of list</option>
+                            <option value="start">Insert at the beginning of list</option>
+                            <option value="current">Insert at current scroll position</option>
+                        </select>
+
+                    </div>
+
+                    <div><button type="button" class="btn btn-sm btn-link" ng-click="_onFinish([])">Cancel</button></div>
+                    <div><button type="button" class="btn btn-sm btn-primary" ng-click="_onFinish(selection, insertPoint);">Done</button></div>
                 </div>
             </div>
         </div>
