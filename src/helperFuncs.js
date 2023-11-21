@@ -345,8 +345,9 @@ function getMedian(channelCache, channel, fillers) {
     if (times.length == 0) {
         return null;
     }
-    quickselect(times, times.length / 2)
-    return times[times.length / 2];
+    let m = Math.floor(times.length / 2);
+    quickselect(times, m)
+    return times[m];
 
 }
 
