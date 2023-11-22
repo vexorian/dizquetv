@@ -62,7 +62,7 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
     return { program: channel.programs[currentProgramIndex], timeElapsed: timeElapsed, programIndex: currentProgramIndex }
 }
 
-function createLineup(obj, channel, fillers, isFirst) {
+function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
     let timeElapsed = obj.timeElapsed
     // Start time of a file is never consistent unless 0. Run time of an episode can vary. 
     // When within 30 seconds of start time, just make the time 0 to smooth things out
@@ -97,7 +97,7 @@ function createLineup(obj, channel, fillers, isFirst) {
             if ( (channel.offlineMode === 'clip') && (channel.fallback.length != 0) ) {
                 special = JSON.parse(JSON.stringify(channel.fallback[0]));
             }
-            let randomResult = pickRandomWithMaxDuration(channel, fillers, remaining + (isFirst? (7*24*60*60*1000) : 0) );
+            let randomResult = pickRandomWithMaxDuration(programPlayTime, channel, fillers, remaining + (isFirst? (7*24*60*60*1000) : 0) );
             filler = randomResult.filler;
             if (filler == null && (typeof(randomResult.minimumWait) !== undefined) && (remaining > randomResult.minimumWait) ) {
                 remaining = randomResult.minimumWait;
@@ -179,7 +179,7 @@ function weighedPick(a, total) {
     return random.bool(a, total);
 }
 
-function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
+function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuration) {
     let list = [];
     for (let i = 0; i < fillers.length; i++) {
         list = list.concat(fillers[i].content);
@@ -196,7 +196,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
     let listM = 0;
     let fillerId = undefined;
 
-    let median = getMedian(channelCache, channel, fillers);
+    let median = getMedian(programPlayTime, channelCache, channel, fillers);
 
     for (let medianCheck = 1; medianCheck >= 0; medianCheck--) {
      for (let j = 0; j < fillers.length; j++) {
@@ -208,7 +208,7 @@ function pickRandomWithMaxDuration(channel, fillers, maxDuration) {
         let clip = list[i];
         // a few extra milliseconds won't hurt anyone, would it? dun dun dun
         if (clip.duration <= maxDuration + SLACK ) {
-            let t1 = channelCache.getProgramLastPlayTime( channel.number, clip );
+            let t1 = channelCache.getProgramLastPlayTime(programPlayTime, channel.number, clip );
             if ( (medianCheck==1) && (t1 > median) ) {
                 continue;
             }
@@ -332,13 +332,13 @@ function getWatermark(  ffmpegSettings, channel, type) {
 }
 
 
-function getMedian(channelCache, channel, fillers) {
+function getMedian(programPlayTime, channelCache, channel, fillers) {
     let times = [];
     for (let j = 0; j < fillers.length; j++) {
         list = fillers[j].content;
         for (let i = 0; i < list.length; i++) {
             let clip = list[i];
-            let t = channelCache.getProgramLastPlayTime( channel.number, clip);
+            let t = channelCache.getProgramLastPlayTime(programPlayTime, channel.number, clip);
             times.push(t);
         }
     }

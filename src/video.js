@@ -18,7 +18,7 @@ async function shutdown() {
     stopPlayback = true;
 }
 
-function video( channelService, fillerDB, db, programmingService, activeChannelService ) {
+function video( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB ) {
     var router = express.Router()
 
     router.get('/setup', (req, res) => {
@@ -232,7 +232,8 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             if ( !(prog.program.isOffline) || (prog.program.type != 'redirect') ) {
                 break;
             }
-            channelCache.recordPlayback( brandChannel.number, t0, {
+            channelCache.recordPlayback(programPlayTimeDB,
+                brandChannel.number, t0, {
                 /*type: 'offline',*/
                 title: 'Error',
                 err: Error("Recursive channel redirect found"),
@@ -299,7 +300,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         }
         let fillers = await fillerDB.getFillersFromChannel(brandChannel);
         try {
-            let lineup = helperFuncs.createLineup(prog, brandChannel, fillers, isFirst)
+            let lineup = helperFuncs.createLineup(programPlayTimeDB, prog, brandChannel, fillers, isFirst)
             lineupItem = lineup.shift();
         } catch (err) {
             console.log("Error when attempting to pick video: " +err.stack);
@@ -331,7 +332,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
                     lineupItem.streamDuration = Math.min(u2, u);
                     upperBound = lineupItem.streamDuration;
                 }
-                channelCache.recordPlayback( redirectChannels[i].number, t0, lineupItem );
+                channelCache.recordPlayback( programPlayTimeDB, redirectChannels[i].number, t0, lineupItem );
             }
         }
  
@@ -354,7 +355,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         console.log("=========================================================");
 
         if (! isLoading && ! isBetween) {
-            channelCache.recordPlayback(channel.number, t0, lineupItem);
+            channelCache.recordPlayback(programPlayTimeDB, channel.number, t0, lineupItem);
         }
         if (wereThereTooManyAttempts(session, lineupItem)) {
             console.error("There are too many attempts to play the same item in a short period of time, playing the error stream instead.");
