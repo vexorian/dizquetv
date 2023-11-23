@@ -6,6 +6,7 @@ module.exports = {
 }
 
 let channelCache = require('./channel-cache');
+const INFINITE_TIME = new Date().getTime() + 10*365*24*60*60*1000; //10 years from the initialization of the server. I dunno, I just wanted it to be a high time without it stopping being human readable if converted to date.
 const SLACK = require('./constants').SLACK;
 const randomJS = require("random-js");
 const quickselect = require("quickselect");
@@ -196,20 +197,33 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
     let listM = 0;
     let fillerId = undefined;
 
-    let median = getMedian(programPlayTime, channelCache, channel, fillers);
-
     for (let medianCheck = 1; medianCheck >= 0; medianCheck--) {
      for (let j = 0; j < fillers.length; j++) {
       list = fillers[j].content;
       let pickedList = false;
       let n = 0;
 
+      let maximumPlayTimeAllowed = INFINITE_TIME;
+      if (medianCheck==1) {
+          //calculate the median
+          let median = getFillerMedian(programPlayTime, channel, fillers[j]);
+          if (median > 0) {
+              maximumPlayTimeAllowed = median - 1;
+              // allow any clip with a play time that's less than the median.
+          } else {
+              // initially all times are 0, so if the median is 0, all of those
+              // are allowed.
+              maximumPlayTimeAllowed = 0;
+          }
+      }
+
+
       for (let i = 0; i < list.length; i++) {
         let clip = list[i];
         // a few extra milliseconds won't hurt anyone, would it? dun dun dun
         if (clip.duration <= maxDuration + SLACK ) {
             let t1 = channelCache.getProgramLastPlayTime(programPlayTime, channel.number, clip );
-            if ( (medianCheck==1) && (t1 > median) ) {
+            if (t1 > maximumPlayTimeAllowed) {
                 continue;
             }
             let timeSince = ( (t1 == 0) ?  D :  (t0 - t1) );
@@ -332,18 +346,19 @@ function getWatermark(  ffmpegSettings, channel, type) {
 }
 
 
-function getMedian(programPlayTime, channelCache, channel, fillers) {
+function getFillerMedian(programPlayTime, channel, filler) {
+
     let times = [];
-    for (let j = 0; j < fillers.length; j++) {
-        list = fillers[j].content;
-        for (let i = 0; i < list.length; i++) {
-            let clip = list[i];
-            let t = channelCache.getProgramLastPlayTime(programPlayTime, channel.number, clip);
-            times.push(t);
-        }
+    list = filler.content;
+    for (let i = 0; i < list.length; i++) {
+        let clip = list[i];
+        let t = channelCache.getProgramLastPlayTime(programPlayTime, channel.number, clip);
+        times.push(t);
     }
-    if (times.length == 0) {
-        return null;
+
+    if (times.length <= 1) {
+        //if there are too few elements, the protection is not helpful.
+        return INFINITE_TIME;
     }
     let m = Math.floor(times.length / 2);
     quickselect(times, m)
