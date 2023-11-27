@@ -7,8 +7,19 @@ function equalItems(a, b) {
     if (  (typeof(a) === 'undefined') || a.isOffline || b.isOffline ) {
         return false;
     }
-    console.log("no idea how to compare this: " + JSON.stringify(a) );
-    console.log(" with this: " + JSON.stringify(b) );
+    if (
+        (a.type === "loading") || (a.type === "interlude")
+        || (b.type === "loading") || (b.type === "interlude")
+    ) {
+        return (a.type === b.type);
+    }
+    if (a.type != b.type) {
+        return false;
+    }
+    if (a.type !== "program") {
+        console.log("no idea how to compare this: " + JSON.stringify(a).slice(0,100) );
+        console.log(" with this: " + JSON.stringify(b).slice(0,100) );
+    }
     return a.title === b.title;
 
 }
