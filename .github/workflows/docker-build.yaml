@@ -38,6 +38,7 @@ jobs:
       with:
         context: .
         push: true
+        file: ${{ matrix.Dockerfile }}
         tags: vexorian/dizquetv:${{ inputs.tag }}${{ matrix.suffix }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
