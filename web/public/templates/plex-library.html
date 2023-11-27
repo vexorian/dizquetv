@@ -37,8 +37,12 @@
 
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Content:</label>
-                    </div>
+                    <label class="form-label">
+                        <button class="btn btn-sm btn-link" ng-click="selectOrigin(currentOrigin)">
+                            <span class="text-info fa fa-sync" ></span>
+                        </button>    
+                        Content:
+                    </label>
                     <ul ng-show="currentOrigin.type=='plex' " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
                         <li class="list-group-item" ng-repeat="a in libraries">
                             <div class="flex-container library-item-hover {{ displayImages ? 'w_images' : 'wo_images' }}" ng-click="getNested(a, true);">
@@ -127,6 +131,7 @@
                             </div>
                         </li>
                     </ul>
+                </div>
 
                     <hr></hr>
                     <div class="loader" ng-if="pending &gt; 0" ></div> <h6 style='display:inline-block'>Selected Items</h6>
