@@ -29,6 +29,7 @@ const EventService = require("./src/services/event-service");
 const OnDemandService = require("./src/services/on-demand-service");
 const ProgrammingService = require("./src/services/programming-service");
 const ActiveChannelService = require('./src/services/active-channel-service')
+const ProgramPlayTimeDB = require('./src/dao/program-play-time-db')
 
 const onShutdown = require("node-graceful-shutdown").onShutdown;
 
@@ -95,7 +96,19 @@ channelService = new ChannelService(channelDB);
 
 fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelService );
 customShowDB = new CustomShowDB( path.join(process.env.DATABASE, 'custom-shows') );
+let programPlayTimeDB = new ProgramPlayTimeDB( path.join(process.env.DATABASE, 'play-cache') );
 
+async function initializeProgramPlayTimeDB() {
+    try {
+        let t0 = new Date().getTime();
+        await programPlayTimeDB.load();
+        let t1 = new Date().getTime();
+        console.log(`Program Play Time Cache loaded in ${t1-t0} milliseconds.`);
+    } catch (err) {
+        console.log(err);
+    }
+}
+initializeProgramPlayTimeDB();
 
 fileCache = new FileCacheService( path.join(process.env.DATABASE, 'cache') );
 cacheImageService = new CacheImageService(db, fileCache);
@@ -270,7 +283,7 @@ app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.cs
 app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService ))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 
-app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService  ))
+app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB  ))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)
@@ -308,6 +321,10 @@ function initDB(db, channelDB) {
     if (!fs.existsSync(process.env.DATABASE + '/images/loading-screen.png')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/loading-screen.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/loading-screen.png', data)
+    }
+    if (!fs.existsSync(process.env.DATABASE + '/images/black.png')) {
+        let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/black.png')))
+        fs.writeFileSync(process.env.DATABASE + '/images/black.png', data)
     }
     if (!fs.existsSync( path.join(process.env.DATABASE, 'custom.css') )) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources', 'default-custom.css')))

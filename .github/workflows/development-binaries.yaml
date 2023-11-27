@@ -1,0 +1,13 @@
+name: Development Binaries
+
+on:
+  push:
+    branches:
+      - dev/1.5.x
+
+jobs:
+  binaries:
+    uses: ./.github/workflows/binaries-build.yaml
+    with:
+      release: development-binaries
+    secrets: inherit

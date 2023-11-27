@@ -391,3 +391,7 @@ div.programming-programs div.list-group-item {
   height: 1em;
   margin-bottom: 0.25em;
 }
+
+.list-group-item .library-item-hover:hover {
+  background: #D0D0FF
+}

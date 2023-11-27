@@ -34,6 +34,7 @@ class ProgramPlayer {
             // people might want the codec normalization to stay because of player support
             context.ffmpegSettings.normalizeResolution = false;
         }
+        context.ffmpegSettings.noRealTime = program.noRealTime;
         if ( typeof(program.err) !== 'undefined') {
             console.log("About to play error stream");
             this.delegate = new OfflinePlayer(true, context);
@@ -41,6 +42,11 @@ class ProgramPlayer {
             console.log("About to play loading stream");
             /* loading */
             context.isLoading = true;
+            this.delegate = new OfflinePlayer(false, context);
+        } else if (program.type === 'interlude') {
+            console.log("About to play interlude stream");
+            /* interlude */
+            context.isInterlude = true;
             this.delegate = new OfflinePlayer(false, context);
         } else if (program.type === 'offline') {
             console.log("About to play offline stream");

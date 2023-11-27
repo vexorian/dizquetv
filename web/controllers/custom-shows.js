@@ -8,6 +8,10 @@ module.exports = function ($scope, $timeout, dizquetv) {
         $scope.shows = [ { id: '?', pending: true} ]
         $timeout();
         let shows = await dizquetv.getAllShowsInfo();
+        shows.sort( (a,b) => {
+            return a.name > b.name;
+        } );
+
         $scope.shows = shows;
         $timeout();
     }

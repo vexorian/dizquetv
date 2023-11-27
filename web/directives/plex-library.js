@@ -6,6 +6,7 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
         scope: {
             onFinish: "=onFinish",
             height: "=height",
+            positionChoice: "=positionChoice",
             visible: "=visible",
             limit: "=limit",
         },
@@ -14,6 +15,7 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
             if ( typeof(scope.limit) == 'undefined') {
                 scope.limit = 1000000000;
             }
+            scope.insertPoint = "end";
             scope.customShows = [];
             scope.origins = [];
             scope.currentOrigin = undefined;
@@ -37,7 +39,7 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
                     updateCustomShows();
                 }
             }
-            scope._onFinish = (s) => {
+            scope._onFinish = (s, insertPoint) => {
                 if (s.length > scope.limit) {
                     if (scope.limit == 1) {
                         scope.error = "Please select only one clip.";
@@ -45,7 +47,7 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
                         scope.error = `Please select at most ${scope.limit} clips.`;
                     }
                 } else {
-                    scope.onFinish(s)
+                    scope.onFinish(s, insertPoint)
                     scope.selection = []
                     scope.visible = false
                 }
@@ -69,7 +71,7 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
                         }
             }
             scope.selectLibrary = async (library) => {
-              await scope.fillNestedIfNecessary(library);
+              await scope.fillNestedIfNecessary(library, true);
               let p = library.nested.length;
               scope.pending += library.nested.length;
               try {

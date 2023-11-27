@@ -1,0 +1,46 @@
+name: Build Executables and Update Release
+
+on:
+  workflow_call:
+    inputs:
+      release:
+        required: true
+        type: string
+
+jobs:
+  release-files:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Build dist image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: Dockerfile-builder
+        load: true
+        tags: builder
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Run dist docker
+      run: |
+        docker run -v ./dist:/home/node/app/dist builder sh make_dist.sh
+
+
+    - name: Upload Files
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ inputs.release }}
+        files: |
+          ./dist/dizquetv-win-x64.exe
+          ./dist/dizquetv-win-x86.exe
+          ./dist/dizquetv-linux-x64
+          ./dist/dizquetv-macos-x64
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

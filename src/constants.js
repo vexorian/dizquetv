@@ -5,6 +5,13 @@ module.exports = {
     TVGUIDE_MAXIMUM_FLEX_DURATION : 6 * 60 * 60 * 1000,
     TOO_FREQUENT: 1000,
 
+    // Duration of things like the loading screen and the interlude (the black
+    // frame that appears between videos). The goal of these things is to
+    // prevent the video from getting stuck on the last second, which looks bad
+    // for some reason ~750 works well. I raised the fps to 60 and now 420 works
+    // but I wish it was lower.
+    GAP_DURATION: 10*42,
+
     //when a channel is forcibly stopped due to an update, let's mark it as active
     // for a while during the transaction just in case.
     CHANNEL_STOP_SHIELD : 5000,
@@ -28,5 +35,5 @@ module.exports = {
     // staying active, it checks every 5 seconds
     PLAYED_MONITOR_CHECK_FREQUENCY: 5*1000,
 
-    VERSION_NAME: "1.5.0"
+    VERSION_NAME: "1.5.1"
 }
