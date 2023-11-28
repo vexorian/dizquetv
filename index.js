@@ -93,6 +93,7 @@ channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
 db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id', 'cache-images', 'settings'])
 
 let fontAwesome = "fontawesome-free-5.15.4-web";
+let bootstrap = "bootstrap-4.4.1-dist";
 initDB(db, channelDB)
 
 channelService = new ChannelService(channelDB);
@@ -286,6 +287,7 @@ app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.cs
 app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService ))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 app.use('/' + fontAwesome, express.static(path.join(process.env.DATABASE, fontAwesome)))
+app.use('/' + bootstrap, express.static(path.join(process.env.DATABASE, bootstrap)))
 
 app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB  ))
 app.use(hdhr.router)
@@ -338,6 +340,15 @@ function initDB(db, channelDB) {
     if (!fs.existsSync( path.join(process.env.DATABASE, fontAwesome) )) {
 
         let sourceZip = path.resolve(__dirname, 'resources', fontAwesome) + ".zip";
+        let destinationPath = path.resolve(process.env.DATABASE);
+
+        fs.createReadStream(sourceZip)
+            .pipe(unzip.Extract({ path: destinationPath }));
+
+    }
+    if (!fs.existsSync( path.join(process.env.DATABASE, bootstrap) )) {
+
+        let sourceZip = path.resolve(__dirname, 'resources', bootstrap) + ".zip";
         let destinationPath = path.resolve(process.env.DATABASE);
 
         fs.createReadStream(sourceZip)
