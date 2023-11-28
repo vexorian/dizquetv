@@ -1,6 +1,7 @@
 
 const db = require('diskdb')
 const fs = require('fs')
+const unzip = require('unzipper')
 const path = require('path')
 const express = require('express')
 const bodyParser = require('body-parser')
@@ -90,6 +91,8 @@ if(!fs.existsSync(path.join(process.env.DATABASE, 'cache','images'))) {
 channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
 
 db.connect(process.env.DATABASE, ['channels', 'plex-servers', 'ffmpeg-settings', 'plex-settings', 'xmltv-settings', 'hdhr-settings', 'db-version', 'client-id', 'cache-images', 'settings'])
+
+let fontAwesome = "fontawesome-free-5.15.4-web";
 initDB(db, channelDB)
 
 channelService = new ChannelService(channelDB);
@@ -282,6 +285,7 @@ app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.cs
 // API Routers
 app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService ))
 app.use('/api/cache/images', cacheImageService.apiRouters())
+app.use('/' + fontAwesome, express.static(path.join(process.env.DATABASE, fontAwesome)))
 
 app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB  ))
 app.use(hdhr.router)
@@ -293,6 +297,7 @@ app.listen(process.env.PORT, () => {
 })
 
 function initDB(db, channelDB) {
+    //TODO: this is getting so repetitive, do it better
     if (!fs.existsSync(process.env.DATABASE + '/images/dizquetv.png')) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources/dizquetv.png')))
         fs.writeFileSync(process.env.DATABASE + '/images/dizquetv.png', data)
@@ -330,7 +335,15 @@ function initDB(db, channelDB) {
         let data = fs.readFileSync(path.resolve(path.join(__dirname, 'resources', 'default-custom.css')))
         fs.writeFileSync( path.join(process.env.DATABASE, 'custom.css'), data)
     }
+    if (!fs.existsSync( path.join(process.env.DATABASE, fontAwesome) )) {
 
+        let sourceZip = path.resolve(__dirname, 'resources', fontAwesome) + ".zip";
+        let destinationPath = path.resolve(process.env.DATABASE);
+
+        fs.createReadStream(sourceZip)
+            .pipe(unzip.Extract({ path: destinationPath }));
+
+    }
 }
 
 

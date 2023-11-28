@@ -38,6 +38,7 @@
     "random-js": "2.1.0",
     "request": "^2.88.2",
     "uuid": "9.0.1",
+    "unzipper": "0.10.14",
     "xml-writer": "^1.7.0"
   },
   "bin": "dist/index.js",
