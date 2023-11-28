@@ -600,17 +600,17 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         if (stepNumber == 0) {
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
 
-            if (transcodingEnabled && (audioOnly !== true)) {
+            /*if (transcodingEnabled && (audioOnly !== true)) {
                 data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
-            }
+            }*/
             remaining--;
         }
 
         for (var i = 0; i < remaining; i++) {
             data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
-            if (transcodingEnabled && (audioOnly !== true) ) {
+            /*if (transcodingEnabled && (audioOnly !== true) ) {
                 data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
-            }
+            }*/
         }
 
         res.send(data)
