@@ -196,6 +196,18 @@
             </div>
         </div>
 
+        <br ></br>
+        <div class="row">
+            <div class="col-sm-9">
+                <div class="form-group">
+                    <input id="disablePreludes" type="checkbox" ng-model="settings.disablePreludes" ng-disabled="isTranscodingNotNeeded()" ></input>
+                    <label for="disablePreludes">Disable Preludes</label>
+                    <small class="form-text text-muted">In an attempt to improve playback, dizqueTV insets really short clips of black screen between videos. The idea is that if the stream pauses because Plex is taking too long to reply, it will pause during one of those black screens instead of interrupting the last second of a video. If you suspect these black screens are causing trouble instead of helping, you can disable them with this option.
+                    </small>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 

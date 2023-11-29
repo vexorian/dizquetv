@@ -495,9 +495,17 @@ class FFMPEG extends events.EventEmitter {
             if ( transcodeVideo && (this.audioOnly !== true) ) {
                 // add the video encoder flags
                 ffmpegArgs.push(
+                            '-crf', '22',
                             `-maxrate:v`, `${this.opts.videoBitrate}k`,
                             `-bufsize:v`, `${this.opts.videoBufSize}k`
                 );
+                if (this.opts.videoEncoder.toLowerCase() === "mpeg2video") {
+                    // This makes message "impossible bitrate constraints, this will fail" appear but nothing actually fails and it really looks like b:v is the only way to make the video look good when using mpeg2video
+                    ffmpegArgs.push(
+                        `-qscale:v`, `1`,
+                        '-b:v', `${this.opts.videoBitrate}k`
+                    );
+                }
             }
             if ( transcodeAudio ) {
                 // add the audio encoder flags

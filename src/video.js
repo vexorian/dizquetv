@@ -183,6 +183,11 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             return
         }
 
+        if (ffmpegSettings.disablePreludes === true) {
+            //disable the preludes
+            isBetween = false;
+        }
+
 
 
 
