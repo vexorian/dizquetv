@@ -1,0 +1,32 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - dev-rpi-docker
+
+  pull_request:
+
+env:
+  PLATFORM: linux/arm/v7
+  IMAGE_NAME: dizquetv:arm7
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push image
+        run: |
+          docker buildx build --platform "linux/arm/v7" --tag $IMAGE_NAME --file ./Dockerfile-rpi --output type=image,push=true .
