@@ -16,13 +16,13 @@ module.exports = function ($timeout) {
             scope.m = 0;
             scope.s = 0;
             scope.weekDayOptions = [
-                { id: 0, description : "Thursday" } ,
-                { id: 1, description : "Friday" } ,
-                { id: 2, description : "Saturday" } ,
-                { id: 3, description : "Sunday" } ,
-                { id: 4, description : "Monday" } ,
-                { id: 5, description : "Tuesday" } ,
-                { id: 6, description : "Wednesday" } ,
+                { id: 0, description : "Sunday" } ,
+                { id: 1, description : "Monday" } ,
+                { id: 2, description : "Tuesday" } ,
+                { id: 3, description : "Wednesday" } ,
+                { id: 4, description : "Thursday" } ,
+                { id: 5, description : "Friday" } ,
+                { id: 6, description : "Saturday" } ,
             ];
 
             scope.hourOptions = [];
