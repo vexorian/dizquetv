@@ -56,7 +56,7 @@ for (let i = 0, l = process.argv.length; i < l; i++) {
         process.env.PORT = process.argv[i + 1]
     if ((process.argv[i] === "-d" || process.argv[i] === "--database") && i + 1 !== l)
         process.env.DATABASE = process.argv[i + 1]
-    if ((process.argv[i] === "-p" || process.argv[i] === "--videoport") && i + 1 !== l)
+    if ((process.argv[i] === "-v" || process.argv[i] === "--videoport") && i + 1 !== l)
         process.env.PORT = process.argv[i + 1]
 }
 
