@@ -125,7 +125,8 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         })
 
         let channelNum = parseInt(req.query.channel, 10)
-        let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.PORT}/playlist?channel=${channelNum}&audioOnly=${audioOnly}&stepNumber={step}`);
+        let ff = await ffmpeg.spawnConcat(`http://localhost:${process.env.VIDEO_PORT}/playlist?channel=${channelNum}&audioOnly=${audioOnly}&stepNumber=${step}`);
+
         ff.pipe(res,  { end: false}  );
     };
     router.get('/video', async(req, res) => {
@@ -599,22 +600,22 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             && (stepNumber == 0)
         ) {
             //loading screen
-            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+            data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&first=0&session=${sessionId}&audioOnly=${audioOnly}'\n`;
         }
         let remaining = maxStreamsToPlayInARow;
         if (stepNumber == 0) {
-            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
+            data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&first=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
 
             if (transcodingEnabled && (audioOnly !== true)) {
-                data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
+                data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`;
             }
             remaining--;
         }
 
         for (var i = 0; i < remaining; i++) {
-            data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
+            data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
             if (transcodingEnabled && (audioOnly !== true) ) {
-                data += `file 'http://localhost:${process.env.PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
+                data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
             }
         }
 
