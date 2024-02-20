@@ -56,10 +56,13 @@ for (let i = 0, l = process.argv.length; i < l; i++) {
         process.env.PORT = process.argv[i + 1]
     if ((process.argv[i] === "-d" || process.argv[i] === "--database") && i + 1 !== l)
         process.env.DATABASE = process.argv[i + 1]
+    if ((process.argv[i] === "-v" || process.argv[i] === "--videoport") && i + 1 !== l)
+        process.env.PORT = process.argv[i + 1]
 }
 
 process.env.DATABASE = process.env.DATABASE ||  path.join(".", ".dizquetv")
 process.env.PORT = process.env.PORT || 8000
+process.env.VIDEO_PORT = process.env.VIDEO_PORT || process.env.PORT // Default to serving both on same port
 
 if (!fs.existsSync(process.env.DATABASE)) {
     if (fs.existsSync(  path.join(".", ".pseudotv")  )) {
@@ -289,10 +292,24 @@ app.use('/api/cache/images', cacheImageService.apiRouters())
 app.use('/' + fontAwesome, express.static(path.join(process.env.DATABASE, fontAwesome)))
 app.use('/' + bootstrap, express.static(path.join(process.env.DATABASE, bootstrap)))
 
-app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB  ))
+// TODO: Should the hdhr router be included on the video stream port? I'm not super familiar with its functionality.
 app.use(hdhr.router)
+
+// Set up video router on appropriate port
+if(process.env.PORT == process.env.VIDEO_PORT) {
+    app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB  ))
+} else {
+    // 2nd express app to listen on a different port
+    let videoApp = express()
+    videoApp.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB  ))
+    videoApp.listen(port = process.env.VIDEO_PORT, () => {
+        console.log(`Video stream server running on port: http://*:${process.env.VIDEO_PORT}`)
+    })
+}
+
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)
+    // TODO: Resolve hdhr question from above.
     let hdhrSettings = db['hdhr-settings'].find()[0]
     if (hdhrSettings.autoDiscovery === true)
         hdhr.ssdp.start()

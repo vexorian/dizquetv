@@ -25,6 +25,7 @@ EPG (Guide Information) data is stored to `.dizquetv/xmltv.xml`
 - Subtitle support.
 - Auto deinterlace any Plex media not marked `"scanType": "progressive"`
 - Can be configured to completely force Direct play, if you are ready for the caveats.
+- It's up to you if the channels have a life of their own and act as if they continued playing when you weren't watching them or if you want "on-demand" channels that stop their schedules while not being watched.
 
 ## Limitations
 
