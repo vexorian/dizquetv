@@ -615,7 +615,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         for (var i = 0; i < remaining; i++) {
             data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
             if (transcodingEnabled && (audioOnly !== true) ) {
-                data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&session=${sessionId}&audioOnly=${audioOnly}'\n`
+                data += `file 'http://localhost:${process.env.VIDEO_PORT}/stream?channel=${channelNum}&between=1&session=${sessionId}&audioOnly=${audioOnly}'\n`
             }
         }
 
