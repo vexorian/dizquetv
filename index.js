@@ -31,6 +31,7 @@ const OnDemandService = require("./src/services/on-demand-service");
 const ProgrammingService = require("./src/services/programming-service");
 const ActiveChannelService = require('./src/services/active-channel-service')
 const ProgramPlayTimeDB = require('./src/dao/program-play-time-db')
+const FfmpegSettingsService = require('./src/services/ffmpeg-settings-service')
 
 const onShutdown = require("node-graceful-shutdown").onShutdown;
 
@@ -50,12 +51,15 @@ if (NODE < 12) {
     console.error(`WARNING: Your nodejs version ${process.version} is lower than supported. dizqueTV has been tested best on nodejs 12.16.`);
 }
 
-
+process.env.unlock = false;
 for (let i = 0, l = process.argv.length; i < l; i++) {
     if ((process.argv[i] === "-p" || process.argv[i] === "--port") && i + 1 !== l)
         process.env.PORT = process.argv[i + 1]
     if ((process.argv[i] === "-d" || process.argv[i] === "--database") && i + 1 !== l)
         process.env.DATABASE = process.argv[i + 1]
+    if (process.argv[i] === "--unlock") {
+        process.env.unlock = true;
+    }
 }
 
 process.env.DATABASE = process.env.DATABASE ||  path.join(".", ".dizquetv")
@@ -101,6 +105,7 @@ channelService = new ChannelService(channelDB);
 fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelService );
 customShowDB = new CustomShowDB( path.join(process.env.DATABASE, 'custom-shows') );
 let programPlayTimeDB = new ProgramPlayTimeDB( path.join(process.env.DATABASE, 'play-cache') );
+let ffmpegSettingsService = new FfmpegSettingsService(db, process.env.unlock);
 
 async function initializeProgramPlayTimeDB() {
     try {
@@ -284,7 +289,7 @@ app.use('/favicon.svg', express.static(
 app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.css')))
 
 // API Routers
-app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService ))
+app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, ffmpegSettingsService))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 app.use('/' + fontAwesome, express.static(path.join(process.env.DATABASE, fontAwesome)))
 app.use('/' + bootstrap, express.static(path.join(process.env.DATABASE, bootstrap)))

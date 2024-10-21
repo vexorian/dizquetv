@@ -20,7 +20,8 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 803;
+const TARGET_VERSION = 804;
+const DAY_MS = 1000 * 60 * 60 * 24;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -43,6 +44,7 @@ const STEPS = [
     [    800,    801, (db) => addImageCache(db) ],
     [    801,    802, () => addGroupTitle() ],
     [    802,    803, () => fixNonIntegerDurations() ],
+    [    803,    804, (db) => addFFMpegLock(db) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -384,7 +386,7 @@ function ffmpeg() {
         //How default ffmpeg settings should look
         configVersion: 5,
         ffmpegPath: "/usr/bin/ffmpeg",
-        threads: 4,
+        pathLockDate: new Date().getTime() + DAY_MS,
         concatMuxDelay: "0",
         logFfmpeg: false,
         enableFFMPEGTranscoding: true,
@@ -762,6 +764,19 @@ function addScalingAlgorithm(db) {
     let ffmpegSettings = db['ffmpeg-settings'].find()[0];
     let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
     ffmpegSettings.scalingAlgorithm = "bicubic";
+    fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
+}
+
+function addFFMpegLock(db) {
+    let ffmpegSettings = db['ffmpeg-settings'].find()[0];
+    let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
+    if ( typeof(ffmpegSettings.pathLockDate) === 'undefined' || ffmpegSettings.pathLockDate == null ) {
+
+        console.log("Adding ffmpeg lock. For your security it will not be possible to modify the ffmpeg path using the UI anymore unless you launch dizquetv by following special instructions..");
+        // We are migrating an existing db that had a ffmpeg path. Make sure
+        // it's already locked.
+        ffmpegSettings.pathLockDate = new Date().getTime() - 2 * DAY_MS;
+    }
     fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
 }
 

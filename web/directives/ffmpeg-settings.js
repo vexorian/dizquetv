@@ -11,8 +11,13 @@ module.exports = function (dizquetv, resolutionOptions) {
                 scope.settings = settings
             })
             scope.updateSettings = (settings) => {
+                delete scope.settingsError;
                 dizquetv.updateFfmpegSettings(settings).then((_settings) => {
                     scope.settings = _settings
+                }).catch( (err) => {
+                    if ( typeof(err.data) === "string") {
+                        scope.settingsError = err.data;
+                    }
                 })
             }
             scope.resetSettings = (settings) => {

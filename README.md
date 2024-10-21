@@ -1,4 +1,4 @@
-# dizqueTV 1.5.3
+# dizqueTV 1.5.4
 ![Discord](https://img.shields.io/discord/711313431457693727?logo=discord&logoColor=fff&style=flat-square) ![GitHub top language](https://img.shields.io/github/languages/top/vexorian/dizquetv?logo=github&style=flat-square) ![Docker Pulls](https://img.shields.io/docker/pulls/vexorian/dizquetv?logo=docker&logoColor=fff&style=flat-square)
 
 Create live TV channel streams from media on your Plex servers.
@@ -33,6 +33,7 @@ EPG (Guide Information) data is stored to `.dizquetv/xmltv.xml`
 - dizqueTV does not currently watch your Plex server for media updates/changes. You must manually remove and re-add your programs for any changes to take effect. Same goes for Plex server changes (changing IP, port, etc).. You&apos;ll have to update the server settings manually in that case.
 - Most players (including Plex) will break after switching episodes if video / audio format is too different. dizqueTV can  be configured to use ffmpeg transcoding to prevent this, but that costs resources.
 - If you configure Plex DVR, it will always be recording and transcoding the channel&apos;s contents.
+- In its current state, dizquetv is intended for private use only and you should be discouraged from running dizqueTV in any capacity where other users can have access to dizqueTV's ports. You can use Plex's iptv player feature to share dizqueTV streams or you'll have to come up with some work arounds to make sure that streams can be played without ever actually exposing the dizquetv port to the outside world. Please use it with care, consider exposing dizqueTV's ports as something only advanced users who know what they are doing should try.
 
 ## Releases
 
