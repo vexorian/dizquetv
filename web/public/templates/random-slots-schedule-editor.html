@@ -65,7 +65,7 @@
                         </div>
                         <div class='form-group col-md-7' ng-if="schedule.randomDistribution == 'weighted'" >
                             <label ng-if="$index==0" for="weightRange{{$index}}">Weight</label>
-                            <input class='form-control-range custom-range' id="weightRange{{$index}}" type='range' ng-model='slot.weight' min=1 max=600
+                            <input class='form-control-range custom-range' id="weightRange{{$index}}" type='range' ng-model='slot.weight' min=1 max=60000
                             data-toggle="tooltip" data-placement="bottom" title="Slots  with more weight will be picked more frequently."
                              ng-change="refreshSlots()"
                             >

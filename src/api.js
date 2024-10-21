@@ -2,7 +2,6 @@
 const express = require('express')
 const path = require('path')
 const fs = require('fs')
-const databaseMigration = require('./database-migration');
 const constants = require('./constants');
 const JSONStream = require('JSONStream');
 const FFMPEGInfo = require('./ffmpeg-info');
@@ -25,7 +24,7 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService ) {
+function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService ) {
     let m3uService = _m3uService;
     const router = express.Router()
     const plexServerDB = new PlexServerDB(channelService, fillerDB, customShowDB, db);
@@ -529,7 +528,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
     // FFMPEG SETTINGS
     router.get('/api/ffmpeg-settings', (req, res) => {
       try {
-        let ffmpeg = db['ffmpeg-settings'].find()[0]
+        let ffmpeg = ffmpegSettingsService.get();
         res.send(ffmpeg)
       } catch(err) {
         console.error(err);
@@ -538,9 +537,9 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
     })
     router.put('/api/ffmpeg-settings', (req, res) => {
       try {
-        db['ffmpeg-settings'].update({ _id: req.body._id }, req.body)
-        let ffmpeg = db['ffmpeg-settings'].find()[0]
-        let err = fixupFFMPEGSettings(ffmpeg);
+        let result = ffmpegSettingsService.update(req.body);
+        let err = result.error
+
         if (typeof(err) !== 'undefined') {
           return res.status(400).send(err);
         }
@@ -555,7 +554,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
             "level" : "info"
           }
         );
-        res.send(ffmpeg)
+        res.send(result.ffmpeg)
       } catch(err) {
         console.error(err);
        res.status(500).send("error");
@@ -576,10 +575,8 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
     })
     router.post('/api/ffmpeg-settings', (req, res) => { // RESET
       try {
-        let ffmpeg = databaseMigration.defaultFFMPEG() ;
-        ffmpeg.ffmpegPath = req.body.ffmpegPath;
-        db['ffmpeg-settings'].update({ _id: req.body._id },  ffmpeg)
-        ffmpeg = db['ffmpeg-settings'].find()[0]
+        let ffmpeg = ffmpegSettingsService.reset();
+
         eventService.push(
           "settings-update",
           {
@@ -611,14 +608,6 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
       }
 
     })
-
-    function fixupFFMPEGSettings(ffmpeg) {
-      if (typeof(ffmpeg.maxFPS) === 'undefined') {
-        ffmpeg.maxFPS = 60;
-      } else if ( isNaN(ffmpeg.maxFPS) ) {
-        return "maxFPS should be a number";
-      }
-    }
 
     // PLEX SETTINGS
     router.get('/api/plex-settings', (req, res) => {
