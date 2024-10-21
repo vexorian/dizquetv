@@ -17,33 +17,33 @@ class FfmpegSettingsService {
             ffmpeg.lock = true;
         }
         // Hid this info from the API
-        delete ffmpeg.pathLockDate;
+        delete ffmpeg.ffmpegPathLockDate;
         return ffmpeg;
     }
 
     unlock() {
         let ffmpeg = this.getCurrentState();
         console.log("ffmpeg path UI unlocked for another day...");
-        ffmpeg.pathLockDate = new Date().getTime() + DAY_MS;
+        ffmpeg.ffmpegPathLockDate = new Date().getTime() + DAY_MS;
         this.db['ffmpeg-settings'].update({ _id: ffmpeg._id }, ffmpeg)
     }
 
 
     update(attempt) {
         let ffmpeg = this.getCurrentState();
-        attempt.pathLockDate = ffmpeg.pathLockDate;
+        attempt.ffmpegPathLockDate = ffmpeg.ffmpegPathLockDate;
         if (isLocked(ffmpeg)) {
             console.log("Note: ffmpeg path is not being updated since it's been locked for your security.");
             attempt.ffmpegPath = ffmpeg.ffmpegPath;
-            if (typeof(ffmpeg.pathLockDate) === 'undefined') {
+            if (typeof(ffmpeg.ffmpegPathLockDate) === 'undefined') {
                 // make sure to lock it even if it was undefined
-                attempt.pathLockDate = new Date().getTime() - DAY_MS;
+                attempt.ffmpegPathLockDate = new Date().getTime() - DAY_MS;
             }
         } else if (attempt.addLock === true) {
             // lock it right now
-            attempt.pathLockDate = new Date().getTime() - DAY_MS;
+            attempt.ffmpegPathLockDate = new Date().getTime() - DAY_MS;
         } else {
-            attempt.pathLockDate = new Date().getTime() + DAY_MS;
+            attempt.ffmpegPathLockDate = new Date().getTime() + DAY_MS;
         }
         delete attempt.addLock;
         delete attempt.lock;
@@ -115,7 +115,7 @@ function isValidFilePath(filePath) {
 }
 
 function isLocked(ffmpeg) {
-    return isNaN(ffmpeg.pathLockDate) || ffmpeg.pathLockDate < new Date().getTime();
+    return isNaN(ffmpeg.ffmpegPathLockDate) || ffmpeg.ffmpegPathLockDate < new Date().getTime();
 }
 
 
