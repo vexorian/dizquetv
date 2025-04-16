@@ -64,24 +64,66 @@ class PlexPlayer {
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
             ffmpeg.setAudioOnly( this.context.audioOnly );
             this.ffmpeg = ffmpeg;
-            let streamDuration;
-            if (typeof(lineupItem.streamDuration)!=='undefined') {
-                if (lineupItem.start + lineupItem.streamDuration + constants.SLACK < lineupItem.duration) {
-                    streamDuration = lineupItem.streamDuration / 1000;
-                }
-            }
-            let deinterlace = ffmpegSettings.enableFFMPEGTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
-
+            
+            // Get basic parameters
+            let seek = typeof lineupItem.seekPosition === 'number' ? lineupItem.seekPosition : 0;
+            let end = typeof lineupItem.endPosition === 'number' ? lineupItem.endPosition : null;
+            let currentElapsed = typeof lineupItem.start === 'number' ? lineupItem.start : 0;
+            let programEnd = end !== null ? end : lineupItem.duration;
+            
+            let deinterlace = ffmpegSettings.enableFFMPEGTranscoding;
+            
+            // Get stream first so we can handle direct play correctly
             let stream = await plexTranscoder.getStream(deinterlace);
             if (this.killed) {
                 return;
             }
-
-            //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
-            //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : lineupItem.start;
-            let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
+            
+            // Calculate parameters differently for direct play vs transcoded mode
+            let streamDuration;
+            let streamStart;
+            
+            if (stream.directPlay) {
+                // DIRECT PLAY:
+                // 1. Calculate duration from endPos to currentElapsed (not from seek to endPos)
+                streamDuration = Math.max(0, programEnd - currentElapsed) / 1000;
+                
+                // 2. Start should be ONLY currentElapsed 
+                streamStart = currentElapsed / 1000;
+                
+                console.log(`[PLEX-PLAYER] Direct Play: Using duration=${streamDuration}s (from currentElapsed=${currentElapsed/1000}s to endPos=${programEnd/1000}s)`);
+                
+                // For direct play, ignore the streamDuration override with custom end times
+                if (end !== null && typeof(lineupItem.streamDuration) !== 'undefined') {
+                    // Store original value for reference
+                    stream.streamStats.originalDuration = lineupItem.streamDuration;
+                    stream.streamStats.duration = Math.max(streamDuration * 1000, 60000);
+                    
+                    console.log(`[PLEX-PLAYER] Direct Play: Custom end time detected, ignoring streamDuration override: ${lineupItem.streamDuration/1000}s`);
+                    lineupItem.streamDuration = undefined;
+                }
+            } else {
+                // TRANSCODED: Keep existing behavior
+                streamStart = undefined; // Plex handles this internally for transcoded streams
+                
+                // Calculate duration based on programEnd and seek
+                streamDuration = Math.max(0, programEnd - seek) / 1000;
+                
+                // Apply streamDuration override if present - only for transcoded streams
+                if (typeof(lineupItem.streamDuration) !== 'undefined') {
+                    streamDuration = lineupItem.streamDuration / 1000;
+                    console.log(`[PLEX-PLAYER] Transcoding: Using override streamDuration: ${streamDuration}s`);
+                }
+                
+                console.log(`[PLEX-PLAYER] Transcoding: Using duration=${streamDuration}s (seek=${seek/1000}s, end=${programEnd/1000}s)`);
+            }
+            
             let streamStats = stream.streamStats;
-            streamStats.duration = lineupItem.streamDuration;
+            
+            // Ensure we have a valid duration for error handling
+            if (!streamStats.duration) {
+                streamStats.duration = Math.max(streamDuration * 1000, 60000);
+            }
 
             let emitter = new EventEmitter();
             //setTimeout( () => {

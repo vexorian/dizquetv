@@ -83,7 +83,12 @@ class TVGuideService extends events.EventEmitter
         let arr = new Array( channel.programs.length + 1);
         arr[0] = 0;
         for (let i = 0; i < n; i++) {
-            let d = channel.programs[i].duration;
+            // Calculate effective duration based on seekPosition and endPosition
+            let program = channel.programs[i];
+            let seek = typeof program.seekPosition === 'number' ? program.seekPosition : 0;
+            let end = typeof program.endPosition === 'number' ? program.endPosition : null;
+            let d = (end !== null ? end : program.duration) - seek;
+            
             if (d == 0) {
                 console.log("Found program with duration 0, correcting it");
                 d = 1;
@@ -92,7 +97,6 @@ class TVGuideService extends events.EventEmitter
                 console.log( `Found program in channel ${channel.number} with non-integer duration ${d}, correcting it`);
                 d = Math.ceil(d);
             }
-            channel.programs[i].duration = d;
             arr[i+1] =  arr[i] + d;
             await this._throttle();
         }
@@ -360,8 +364,68 @@ class TVGuideService extends events.EventEmitter
                             result.programs.push( makeEntry(channel, programs[i] ) );
             }
         }
+        
+        // Only merge programs if enabled in channel settings
+        if (channel.mergeAdjacentPrograms === true) {
+            result.programs = this.mergeAdjacentSamePrograms(result.programs);
+        }
          
         return result;
+    }
+
+    // Merge adjacent programs that have the same ratingKey
+    mergeAdjacentSamePrograms(programs) {
+        if (!programs || programs.length <= 1) {
+            return programs;
+        }
+        
+        console.log(`Before merging: ${programs.length} programs`);
+        
+        // Debug: Check how many programs have ratingKeys
+        const programsWithRatingKey = programs.filter(p => p.ratingKey);
+        console.log(`Programs with ratingKey: ${programsWithRatingKey.length}`);
+        
+        const mergedPrograms = [];
+        let i = 0;
+        
+        while (i < programs.length) {
+            const currentProgram = programs[i];
+            
+            // Skip if this is a flex/placeholder program with no ratingKey
+            if (!currentProgram.ratingKey) {
+                mergedPrograms.push(currentProgram);
+                i++;
+                continue;
+            }
+            
+            // Look ahead to see if there are adjacent programs with the same ratingKey
+            let j = i + 1;
+            while (j < programs.length && 
+                   programs[j].ratingKey && 
+                   programs[j].ratingKey === currentProgram.ratingKey) {
+                j++;
+            }
+            
+            if (j > i + 1) {
+                // We found programs to merge
+                console.log(`Merging ${j-i} programs with ratingKey ${currentProgram.ratingKey}`);
+                
+                const mergedProgram = {...currentProgram};
+                mergedProgram.stop = programs[j-1].stop;
+                mergedPrograms.push(mergedProgram);
+                
+                // Skip all the programs we just merged
+                i = j;
+            } else {
+                // No programs to merge, just add the current one
+                mergedPrograms.push(currentProgram);
+                i++;
+            }
+        }
+        
+        console.log(`After merging: ${mergedPrograms.length} programs`);
+        
+        return mergedPrograms;
     }
 
     async buildItManaged() {
@@ -580,6 +644,7 @@ function makeEntry(channel, x) {
         icon: icon,
         title: title,
         sub: sub,
+        ratingKey: x.program.ratingKey // Add ratingKey to preserve it for merging
     }
 }
 
