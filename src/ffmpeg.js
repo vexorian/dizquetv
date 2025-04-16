@@ -126,8 +126,19 @@ class FFMPEG extends events.EventEmitter {
         }
         
 
-        if (typeof startTime !== 'undefined')
-            ffmpegArgs.push(`-ss`, startTime)
+        // Ensure startTime is a number (seconds), convert if needed
+        if (typeof startTime !== 'undefined') {
+            let ss = startTime;
+            if (typeof ss === 'string' && ss.endsWith('ms')) {
+                ss = parseInt(ss) / 1000;
+            }
+            if (typeof ss === 'number' && ss > 10000) {
+                // probably ms, convert to seconds
+                ss = ss / 1000;
+            }
+            ffmpegArgs.push(`-ss`, `${ss}`);
+            console.log(`[FFMPEG] Using custom start position: -ss ${ss}`);
+        }
         
         if (isConcatPlaylist == true)
             ffmpegArgs.push(`-f`, `concat`, 
@@ -558,9 +569,18 @@ class FFMPEG extends events.EventEmitter {
                         `service_name="${this.channel.name}"`,
                         );
 
-        //t should be before -f
+        // Ensure duration is a number (seconds), convert if needed
         if (typeof duration !== 'undefined') {
-            ffmpegArgs.push(`-t`, `${duration}`);
+            let t = duration;
+            if (typeof t === 'string' && t.endsWith('ms')) {
+                t = parseInt(t) / 1000;
+            }
+            if (typeof t === 'number' && t > 10000) {
+                // probably ms, convert to seconds
+                t = t / 1000;
+            }
+            ffmpegArgs.push(`-t`, `${t}`);
+            console.log(`[FFMPEG] Using custom duration: -t ${t}`);
         }
             
         ffmpegArgs.push(`-f`, `mpegts`, `pipe:1`)
