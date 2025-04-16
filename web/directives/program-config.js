@@ -23,6 +23,12 @@ module.exports = function ($timeout) {
                 else if (prog.type === "episode" && prog.episode <= 0)
                     scope.error = { episode: 'Episode number musat be greater than 0' }
 
+                // Validate seekPosition and endPosition
+                if (typeof prog.endPosition === 'number' && typeof prog.seekPosition === 'number') {
+                    if (prog.endPosition <= prog.seekPosition) {
+                        scope.error = { endPosition: 'End position must be greater than start position (seek).' };
+                    }
+                }
                 if (scope.error != null) {
                     $timeout(() => {
                         scope.error = null

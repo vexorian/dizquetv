@@ -64,11 +64,15 @@ class PlexPlayer {
             let ffmpeg = new FFMPEG(ffmpegSettings, channel);  // Set the transcoder options
             ffmpeg.setAudioOnly( this.context.audioOnly );
             this.ffmpeg = ffmpeg;
-            let streamDuration;
+            // Compute stream start and duration using seekPosition and endPosition
+            let seek = typeof lineupItem.seekPosition === 'number' ? lineupItem.seekPosition : 0;
+            let end = typeof lineupItem.endPosition === 'number' ? lineupItem.endPosition : null;
+            let programStart = seek + (typeof lineupItem.start === 'number' ? lineupItem.start : 0);
+            let programEnd = end !== null ? end : lineupItem.duration;
+            let streamDuration = Math.max(0, programEnd - programStart) / 1000; // in seconds
+            // If streamDuration is explicitly set, override
             if (typeof(lineupItem.streamDuration)!=='undefined') {
-                if (lineupItem.start + lineupItem.streamDuration + constants.SLACK < lineupItem.duration) {
-                    streamDuration = lineupItem.streamDuration / 1000;
-                }
+                streamDuration = lineupItem.streamDuration / 1000;
             }
             let deinterlace = ffmpegSettings.enableFFMPEGTranscoding; //for now it will always deinterlace when transcoding is enabled but this is sub-optimal
 
@@ -77,9 +81,7 @@ class PlexPlayer {
                 return;
             }
 
-            //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
-            //let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : lineupItem.start;
-            let streamStart = (stream.directPlay) ? plexTranscoder.currTimeS : undefined;
+            let streamStart = (stream.directPlay) ? (programStart / 1000) : undefined;
             let streamStats = stream.streamStats;
             streamStats.duration = lineupItem.streamDuration;
 
