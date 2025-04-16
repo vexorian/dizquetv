@@ -571,7 +571,7 @@ function makeEntry(channel, x) {
         title=".";
     }
     //what data is needed here?
-    return {
+    let entry = {
         start: (new Date(x.start)).toISOString(),
         stop: (new Date(x.start + x.program.duration)).toISOString(),
         summary: x.program.summary,
@@ -581,6 +581,12 @@ function makeEntry(channel, x) {
         title: title,
         sub: sub,
     }
+    const seek = typeof x.program.seekPosition === 'number' ? x.program.seekPosition : 0;
+    const endPos = typeof x.program.endPosition === 'number' ? x.program.endPosition : x.program.duration;
+    const effectiveDuration = endPos - seek;
+    // use effectiveDuration instead of full duration
+    entry.stop = new Date(new Date(entry.start).getTime() + effectiveDuration).toISOString();
+    return entry;
 }
 
 function formatDateYYYYMMDD(date) {

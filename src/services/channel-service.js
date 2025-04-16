@@ -59,8 +59,24 @@ class ChannelService extends events.EventEmitter {
 
 
 function cleanUpProgram(program) {
-    delete program.start
-    delete program.stop
+    // ▶ If the user set an End‑Position in the EPG modal, shrink duration
+    if (program.endPosition != null && program.endPosition !== '') {
+        const end = parseInt(program.endPosition, 10);
+        const start = program.startPosition != null && program.startPosition !== ''
+            ? parseInt(program.startPosition, 10)
+            : 0;
+        if (!Number.isNaN(end) && end > start) {
+            program.duration = end - start;
+            if (program.start) {
+                program.stop = new Date(new Date(program.start).getTime() + (end - start)).toISOString();
+            }
+        }
+    }
+
+    // ▶ Your manual ISO‑datetime override (if you ever wire up true start/stop)
+    if (program.start && program.stop) {
+        program.duration = new Date(program.stop) - new Date(program.start);
+    }
     delete program.streams;
     delete program.durationStr;
     delete program.commercials;
