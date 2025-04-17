@@ -160,6 +160,19 @@ function _smartMerge(programs) {
     
     return false;
   }
+  
+  // New helper function to detect exact duplicates
+  function isExactDuplicate(a, b) {
+    if (!a || !b) return false;
+    
+    // Check for identical content
+    return a.title === b.title && 
+           ((a.sub && b.sub && a.sub.season === b.sub.season && a.sub.episode === b.sub.episode) || 
+            (!a.sub && !b.sub)) &&
+           a.summary === b.summary &&
+           a.rating === b.rating &&
+           (a.ratingKey === b.ratingKey || (!a.ratingKey && !b.ratingKey));
+  }
 
   // Get channel from first program if available
   const channel = programs.length > 0 && programs[0].channel ? programs[0].channel : {
@@ -332,8 +345,39 @@ function _smartMerge(programs) {
     }
   }
   
-  console.log(`_smartMerge returning ${splitResult.length} programs (from original ${programs.length})`);
-  return splitResult;
+  // Step 4: Merge consecutive identical programs (final pass)
+  console.log('XMLTV Debug: Starting final pass to merge identical consecutive programs');
+  const deduplicatedResult = [];
+  let currentGroup = null;
+  let lastProgram = null;
+  
+  for (let i = 0; i < splitResult.length; i++) {
+    const prog = splitResult[i];
+    
+    if (lastProgram === null) {
+      // First program
+      lastProgram = prog;
+      deduplicatedResult.push(prog);
+      continue;
+    }
+    
+    // Check if this is an exact duplicate of the last program
+    if (isExactDuplicate(lastProgram, prog) && 
+        Math.abs(ms(lastProgram.stop) - ms(prog.start)) <= ADJACENT_THRESHOLD) {
+      // Merge by extending the last program
+      console.log(`XMLTV Debug: Merging duplicate program: ${prog.title}`);
+      lastProgram.stop = prog.stop;
+    } else {
+      // Different program, add as new
+      deduplicatedResult.push(prog);
+      lastProgram = prog;
+    }
+  }
+  
+  console.log(`XMLTV Debug: Final pass reduced from ${splitResult.length} to ${deduplicatedResult.length} programs`);
+  
+  console.log(`_smartMerge returning ${deduplicatedResult.length} programs (from original ${programs.length})`);
+  return deduplicatedResult;
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
