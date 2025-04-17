@@ -382,8 +382,8 @@ async function _writeProgramme(channel, prog, xw, xmlSettings, cacheImageService
     // Format dates and validate
     let startDate, stopDate;
     try {
-      startDate = _xmltvDate(prog.start);
-      stopDate = _xmltvDate(prog.stop);
+      startDate = _createXMLTVDate(prog.start);
+      stopDate = _createXMLTVDate(prog.stop);
     } catch (e) {
       console.error('ERROR: Invalid date format in program:', prog.title, e.message);
       return; // Skip program with invalid dates
@@ -404,6 +404,7 @@ async function _writeProgramme(channel, prog, xw, xmlSettings, cacheImageService
     // Add previously-shown tag
     xw.writeRaw('\n        <previously-shown/>');
 
+    // TODO: Add support for track data (artist, album) here
     // Add episode information if available
     if (prog.sub) {
       // Subtitle (episode title)
@@ -456,18 +457,24 @@ async function _writeProgramme(channel, prog, xw, xmlSettings, cacheImageService
   }
 }
 
-function _xmltvDate(iso) {
-  return iso.substring(0, 19).replace(/[-T:]/g, '') + ' +0000';
+function _createXMLTVDate(d) {
+  return d.substring(0, 19).replace(/[-T:]/g, '') + ' +0000';
 }
 
 function wait(ms) { return new Promise(res => setTimeout(res, ms)); }
 
 async function shutdown() {
   isShutdown = true;
-  console.log('Shutting down xmltv writer.');
-  while (isWorking) {
-    console.log('Waiting for xmltv writer to finish…');
-    await wait(100);
+  console.log("Shutting down xmltv writer.");
+  if (isWorking) {
+    let s = "Wait for xmltv writer...";
+    while (isWorking) {
+      console.log(s);
+      await wait(100);
+      s = "Still waiting for xmltv writer...";
+    }
+    console.log("Write finished.");
+  } else {
+    console.log("xmltv writer had no pending jobs.");
   }
-  console.log('xmltv writer idle.');
 }
