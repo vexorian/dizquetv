@@ -9,6 +9,52 @@ module.exports = function ($timeout) {
             onDone: "=onDone"
         },
         link: function (scope, element, attrs) {
+            // Format conversion functions
+            scope.msToTimeString = function(ms) {
+                if (ms === null || ms === undefined) return '';
+                var totalSeconds = Math.floor(ms / 1000);
+                var minutes = Math.floor(totalSeconds / 60);
+                var seconds = totalSeconds % 60;
+                return minutes + ':' + (seconds < 10 ? '0' + seconds : seconds);
+            };
+            
+            scope.timeStringToMs = function(timeString) {
+                if (!timeString) return 0;
+                var parts = timeString.split(':');
+                if (parts.length !== 2) return 0;
+                
+                var minutes = parseInt(parts[0], 10);
+                var seconds = parseInt(parts[1], 10);
+                
+                if (isNaN(minutes) || isNaN(seconds)) return 0;
+                return (minutes * 60 + seconds) * 1000;
+            };
+            
+            // Initialize time string fields
+            scope.seekPositionTime = '';
+            scope.endPositionTime = '';
+            
+            // Watch for program changes to update time strings
+            scope.$watch('program', function(newVal) {
+                if (newVal) {
+                    scope.seekPositionTime = scope.msToTimeString(newVal.seekPosition);
+                    scope.endPositionTime = scope.msToTimeString(newVal.endPosition);
+                }
+            });
+            
+            // Update milliseconds when time strings change
+            scope.$watch('seekPositionTime', function(newVal) {
+                if (scope.program && newVal) {
+                    scope.program.seekPosition = scope.timeStringToMs(newVal);
+                }
+            });
+            
+            scope.$watch('endPositionTime', function(newVal) {
+                if (scope.program && newVal) {
+                    scope.program.endPosition = scope.timeStringToMs(newVal);
+                }
+            });
+
             scope.finished = (prog) => {
                 if (prog.title === "")
                     scope.error = { title: 'You must set a program title.' }

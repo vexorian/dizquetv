@@ -22,12 +22,22 @@
                         <input class="form-control form-control-sm" type="text" ng-model="program.subtitle"></input>
                         <label>Summary</label>
                         <textarea class="form-control form-control-sm" ng-model="program.summary"></textarea>
-                        <label>Start Position (ms)</label>
-                        <input class="form-control form-control-sm" type="number" ng-model="program.seekPosition" min="0" placeholder="0 (start of file)">
-                        <label>End Position (ms, optional)
+                        <label>Start Position Offset (optional)</label>
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <input class="form-control form-control-sm" type="text" ng-model="seekPositionTime" placeholder="Min:Sec (leave blank for start of file)">
+                                <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                            </div>
+                        </div>
+                        <label>End Position Offset (optional)
                             <span class="text-danger pull-right">{{error.endPosition}}</span>
                         </label>
-                        <input class="form-control form-control-sm" type="number" ng-model="program.endPosition" min="0" placeholder="Leave blank for end of file">
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <input class="form-control form-control-sm" type="text" ng-model="endPositionTime" placeholder="Min:Sec (leave blank for end of file)">
+                                <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
+                            </div>
+                        </div>
                         <label>Rating</label>
                         <input class="form-control form-control-sm" type="text" ng-model="program.rating"></input>
                         <label>Icon</label>
@@ -46,12 +56,22 @@
                         <input class="form-control form-control-sm" type="text" ng-model="program.subtitle"></input>
                         <label>Summary</label>
                         <textarea class="form-control form-control-sm" ng-model="program.summary"></textarea>
-                        <label>Start Position (ms)</label>
-                        <input class="form-control form-control-sm" type="number" ng-model="program.seekPosition" min="0" placeholder="0 (start of file)">
-                        <label>End Position (ms, optional)
+                        <label>Start Position Offset (optional)</label>
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <input class="form-control form-control-sm" type="text" ng-model="seekPositionTime" placeholder="Min:Sec (leave blank for start of file)">
+                                <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                            </div>
+                        </div>
+                        <label>End Position Offset (optional)
                             <span class="text-danger pull-right">{{error.endPosition}}</span>
                         </label>
-                        <input class="form-control form-control-sm" type="number" ng-model="program.endPosition" min="0" placeholder="Leave blank for end of file">
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <input class="form-control form-control-sm" type="text" ng-model="endPositionTime" placeholder="Min:Sec (leave blank for end of file)">
+                                <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
+                            </div>
+                        </div>
                         <label>Rating</label>
                         <input class="form-control form-control-sm" type="text" ng-model="program.rating"></input>
                         <label>Icon</label>
@@ -80,12 +100,22 @@
                         <input class="form-control form-control-sm" type="number" ng-model="program.episode"></input>
                         <label>Summary</label>
                         <textarea class="form-control form-control-sm" ng-model="program.summary"></textarea>
-                        <label>Start Position (ms)</label>
-                        <input class="form-control form-control-sm" type="number" ng-model="program.seekPosition" min="0" placeholder="0 (start of file)">
-                        <label>End Position (ms, optional)
+                        <label>Start Position Offset (optional)</label>
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <input class="form-control form-control-sm" type="text" ng-model="seekPositionTime" placeholder="Min:Sec (leave blank for start of file)">
+                                <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                            </div>
+                        </div>
+                        <label>End Position Offset (optional)
                             <span class="text-danger pull-right">{{error.endPosition}}</span>
                         </label>
-                        <input class="form-control form-control-sm" type="number" ng-model="program.endPosition" min="0" placeholder="Leave blank for end of file">
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <input class="form-control form-control-sm" type="text" ng-model="endPositionTime" placeholder="Min:Sec (leave blank for end of file)">
+                                <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
+                            </div>
+                        </div>
                         <label>Rating</label>
                         <input class="form-control form-control-sm" type="text" ng-model="program.rating"></input>
                         <label>Icon</label>
