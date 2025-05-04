@@ -364,8 +364,66 @@ class TVGuideService extends events.EventEmitter
                             result.programs.push( makeEntry(channel, programs[i] ) );
             }
         }
+        
+        // Merge adjacent programs with the same ratingKey
+        result.programs = this.mergeAdjacentSamePrograms(result.programs);
          
         return result;
+    }
+
+    // Merge adjacent programs that have the same ratingKey
+    mergeAdjacentSamePrograms(programs) {
+        if (!programs || programs.length <= 1) {
+            return programs;
+        }
+        
+        console.log(`Before merging: ${programs.length} programs`);
+        
+        // Debug: Check how many programs have ratingKeys
+        const programsWithRatingKey = programs.filter(p => p.ratingKey);
+        console.log(`Programs with ratingKey: ${programsWithRatingKey.length}`);
+        
+        const mergedPrograms = [];
+        let i = 0;
+        
+        while (i < programs.length) {
+            const currentProgram = programs[i];
+            
+            // Skip if this is a flex/placeholder program with no ratingKey
+            if (!currentProgram.ratingKey) {
+                mergedPrograms.push(currentProgram);
+                i++;
+                continue;
+            }
+            
+            // Look ahead to see if there are adjacent programs with the same ratingKey
+            let j = i + 1;
+            while (j < programs.length && 
+                   programs[j].ratingKey && 
+                   programs[j].ratingKey === currentProgram.ratingKey) {
+                j++;
+            }
+            
+            if (j > i + 1) {
+                // We found programs to merge
+                console.log(`Merging ${j-i} programs with ratingKey ${currentProgram.ratingKey}`);
+                
+                const mergedProgram = {...currentProgram};
+                mergedProgram.stop = programs[j-1].stop;
+                mergedPrograms.push(mergedProgram);
+                
+                // Skip all the programs we just merged
+                i = j;
+            } else {
+                // No programs to merge, just add the current one
+                mergedPrograms.push(currentProgram);
+                i++;
+            }
+        }
+        
+        console.log(`After merging: ${mergedPrograms.length} programs`);
+        
+        return mergedPrograms;
     }
 
     async buildItManaged() {
@@ -584,6 +642,7 @@ function makeEntry(channel, x) {
         icon: icon,
         title: title,
         sub: sub,
+        ratingKey: x.program.ratingKey // Add ratingKey to preserve it for merging
     }
 }
 
