@@ -365,8 +365,10 @@ class TVGuideService extends events.EventEmitter
             }
         }
         
-        // Merge adjacent programs with the same ratingKey
-        result.programs = this.mergeAdjacentSamePrograms(result.programs);
+        // Only merge programs if enabled in channel settings
+        if (channel.mergeAdjacentPrograms === true) {
+            result.programs = this.mergeAdjacentSamePrograms(result.programs);
+        }
          
         return result;
     }

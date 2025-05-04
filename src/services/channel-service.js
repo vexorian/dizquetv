@@ -105,6 +105,11 @@ function cleanUpChannel(channel) {
     delete channel.filler;
     channel.fallback = channel.fallback.flatMap( cleanUpProgram );
     
+    // Set default for mergeAdjacentPrograms if not already defined
+    if (typeof channel.mergeAdjacentPrograms === 'undefined') {
+        channel.mergeAdjacentPrograms = false; // Disabled by default for backward compatibility
+    }
+    
     // Calculate total channel duration using effective durations
     channel.duration = 0;
     for (let i = 0; i < channel.programs.length; i++) {
