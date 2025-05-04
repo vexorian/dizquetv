@@ -59,18 +59,15 @@ class ChannelService extends events.EventEmitter {
 
 
 function cleanUpProgram(program) {
-    // ▶ If the user set an End‑Position in the EPG modal, shrink duration
+    // ▶ Store seekPosition and endPosition without modifying original duration
+    if (program.startPosition != null && program.startPosition !== '') {
+        // Convert startPosition to seekPosition for consistency
+        program.seekPosition = parseInt(program.startPosition, 10);
+        delete program.startPosition;
+    }
+    
     if (program.endPosition != null && program.endPosition !== '') {
-        const end = parseInt(program.endPosition, 10);
-        const start = program.startPosition != null && program.startPosition !== ''
-            ? parseInt(program.startPosition, 10)
-            : 0;
-        if (!Number.isNaN(end) && end > start) {
-            program.duration = end - start;
-            if (program.start) {
-                program.stop = new Date(new Date(program.start).getTime() + (end - start)).toISOString();
-            }
-        }
+        program.endPosition = parseInt(program.endPosition, 10);
     }
 
     // ▶ Your manual ISO‑datetime override (if you ever wire up true start/stop)
@@ -107,13 +104,18 @@ function cleanUpChannel(channel) {
     delete channel.fillerContent;
     delete channel.filler;
     channel.fallback = channel.fallback.flatMap( cleanUpProgram );
+    
+    // Calculate total channel duration using effective durations
     channel.duration = 0;
     for (let i = 0; i < channel.programs.length; i++) {
-      channel.duration += channel.programs[i].duration;
+      let program = channel.programs[i];
+      let seek = typeof program.seekPosition === 'number' ? program.seekPosition : 0;
+      let end = typeof program.endPosition === 'number' ? program.endPosition : null;
+      let effectiveDuration = (end !== null ? end : program.duration) - seek;
+      
+      channel.duration += effectiveDuration;
     }
     return channel;
-
 }
-
 
 module.exports = ChannelService

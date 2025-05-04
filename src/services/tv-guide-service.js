@@ -83,7 +83,12 @@ class TVGuideService extends events.EventEmitter
         let arr = new Array( channel.programs.length + 1);
         arr[0] = 0;
         for (let i = 0; i < n; i++) {
-            let d = channel.programs[i].duration;
+            // Calculate effective duration based on seekPosition and endPosition
+            let program = channel.programs[i];
+            let seek = typeof program.seekPosition === 'number' ? program.seekPosition : 0;
+            let end = typeof program.endPosition === 'number' ? program.endPosition : null;
+            let d = (end !== null ? end : program.duration) - seek;
+            
             if (d == 0) {
                 console.log("Found program with duration 0, correcting it");
                 d = 1;
@@ -92,7 +97,6 @@ class TVGuideService extends events.EventEmitter
                 console.log( `Found program in channel ${channel.number} with non-integer duration ${d}, correcting it`);
                 d = Math.ceil(d);
             }
-            channel.programs[i].duration = d;
             arr[i+1] =  arr[i] + d;
             await this._throttle();
         }
@@ -571,7 +575,7 @@ function makeEntry(channel, x) {
         title=".";
     }
     //what data is needed here?
-    let entry = {
+    return {
         start: (new Date(x.start)).toISOString(),
         stop: (new Date(x.start + x.program.duration)).toISOString(),
         summary: x.program.summary,
@@ -581,12 +585,6 @@ function makeEntry(channel, x) {
         title: title,
         sub: sub,
     }
-    const seek = typeof x.program.seekPosition === 'number' ? x.program.seekPosition : 0;
-    const endPos = typeof x.program.endPosition === 'number' ? x.program.endPosition : x.program.duration;
-    const effectiveDuration = endPos - seek;
-    // use effectiveDuration instead of full duration
-    entry.stop = new Date(new Date(entry.start).getTime() + effectiveDuration).toISOString();
-    return entry;
 }
 
 function formatDateYYYYMMDD(date) {
