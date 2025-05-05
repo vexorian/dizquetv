@@ -59,7 +59,6 @@ class ChannelService extends events.EventEmitter {
 
 
 function cleanUpProgram(program) {
-    // ▶ Store seekPosition and endPosition without modifying original duration
     if (program.startPosition != null && program.startPosition !== '') {
         // Convert startPosition to seekPosition for consistency
         program.seekPosition = parseInt(program.startPosition, 10);
@@ -70,7 +69,6 @@ function cleanUpProgram(program) {
         program.endPosition = parseInt(program.endPosition, 10);
     }
 
-    // ▶ Your manual ISO‑datetime override (if you ever wire up true start/stop)
     if (program.start && program.stop) {
         program.duration = new Date(program.stop) - new Date(program.start);
     }
@@ -122,5 +120,6 @@ function cleanUpChannel(channel) {
     }
     return channel;
 }
+
 
 module.exports = ChannelService

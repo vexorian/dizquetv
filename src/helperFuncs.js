@@ -93,7 +93,6 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
     // Use seekPosition and endPosition for effective start and duration
     let seek = typeof activeProgram.seekPosition === 'number' ? activeProgram.seekPosition : 0;
     let end = typeof activeProgram.endPosition === 'number' ? activeProgram.endPosition : null;
-    let effectiveDurationForLineup = (end !== null ? end : activeProgram.duration) - seek;
 
     let lineup = []
 
@@ -113,8 +112,6 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
 
 
     if (activeProgram.isOffline === true) {
-        // Offline programs don't use seek/end logic
-
         //offline case
         let remaining = activeProgram.duration - timeElapsed;
         //look for a random filler to play
@@ -205,6 +202,7 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
         streamDuration: effectiveStreamDuration,
         beginningOffset: beginningOffset,
         duration: effectiveDuration,
+        originalDuration: activeProgram.duration,
         serverKey: activeProgram.serverKey,
         seekPosition: effectiveSeek,
         endPosition: end

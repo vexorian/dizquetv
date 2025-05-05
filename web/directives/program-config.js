@@ -56,9 +56,6 @@ module.exports = function ($timeout) {
                 }
             });
 
-            // REMOVED watchers for seekPositionTime and endPositionTime
-            // We will process timeInput directly in finished()
-
             scope.finished = (prog) => {
                 // prog here is the original program object passed to the directive
                 // We need to validate and apply changes from scope.timeInput
