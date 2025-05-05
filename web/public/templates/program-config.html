@@ -40,8 +40,9 @@
                                     <label>Custom Start Time (optional)</label>
                                     <div class="form-row mb-3">
                                         <div class="col">
-                                            <input class="form-control form-control-sm" type="text" ng-model="seekPositionTime" placeholder="Min:Sec (leave blank for start of file)">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.seek" placeholder="MM:SS (leave blank for start)">
                                             <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                                            <div ng-show="error && error.seekPosition" class="text-danger">{{error.seekPosition}}</div>
                                         </div>
                                     </div>
                                     <label>Custom End Time (optional)
@@ -49,7 +50,7 @@
                                     </label>
                                     <div class="form-row mb-3">
                                         <div class="col">
-                                            <input class="form-control form-control-sm" type="text" ng-model="endPositionTime" placeholder="Min:Sec (leave blank for end of file)">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.end" placeholder="MM:SS (leave blank for end)">
                                             <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
                                         </div>
                                     </div>
@@ -84,8 +85,9 @@
                                     <label>Custom Start Time (optional)</label>
                                     <div class="form-row mb-3">
                                         <div class="col">
-                                            <input class="form-control form-control-sm" type="text" ng-model="seekPositionTime" placeholder="Min:Sec (leave blank for start of file)">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.seek" placeholder="MM:SS (leave blank for start)">
                                             <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                                            <div ng-show="error && error.seekPosition" class="text-danger">{{error.seekPosition}}</div>
                                         </div>
                                     </div>
                                     <label>Custom End Time (optional)
@@ -93,7 +95,7 @@
                                     </label>
                                     <div class="form-row mb-3">
                                         <div class="col">
-                                            <input class="form-control form-control-sm" type="text" ng-model="endPositionTime" placeholder="Min:Sec (leave blank for end of file)">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.end" placeholder="MM:SS (leave blank for end)">
                                             <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
                                         </div>
                                     </div>
@@ -156,8 +158,9 @@
                                     <label>Custom Start Time (optional)</label>
                                     <div class="form-row mb-3">
                                         <div class="col">
-                                            <input class="form-control form-control-sm" type="text" ng-model="seekPositionTime" placeholder="Min:Sec (leave blank for start of file)">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.seek" placeholder="MM:SS (leave blank for start)">
                                             <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                                            <div ng-show="error && error.seekPosition" class="text-danger">{{error.seekPosition}}</div>
                                         </div>
                                     </div>
                                     <label>Custom End Time (optional)
@@ -165,7 +168,7 @@
                                     </label>
                                     <div class="form-row mb-3">
                                         <div class="col">
-                                            <input class="form-control form-control-sm" type="text" ng-model="endPositionTime" placeholder="Min:Sec (leave blank for end of file)">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.end" placeholder="MM:SS (leave blank for end)">
                                             <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
                                         </div>
                                     </div>
