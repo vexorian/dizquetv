@@ -80,14 +80,26 @@ module.exports = function ($timeout) {
                     // Treat endMs === 0 (from empty input) as 'undefined' for comparison
                     let effectiveEndMs = (endMs === 0 && (endInputString == null || endInputString.trim() === '')) ? undefined : endMs;
 
-                    if (typeof effectiveEndMs === 'number') { // Check only if end time is specified
-                        // Ensure seekMs is valid before comparison
-                        if (isNaN(seekMs)) {
-                             // This case should be caught above, but double-check
-                             currentError = { seekPosition: 'Invalid start time format. Use MM:SS.' };
-                        } else if (effectiveEndMs <= seekMs) {
+                    // Validate Seek Position against Duration first
+                    if (prog.duration && seekMs >= (prog.duration - 1000)) {
+                        currentError = currentError || {};
+                        currentError.seekPosition = 'Start time must be at least 1 second before the program ends.';
+                    }
+                    // Then validate End Position if specified
+                    else if (typeof effectiveEndMs === 'number') { 
+                        if (effectiveEndMs <= seekMs) {
                             currentError = currentError || {};
                             currentError.endPosition = 'End position must be greater than start position.';
+                        } else if (prog.duration && effectiveEndMs > prog.duration) {
+                            // Error if end time EXCEEDS program duration
+                            currentError = currentError || {};
+                            currentError.endPosition = 'End position cannot exceed program duration (' + scope.msToTimeString(prog.duration) + ').';
+                        } 
+                        // Check if start/end combination is valid (at least 1s apart)
+                        else if ((effectiveEndMs - seekMs) < 1000) {
+                             currentError = currentError || {};
+                             // Apply error to the field being edited or a general one if needed
+                             currentError.endPosition = 'Effective program length must be at least 1 second.'; 
                         }
                     }
                 }
