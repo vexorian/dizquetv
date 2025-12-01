@@ -59,19 +59,8 @@ class ChannelService extends events.EventEmitter {
 
 
 function cleanUpProgram(program) {
-    if (program.startPosition != null && program.startPosition !== '') {
-        // Convert startPosition to seekPosition for consistency
-        program.seekPosition = parseInt(program.startPosition, 10);
-        delete program.startPosition;
-    }
-    
-    if (program.endPosition != null && program.endPosition !== '') {
-        program.endPosition = parseInt(program.endPosition, 10);
-    }
-
-    if (program.start && program.stop) {
-        program.duration = new Date(program.stop) - new Date(program.start);
-    }
+    delete program.start
+    delete program.stop
     delete program.streams;
     delete program.durationStr;
     delete program.commercials;
@@ -102,23 +91,12 @@ function cleanUpChannel(channel) {
     delete channel.fillerContent;
     delete channel.filler;
     channel.fallback = channel.fallback.flatMap( cleanUpProgram );
-    
-    // Set default for mergeAdjacentPrograms if not already defined
-    if (typeof channel.mergeAdjacentPrograms === 'undefined') {
-        channel.mergeAdjacentPrograms = false; // Disabled by default for backward compatibility
-    }
-    
-    // Calculate total channel duration using effective durations
     channel.duration = 0;
     for (let i = 0; i < channel.programs.length; i++) {
-      let program = channel.programs[i];
-      let seek = typeof program.seekPosition === 'number' ? program.seekPosition : 0;
-      let end = typeof program.endPosition === 'number' ? program.endPosition : null;
-      let effectiveDuration = (end !== null ? end : program.duration) - seek;
-      
-      channel.duration += effectiveDuration;
+      channel.duration += channel.programs[i].duration;
     }
     return channel;
+
 }
 
 

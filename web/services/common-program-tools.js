@@ -210,16 +210,12 @@ module.exports = function (getShowData) {
             background = "repeating-linear-gradient( " + angle + "deg, " + rgb1 + ", " + rgb1 + " " + w + "px, " + rgb2 + " " + w + "px, " + rgb2 + " " + (w*2) + "px)";
 
         }
-
-        // Width calculation based on effective duration
-        let seek = typeof program.seekPosition === 'number' ? program.seekPosition : 0;
-        let end = typeof program.endPosition === 'number' ? program.endPosition : null;
-        let effectiveDuration = (end !== null ? end : program.duration) - seek;
-        
         let f = interpolate;
         let w = 15.0;
         let t = 4*60*60*1000;
-        let a = (f(effectiveDuration) *w) / f(t);
+        //let d = Math.log( Math.min(t, program.duration) ) / Math.log(2);
+        //let a = (d * Math.log(2) ) / Math.log(t);
+        let a = ( f(program.duration) *w) / f(t);
         a = Math.min( w, Math.max(0.3, a) );
         b = w - a + 0.01;
 
