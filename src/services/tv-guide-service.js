@@ -1,6 +1,6 @@
 const events = require('events')
 const constants = require("../constants");
-const  FALLBACK_ICON = "https://raw.githubusercontent.com/vexorain/dizquetv/main/resources/dizquetv.png";
+const  FALLBACK_ICON = "https://raw.githubusercontent.com/vexorian/dizquetv/main/resources/dizquetv.png";
 const throttle = require('./throttle');
 
 class TVGuideService extends events.EventEmitter
