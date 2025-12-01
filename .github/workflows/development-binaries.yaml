@@ -3,7 +3,7 @@ name: Development Binaries
 on:
   push:
     branches:
-      - dev/1.5.x
+      - dev/1.6.x
 
 jobs:
   binaries:
