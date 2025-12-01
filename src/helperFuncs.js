@@ -27,13 +27,6 @@ const CHANNEL_CONTEXT_KEYS = [
 module.exports.random = random;
 
 function getCurrentProgramAndTimeElapsed(date, channel) {
-    // If seekPosition is not set, default to 0
-    function getSeek(program) {
-        return typeof program.seekPosition === 'number' ? program.seekPosition : 0;
-    }
-    function getEnd(program) {
-        return typeof program.endPosition === 'number' ? program.endPosition : null;
-    }
     let channelStartTime = (new Date(channel.startTime)).getTime();
     if (channelStartTime > date) {
         let t0 = date;
@@ -51,36 +44,23 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
     let timeElapsed = (date - channelStartTime) % channel.duration
     let currentProgramIndex = -1
     for (let y = 0, l2 = channel.programs.length; y < l2; y++) {
-        let program = channel.programs[y];
-        // Compute effective duration based on seek/end
-        let seek = getSeek(program);
-        let end = getEnd(program);
-        let effectiveDurationForProgram = (end !== null ? end : program.duration) - seek;
-        if (timeElapsed - effectiveDurationForProgram < 0) {
+        let program = channel.programs[y]
+        if (timeElapsed - program.duration < 0) {
             currentProgramIndex = y
-            if ( ((end !== null ? end - seek : program.duration - seek) > 2*SLACK) && (timeElapsed > (end !== null ? end - seek : program.duration - seek) - SLACK) ) {
+            if ( (program.duration > 2*SLACK) && (timeElapsed > program.duration - SLACK) ) {
                 timeElapsed = 0;
                 currentProgramIndex = (y + 1) % channel.programs.length;
             }
             break;
         } else {
-            timeElapsed -= (end !== null ? end - seek : program.duration - seek);
+            timeElapsed -= program.duration
         }
     }
 
     if (currentProgramIndex === -1)
         throw new Error("No program found; find algorithm fucked up")
 
-    // Attach seek/end for downstream use
-    let program = channel.programs[currentProgramIndex];
-    let seek = getSeek(program);
-    let end = getEnd(program);
-    let effectiveDurationForProgram = (end !== null ? end : program.duration) - seek;
-    return {
-        program: Object.assign({}, program, { seekPosition: seek, endPosition: end, effectiveDuration: effectiveDurationForProgram }),
-        timeElapsed: timeElapsed,
-        programIndex: currentProgramIndex
-    }
+    return { program: channel.programs[currentProgramIndex], timeElapsed: timeElapsed, programIndex: currentProgramIndex }
 }
 
 function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
@@ -90,9 +70,6 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
     // Helps prevents loosing first few seconds of an episode upon lineup change
     let activeProgram = obj.program
     let beginningOffset = 0;
-    // Use seekPosition and endPosition for effective start and duration
-    let seek = typeof activeProgram.seekPosition === 'number' ? activeProgram.seekPosition : 0;
-    let end = typeof activeProgram.endPosition === 'number' ? activeProgram.endPosition : null;
 
     let lineup = []
 
@@ -182,29 +159,19 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
     }
     beginningOffset = Math.max(0, originalTimeElapsed - timeElapsed);
 
-    // Calculate effective start, duration, and streamDuration using seek/end
-    const effectiveSeek = seek;
-    const effectiveEnd = end !== null ? end : activeProgram.duration;
-    const effectiveDuration = effectiveEnd - effectiveSeek;
-    const effectiveTimeElapsed = Math.max(0, timeElapsed);
-    const effectiveStreamDuration = effectiveDuration - effectiveTimeElapsed;
-
-    return [{
-        type: 'program',
-        title: activeProgram.title,
-        key: activeProgram.key,
-        plexFile: activeProgram.plexFile,
-        file: activeProgram.file,
-        ratingKey: activeProgram.ratingKey,
-        start: effectiveSeek + effectiveTimeElapsed, // playback should start at seek + elapsed
-        streamDuration: effectiveStreamDuration,
-        beginningOffset: beginningOffset,
-        duration: effectiveDuration,
-        originalDuration: activeProgram.duration,
-        serverKey: activeProgram.serverKey,
-        seekPosition: effectiveSeek,
-        endPosition: end
-    }];
+    return [ {
+                        type: 'program',
+                        title: activeProgram.title,
+                        key: activeProgram.key,
+                        plexFile: activeProgram.plexFile,
+                        file: activeProgram.file,
+                        ratingKey: activeProgram.ratingKey,
+                        start:  timeElapsed,
+                        streamDuration: activeProgram.duration - timeElapsed,
+                        beginningOffset: beginningOffset,
+                        duration: activeProgram.duration,
+                        serverKey: activeProgram.serverKey
+    } ];
 }
 
 function weighedPick(a, total) {
