@@ -1029,9 +1029,6 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     } else if (channel.overlayIcon && !validURL(channel.icon)) {
                         scope.error.icon = "Please enter a valid image URL. Cant overlay an invalid image."
                         scope.error.tab = "basic";
-                    } else if (now < channel.startTime) {
-                        scope.error.startTime = "Start time must not be set in the future."
-                        scope.error.tab = "programming";
                     } else if (channel.programs.length === 0) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
                         scope.error.tab = "programming";
