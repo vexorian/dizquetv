@@ -332,9 +332,9 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
                 if (typeof(u) !== 'undefined') {
                     let u2 = upperBound;
                     if ( typeof(lineupItem.streamDuration) !== 'undefined') {
-                        u2 = Math.min(u2, lineupItem.streamDuration);
+                        u2 = Math.min(u2 , lineupItem.streamDuration);
                     }
-                    lineupItem.streamDuration = Math.min(u2, u);
+                    lineupItem.streamDuration = Math.min(lineupItem.streamDuration, Math.min(u2, u) +  constants.SLACK);
                     upperBound = lineupItem.streamDuration;
                 }
                 channelCache.recordPlayback( programPlayTimeDB, redirectChannels[i].number, t0, lineupItem );

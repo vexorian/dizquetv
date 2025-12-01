@@ -121,7 +121,7 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
             if ( (channel.offlineMode === 'clip') && (channel.fallback.length != 0) ) {
                 special = JSON.parse(JSON.stringify(channel.fallback[0]));
             }
-            let randomResult = pickRandomWithMaxDuration(programPlayTime, channel, fillers, remaining + (isFirst? (7*24*60*60*1000) : 0) );
+            let randomResult = pickRandomWithMaxDuration(programPlayTime, channel, fillers, remaining + (isFirst? (7*24*60*60*1000) : 0) , isFirst );
             filler = randomResult.filler;
             if (filler == null && (typeof(randomResult.minimumWait) !== undefined) && (remaining > randomResult.minimumWait) ) {
                 remaining = randomResult.minimumWait;
@@ -137,8 +137,6 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
             if (isSpecial) {
                 if (filler.duration > remaining) {
                     fillerstart = filler.duration - remaining;
-                } else {
-                    ffillerstart = 0;
                 }
             } else if(isFirst) {
                 fillerstart = Math.max(0, filler.duration - remaining);
@@ -155,7 +153,7 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
                 file: filler.file,
                 ratingKey: filler.ratingKey,
                 start: fillerstart,
-                streamDuration: Math.max(1, Math.min(filler.duration - fillerstart, remaining) ),
+                streamDuration: Math.max(1, Math.min(filler.duration - fillerstart, remaining + SLACK ) ),
                 duration: filler.duration,
                 fillerId: filler.fillerId,
                 beginningOffset: beginningOffset,
@@ -213,7 +211,7 @@ function weighedPick(a, total) {
     return random.bool(a, total);
 }
 
-function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuration) {
+function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuration, isFirst) {
     let list = [];
     for (let i = 0; i < fillers.length; i++) {
         list = list.concat(fillers[i].content);
@@ -223,7 +221,14 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
     let t0 = (new Date()).getTime();
     let minimumWait = 1000000000;
     const D = 7*24*60*60*1000;
-    const E = 5*60*60*1000;
+
+    let minPick = null;
+    let minPickN = 0;
+    let minPickSet = 0;
+    let minPickPlayTime = t0 + 1;
+    let minPickFillerId = 0;
+    let pickLastPlayed = null;
+
     if (typeof(channel.fillerRepeatCooldown) === 'undefined') {
         channel.fillerRepeatCooldown = 30*60*1000;
     }
@@ -267,7 +272,7 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
                     minimumWait = Math.min(minimumWait, w);
                 }
                 timeSince = 0;
-                //30 minutes is too little, don't repeat it at all
+                //Can't pick from this filler list due to cooldown
             } else if (!pickedList) {
                 let t1 = channelCache.getFillerLastPlayTime( channel.number, fillers[j].id );
                 let timeSince = ( (t1 == 0) ?  D :  (t0 - t1) );
@@ -293,12 +298,26 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
             if (timeSince <= 0) {
                 continue;
             }
-            let s = norm_s( (timeSince >= E) ?  E : timeSince );
+            minPickSet += 1;
+            if (t1 < minPickPlayTime) {
+                // new minimum
+                minPickN = 0;
+                minPickPlayTime = t1;
+            }
+            if (t1 == minPickPlayTime) {
+                // tie
+                minPickN += 1;
+                if ( (minPickN == 1) ||  weighedPick(1,minPickN)) {
+                    minPick = clip;
+                    minPickFillerId = fillers[j].id;
+                }
+            }
             let d = norm_d( clip.duration);
-            let w = s + d;
+            let w = d;
             n += w;
             if (weighedPick(w,n)) {
                 pick1 = clip;
+                pickLastPlayed = t1;
             }
         }
       }
@@ -308,6 +327,11 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
      }
     }
     let pick = pick1;
+    let Q = Math.max(30, Math.ceil(10* Math.log(minPickSet) / Math.log(2) ) );
+    if (!isFirst && (minPick != null) && weighedPick(10,Q) ) {
+        pick = minPick;
+        pick.fillerId = minPickFillerId;
+    }
     if (pick != null) {
         pick = JSON.parse( JSON.stringify(pick) );
         pick.fillerId = fillerId;
@@ -321,18 +345,7 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
 }
 
 function norm_d(x) {
-    x /= 60 * 1000;
-    if (x >= 3.0) {
-        x = 3.0 + Math.log(x);
-    }
-    let y = 10000 * ( Math.ceil(x * 1000) + 1 );
-    return Math.ceil(y / 1000000) + 1;
-}
-
-function norm_s(x) {
-    let y = Math.ceil(x / 600) + 1;
-    y = y*y;
-    return Math.ceil(y / 1000000) + 1;
+    return 1 + Math.ceil( Math.log(x+1) / Math.log(2) )
 }
 
 
