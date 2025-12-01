@@ -163,10 +163,7 @@ class FillerDB {
     }
 
     async getFillersFromChannel(channel) {
-        let f = [];
-        if (typeof(channel.fillerCollections) !== 'undefined') {
-            f = channel.fillerContent;
-        }
+
         let loadChannelFiller = async(fillerEntry) => {
             let content = [];
             try {

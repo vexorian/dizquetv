@@ -30,6 +30,33 @@
                         <div class="text-center">
                             <img class="img" ng-src="{{program.icon}}" style="max-width: 200px;"></img>
                         </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header" ng-click="trackAdvancedOpen = !trackAdvancedOpen" style="cursor: pointer;">
+                                <h6 class="mb-0">Advanced Options <i class="float-right" ng-class="{'fa fa-chevron-down': !trackAdvancedOpen, 'fa fa-chevron-up': trackAdvancedOpen}"></i></h6>
+                            </div>
+                            <div class="collapse" ng-class="{'show': trackAdvancedOpen}">
+                                <div class="card-body">
+                                    <label>Custom Start Time (optional)</label>
+                                    <div class="form-row mb-3">
+                                        <div class="col">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.seek" placeholder="MM:SS (leave blank for start)">
+                                            <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                                            <div ng-show="error && error.seekPosition" class="text-danger">{{error.seekPosition}}</div>
+                                        </div>
+                                    </div>
+                                    <label>Custom End Time (optional)
+                                        <span class="text-danger pull-right">{{error.endPosition}}</span>
+                                    </label>
+                                    <div class="form-row mb-3">
+                                        <div class="col">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.end" placeholder="MM:SS (leave blank for end)">
+                                            <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div ng-if="program.type === 'movie'">
                         <label>Movie Title
@@ -47,6 +74,33 @@
                         <h6>Icon Preview</h6>
                         <div class="text-center">
                             <img class="img" ng-src="{{program.icon}}" style="max-width: 200px;"></img>
+                        </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header" ng-click="movieAdvancedOpen = !movieAdvancedOpen" style="cursor: pointer;">
+                                <h6 class="mb-0">Advanced Options <i class="float-right" ng-class="{'fa fa-chevron-down': !movieAdvancedOpen, 'fa fa-chevron-up': movieAdvancedOpen}"></i></h6>
+                            </div>
+                            <div class="collapse" ng-class="{'show': movieAdvancedOpen}">
+                                <div class="card-body">
+                                    <label>Custom Start Time (optional)</label>
+                                    <div class="form-row mb-3">
+                                        <div class="col">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.seek" placeholder="MM:SS (leave blank for start)">
+                                            <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                                            <div ng-show="error && error.seekPosition" class="text-danger">{{error.seekPosition}}</div>
+                                        </div>
+                                    </div>
+                                    <label>Custom End Time (optional)
+                                        <span class="text-danger pull-right">{{error.endPosition}}</span>
+                                    </label>
+                                    <div class="form-row mb-3">
+                                        <div class="col">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.end" placeholder="MM:SS (leave blank for end)">
+                                            <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div ng-if="program.type === 'episode'">
@@ -91,6 +145,33 @@
                                 <div class="col-sm-12 text-center">
                                     <label>Episode</label>
                                     <img class="img" ng-src="{{program.episodeIcon}}" style="max-width: 150px; cursor: pointer;" ng-click="program.icon = program.episodeIcon"></img>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header" ng-click="episodeAdvancedOpen = !episodeAdvancedOpen" style="cursor: pointer;">
+                                <h6 class="mb-0">Advanced Options <i class="float-right" ng-class="{'fa fa-chevron-down': !episodeAdvancedOpen, 'fa fa-chevron-up': episodeAdvancedOpen}"></i></h6>
+                            </div>
+                            <div class="collapse" ng-class="{'show': episodeAdvancedOpen}">
+                                <div class="card-body">
+                                    <label>Custom Start Time (optional)</label>
+                                    <div class="form-row mb-3">
+                                        <div class="col">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.seek" placeholder="MM:SS (leave blank for start)">
+                                            <small class="form-text text-muted">Format: minutes:seconds (e.g. 5:30)</small>
+                                            <div ng-show="error && error.seekPosition" class="text-danger">{{error.seekPosition}}</div>
+                                        </div>
+                                    </div>
+                                    <label>Custom End Time (optional)
+                                        <span class="text-danger pull-right">{{error.endPosition}}</span>
+                                    </label>
+                                    <div class="form-row mb-3">
+                                        <div class="col">
+                                            <input class="form-control form-control-sm" type="text" ng-model="timeInput.end" placeholder="MM:SS (leave blank for end)">
+                                            <small class="form-text text-muted">Format: minutes:seconds (e.g. 10:45)</small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

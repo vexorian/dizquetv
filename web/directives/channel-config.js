@@ -964,9 +964,24 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                 scope.hasFlex = false;
 
                 for (let i = 0, l = scope.channel.programs.length; i < l; i++) {
+                    // Calculate effective duration using seekPosition and endPosition
+                    let program = scope.channel.programs[i];
+                    let seek = typeof program.seekPosition === 'number' ? program.seekPosition : 0;
+                    let end = typeof program.endPosition === 'number' ? program.endPosition : null;
+                    let effectiveDuration = (end !== null ? end : program.duration) - seek;
+                    
+                    // Store effective values for consistency
+                    program.effectiveStart = seek;
+                    program.effectiveDuration = effectiveDuration;
+                    
+                    // Set start time based on accumulated duration
                     scope.channel.programs[i].start = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
                     scope.channel.programs[i].$index = i;
-                    scope.channel.duration += scope.channel.programs[i].duration
+                    
+                    // Use effectiveDuration for timeline calculation
+                    scope.channel.duration += effectiveDuration;
+                    
+                    // Set stop time using the updated duration
                     scope.channel.programs[i].stop = new Date(scope.channel.startTime.valueOf() + scope.channel.duration)
                     if (scope.channel.programs[i].isOffline) {
                         scope.hasFlex = true;
@@ -1014,9 +1029,6 @@ module.exports = function ($timeout, $location, dizquetv, resolutionOptions, get
                     } else if (channel.overlayIcon && !validURL(channel.icon)) {
                         scope.error.icon = "Please enter a valid image URL. Cant overlay an invalid image."
                         scope.error.tab = "basic";
-                    } else if (now < channel.startTime) {
-                        scope.error.startTime = "Start time must not be set in the future."
-                        scope.error.tab = "programming";
                     } else if (channel.programs.length === 0) {
                         scope.error.programs = "No programs have been selected. Select at least one program."
                         scope.error.tab = "programming";

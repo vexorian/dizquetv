@@ -27,6 +27,13 @@ const CHANNEL_CONTEXT_KEYS = [
 module.exports.random = random;
 
 function getCurrentProgramAndTimeElapsed(date, channel) {
+    // If seekPosition is not set, default to 0
+    function getSeek(program) {
+        return typeof program.seekPosition === 'number' ? program.seekPosition : 0;
+    }
+    function getEnd(program) {
+        return typeof program.endPosition === 'number' ? program.endPosition : null;
+    }
     let channelStartTime = (new Date(channel.startTime)).getTime();
     if (channelStartTime > date) {
         let t0 = date;
@@ -44,23 +51,36 @@ function getCurrentProgramAndTimeElapsed(date, channel) {
     let timeElapsed = (date - channelStartTime) % channel.duration
     let currentProgramIndex = -1
     for (let y = 0, l2 = channel.programs.length; y < l2; y++) {
-        let program = channel.programs[y]
-        if (timeElapsed - program.duration < 0) {
+        let program = channel.programs[y];
+        // Compute effective duration based on seek/end
+        let seek = getSeek(program);
+        let end = getEnd(program);
+        let effectiveDurationForProgram = (end !== null ? end : program.duration) - seek;
+        if (timeElapsed - effectiveDurationForProgram < 0) {
             currentProgramIndex = y
-            if ( (program.duration > 2*SLACK) && (timeElapsed > program.duration - SLACK) ) {
+            if ( ((end !== null ? end - seek : program.duration - seek) > 2*SLACK) && (timeElapsed > (end !== null ? end - seek : program.duration - seek) - SLACK) ) {
                 timeElapsed = 0;
                 currentProgramIndex = (y + 1) % channel.programs.length;
             }
             break;
         } else {
-            timeElapsed -= program.duration
+            timeElapsed -= (end !== null ? end - seek : program.duration - seek);
         }
     }
 
     if (currentProgramIndex === -1)
         throw new Error("No program found; find algorithm fucked up")
 
-    return { program: channel.programs[currentProgramIndex], timeElapsed: timeElapsed, programIndex: currentProgramIndex }
+    // Attach seek/end for downstream use
+    let program = channel.programs[currentProgramIndex];
+    let seek = getSeek(program);
+    let end = getEnd(program);
+    let effectiveDurationForProgram = (end !== null ? end : program.duration) - seek;
+    return {
+        program: Object.assign({}, program, { seekPosition: seek, endPosition: end, effectiveDuration: effectiveDurationForProgram }),
+        timeElapsed: timeElapsed,
+        programIndex: currentProgramIndex
+    }
 }
 
 function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
@@ -70,6 +90,9 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
     // Helps prevents loosing first few seconds of an episode upon lineup change
     let activeProgram = obj.program
     let beginningOffset = 0;
+    // Use seekPosition and endPosition for effective start and duration
+    let seek = typeof activeProgram.seekPosition === 'number' ? activeProgram.seekPosition : 0;
+    let end = typeof activeProgram.endPosition === 'number' ? activeProgram.endPosition : null;
 
     let lineup = []
 
@@ -98,7 +121,7 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
             if ( (channel.offlineMode === 'clip') && (channel.fallback.length != 0) ) {
                 special = JSON.parse(JSON.stringify(channel.fallback[0]));
             }
-            let randomResult = pickRandomWithMaxDuration(programPlayTime, channel, fillers, remaining + (isFirst? (7*24*60*60*1000) : 0) );
+            let randomResult = pickRandomWithMaxDuration(programPlayTime, channel, fillers, remaining + (isFirst? (7*24*60*60*1000) : 0) , isFirst );
             filler = randomResult.filler;
             if (filler == null && (typeof(randomResult.minimumWait) !== undefined) && (remaining > randomResult.minimumWait) ) {
                 remaining = randomResult.minimumWait;
@@ -114,8 +137,6 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
             if (isSpecial) {
                 if (filler.duration > remaining) {
                     fillerstart = filler.duration - remaining;
-                } else {
-                    ffillerstart = 0;
                 }
             } else if(isFirst) {
                 fillerstart = Math.max(0, filler.duration - remaining);
@@ -132,7 +153,7 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
                 file: filler.file,
                 ratingKey: filler.ratingKey,
                 start: fillerstart,
-                streamDuration: Math.max(1, Math.min(filler.duration - fillerstart, remaining) ),
+                streamDuration: Math.max(1, Math.min(filler.duration - fillerstart, remaining + SLACK ) ),
                 duration: filler.duration,
                 fillerId: filler.fillerId,
                 beginningOffset: beginningOffset,
@@ -161,26 +182,36 @@ function createLineup(programPlayTime, obj, channel, fillers, isFirst) {
     }
     beginningOffset = Math.max(0, originalTimeElapsed - timeElapsed);
 
-    return [ {
-                        type: 'program',
-                        title: activeProgram.title,
-                        key: activeProgram.key,
-                        plexFile: activeProgram.plexFile,
-                        file: activeProgram.file,
-                        ratingKey: activeProgram.ratingKey,
-                        start:  timeElapsed,
-                        streamDuration: activeProgram.duration - timeElapsed,
-                        beginningOffset: beginningOffset,
-                        duration: activeProgram.duration,
-                        serverKey: activeProgram.serverKey
-    } ];
+    // Calculate effective start, duration, and streamDuration using seek/end
+    const effectiveSeek = seek;
+    const effectiveEnd = end !== null ? end : activeProgram.duration;
+    const effectiveDuration = effectiveEnd - effectiveSeek;
+    const effectiveTimeElapsed = Math.max(0, timeElapsed);
+    const effectiveStreamDuration = effectiveDuration - effectiveTimeElapsed;
+
+    return [{
+        type: 'program',
+        title: activeProgram.title,
+        key: activeProgram.key,
+        plexFile: activeProgram.plexFile,
+        file: activeProgram.file,
+        ratingKey: activeProgram.ratingKey,
+        start: effectiveSeek + effectiveTimeElapsed, // playback should start at seek + elapsed
+        streamDuration: effectiveStreamDuration,
+        beginningOffset: beginningOffset,
+        duration: effectiveDuration,
+        originalDuration: activeProgram.duration,
+        serverKey: activeProgram.serverKey,
+        seekPosition: effectiveSeek,
+        endPosition: end
+    }];
 }
 
 function weighedPick(a, total) {
     return random.bool(a, total);
 }
 
-function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuration) {
+function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuration, isFirst) {
     let list = [];
     for (let i = 0; i < fillers.length; i++) {
         list = list.concat(fillers[i].content);
@@ -190,7 +221,14 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
     let t0 = (new Date()).getTime();
     let minimumWait = 1000000000;
     const D = 7*24*60*60*1000;
-    const E = 5*60*60*1000;
+
+    let minPick = null;
+    let minPickN = 0;
+    let minPickSet = 0;
+    let minPickPlayTime = t0 + 1;
+    let minPickFillerId = 0;
+    let pickLastPlayed = null;
+
     if (typeof(channel.fillerRepeatCooldown) === 'undefined') {
         channel.fillerRepeatCooldown = 30*60*1000;
     }
@@ -234,7 +272,7 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
                     minimumWait = Math.min(minimumWait, w);
                 }
                 timeSince = 0;
-                //30 minutes is too little, don't repeat it at all
+                //Can't pick from this filler list due to cooldown
             } else if (!pickedList) {
                 let t1 = channelCache.getFillerLastPlayTime( channel.number, fillers[j].id );
                 let timeSince = ( (t1 == 0) ?  D :  (t0 - t1) );
@@ -260,12 +298,26 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
             if (timeSince <= 0) {
                 continue;
             }
-            let s = norm_s( (timeSince >= E) ?  E : timeSince );
+            minPickSet += 1;
+            if (t1 < minPickPlayTime) {
+                // new minimum
+                minPickN = 0;
+                minPickPlayTime = t1;
+            }
+            if (t1 == minPickPlayTime) {
+                // tie
+                minPickN += 1;
+                if ( (minPickN == 1) ||  weighedPick(1,minPickN)) {
+                    minPick = clip;
+                    minPickFillerId = fillers[j].id;
+                }
+            }
             let d = norm_d( clip.duration);
-            let w = s + d;
+            let w = d;
             n += w;
             if (weighedPick(w,n)) {
                 pick1 = clip;
+                pickLastPlayed = t1;
             }
         }
       }
@@ -275,6 +327,11 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
      }
     }
     let pick = pick1;
+    let Q = Math.max(30, Math.ceil(10* Math.log(minPickSet) / Math.log(2) ) );
+    if (!isFirst && (minPick != null) && weighedPick(10,Q) ) {
+        pick = minPick;
+        pick.fillerId = minPickFillerId;
+    }
     if (pick != null) {
         pick = JSON.parse( JSON.stringify(pick) );
         pick.fillerId = fillerId;
@@ -288,18 +345,7 @@ function pickRandomWithMaxDuration(programPlayTime, channel, fillers, maxDuratio
 }
 
 function norm_d(x) {
-    x /= 60 * 1000;
-    if (x >= 3.0) {
-        x = 3.0 + Math.log(x);
-    }
-    let y = 10000 * ( Math.ceil(x * 1000) + 1 );
-    return Math.ceil(y / 1000000) + 1;
-}
-
-function norm_s(x) {
-    let y = Math.ceil(x / 600) + 1;
-    y = y*y;
-    return Math.ceil(y / 1000000) + 1;
+    return 1 + Math.ceil( Math.log(x+1) / Math.log(2) )
 }
 
 

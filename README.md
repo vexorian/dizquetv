@@ -1,4 +1,4 @@
-# dizqueTV 1.5.5
+# dizqueTV 1.6.0
 ![Discord](https://img.shields.io/discord/711313431457693727?logo=discord&logoColor=fff&style=flat-square) ![GitHub top language](https://img.shields.io/github/languages/top/vexorian/dizquetv?logo=github&style=flat-square) ![Docker Pulls](https://img.shields.io/docker/pulls/vexorian/dizquetv?logo=docker&logoColor=fff&style=flat-square)
 
 Create live TV channel streams from media on your Plex servers.
@@ -78,3 +78,12 @@ npm run dev-server
  * dizqueTV's improvements are released under zlib license (c) 2020 Victor Hugo Soliz Kuncar
  * FontAwesome: [https://fontawesome.com/license/free](https://archive.fo/PRqis)
  * Bootstrap: https://github.com/twbs/bootstrap/blob/v4.4.1/LICENSE
+
+## Thanks
+
+ * DEFENDORe , George and everyone that worked on PseudoTV
+ * Ahmed Said Al-Busaidi , for reporting exploits in advance before publishing in exploit-db.
+ * Nathan for working on automation addons.
+ * Timebomb, Rafael for the contributions during dizqueTV's active days.
+ 
+ 
