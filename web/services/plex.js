@@ -1,6 +1,6 @@
 const Plex = require('../../src/plex');
 
-module.exports = function ($http, $window, $interval) {
+module.exports = function (dizquetv, $http, $window, $interval) {
     let exported = {
         login: async () => {
             const headers = {
@@ -108,14 +108,13 @@ module.exports = function ($http, $window, $interval) {
         },
 
         getLibrary: async (server) => {
-            var client = new Plex(server)
-            const res = await client.Get('/library/sections')
+            const res = await dizquetv.getFromPlexProxy(server.name, '/library/sections')
             var sections = []
             for (let i = 0, l = typeof res.Directory !== 'undefined' ? res.Directory.length : 0; i < l; i++)
                 if (res.Directory[i].type === 'movie' || res.Directory[i].type === 'show' || res.Directory[i].type === 'artist' ) {
                     var genres = []
                     if (res.Directory[i].type === 'movie') {
-                        const genresRes = await client.Get(`/library/sections/${res.Directory[i].key}/genre`)
+                        const genresRes = await dizquetv.getFromPlexProxy(server.name,`/library/sections/${res.Directory[i].key}/genre`)
                         for (let q = 0, k = typeof genresRes.Directory !== 'undefined' ? genresRes.Directory.length : 0; q < k; q++) {
                             if (genresRes.Directory[q].type === 'genre') {
                                 genres.push({
@@ -138,8 +137,7 @@ module.exports = function ($http, $window, $interval) {
             return sections
         },
         getPlaylists: async (server) => {
-            var client = new Plex(server)
-            const res = await client.Get('/playlists')
+            const res = await dizquetv.getFromPlexProxy(server.name, '/playlists');
             var playlists = []
             for (let i = 0, l = typeof res.Metadata !== 'undefined' ? res.Metadata.length : 0; i < l; i++)
                 if (
@@ -157,8 +155,7 @@ module.exports = function ($http, $window, $interval) {
             return playlists
         },
         getStreams: async (server, key) => {
-            var client = new Plex(server)
-            return client.Get(key).then((res) => {
+            return dizquetv.getFromPlexProxy(server.name, key).then((res) => {
                 let streams =  res.Metadata[0].Media[0].Part[0].Stream
                 for (let i = 0, l = streams.length; i < l; i++) {
                     if (typeof streams[i].key !== 'undefined') {
@@ -169,9 +166,9 @@ module.exports = function ($http, $window, $interval) {
             })
         },
         getNested: async (server, lib, includeCollections, errors) => {
-            var client = new Plex(server)
+
             const key = lib.key
-            const res = await client.Get(key)
+            const res = await dizquetv.getFromPlexProxy(server.name, key)
 
             const size = (typeof(res.Metadata) !== 'undefined') ? res.Metadata.length : 0;
             var nested = []
@@ -191,7 +188,8 @@ module.exports = function ($http, $window, $interval) {
             albumKeys = Object.keys( albumKeys );
             await Promise.all( albumKeys.map( async(albumKey) => {
                 try {
-                    let album = await client.Get(albumKey);
+                    let album = await dizquetv.getFromPlexProxy(
+                        server.name, albumKey);
                     if ( (typeof(album)!=='undefined') && album.size == 1) {
                         album = album.Metadata[0];
                     }
@@ -287,7 +285,7 @@ module.exports = function ($http, $window, $interval) {
                 let k = res.librarySectionID;
 
                 k = `/library/sections/${k}/collections`;
-                let collections = await client.Get(k);
+                let collections = await dizquetv.getFromPlexProxy(server.name, k);
                 if ( typeof(collections.Metadata) === 'undefined') {
                     collections.Metadata = [];
                 }

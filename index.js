@@ -32,6 +32,8 @@ const ProgrammingService = require("./src/services/programming-service");
 const ActiveChannelService = require('./src/services/active-channel-service')
 const ProgramPlayTimeDB = require('./src/dao/program-play-time-db')
 const FfmpegSettingsService = require('./src/services/ffmpeg-settings-service')
+const PlexProxyService = require('./src/services/plex-proxy-service')
+const PlexServerDB = require('./src/dao/plex-server-db');
 
 const onShutdown = require("node-graceful-shutdown").onShutdown;
 
@@ -107,6 +109,9 @@ fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelServ
 customShowDB = new CustomShowDB( path.join(process.env.DATABASE, 'custom-shows') );
 let programPlayTimeDB = new ProgramPlayTimeDB( path.join(process.env.DATABASE, 'play-cache') );
 let ffmpegSettingsService = new FfmpegSettingsService(db, unlockPath);
+let plexServerDB = new PlexServerDB(channelService, fillerDB, customShowDB, db);
+let plexProxyService = new PlexProxyService(plexServerDB);
+
 
 async function initializeProgramPlayTimeDB() {
     try {
@@ -251,6 +256,35 @@ channelService.on("channel-update", (data) => {
 
 let hdhr = HDHR(db, channelDB)
 let app = express()
+
+const responseInterceptor = (
+  req,
+  res,
+  next
+) => {
+
+    let t0 = new Date().getTime();
+
+    const originalSend = res.send;
+    let responseSent = false;
+    console.log(`${req.method} ${req.url} ...`);
+
+    res.send = function (body) {
+
+        if (!responseSent) {
+            let t1 = new Date().getTime();
+            let dt = t1 - t0;
+            console.log(`${req.method} ${req.url} ${res.statusCode} in ${dt}ms`);
+            responseSent = true;
+        }
+
+        return originalSend.call(this, body);
+    };
+
+    next();
+};
+app.use(responseInterceptor);
+
 eventService.setup(app);
 
 app.use(
@@ -290,7 +324,7 @@ app.use('/favicon.svg', express.static(
 app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.css')))
 
 // API Routers
-app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, ffmpegSettingsService))
+app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 app.use('/' + fontAwesome, express.static(path.join(process.env.DATABASE, fontAwesome)))
 app.use('/' + bootstrap, express.static(path.join(process.env.DATABASE, bootstrap)))

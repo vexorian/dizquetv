@@ -43,7 +43,13 @@
                         </button>    
                         Content:
                     </label>
-                    <ul ng-show="currentOrigin.type=='plex' " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
+                    
+                    <ul ng-show="currentOrigin.loaded!==true" class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
+
+                        <li class="list-group-item"><div class="loader"></div>  <div>Loading Library Contents...</div></li>
+
+                    </ul>
+                    <ul ng-show="currentOrigin.type=='plex' && currentOrigin.loaded===true " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
                         <li class="list-group-item" ng-repeat="a in libraries">
                             <div class="flex-container library-item-hover {{ displayImages ? 'w_images' : 'wo_images' }}" ng-click="getNested(a, true);">
                                 <span class="fa {{ a.collapse ? 'fa-chevron-down' : 'fa-chevron-right' }} tab"></span>
@@ -122,7 +128,7 @@
                             </ul>
                         </li>
                     </ul>
-                    <ul ng-show="currentOrigin.type=='dizquetv' " class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
+                    <ul ng-show="currentOrigin.type=='dizquetv' && currentOrigin.loaded===true" class="list-group list-group-root plex-panel" ng-init="setHeight = {'height': height + 'px'}" ng-style="setHeight" lazy-img-container>
                         <li class="list-group-item" ng-repeat="x in customShows">
                             <div class="flex-container" ng-click="addCustomShow(x);">
                                 <span class="fa fa-plus-circle tab"></span>

@@ -31,13 +31,7 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
                 });
             }
             scope.selectOrigin = function (origin) {
-                if ( origin.type === 'plex' ) {
-                    scope.plexServer = origin.server;
-                    updateLibrary(scope.plexServer);
-                } else {
-                    scope.plexServer = undefined;
-                    updateCustomShows();
-                }
+                updateLibrary(origin);
             }
             scope._onFinish = (s, insertPoint) => {
                 if (s.length > scope.limit) {
@@ -99,20 +93,31 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
                         "type" : "plex",
                         "name" : `Plex - ${s.name}`,
                         "server": s,
+                        "loaded" : false,
                     }
                 } );
-                scope.currentOrigin = scope.origins[0];
-                scope.plexServer = scope.currentOrigin.server;
                 scope.origins.push( {
                     "type": "dizquetv",
                     "name" : "dizqueTV - Custom Shows",
+                    "loaded" : false,
                 } );
-                updateLibrary(scope.plexServer)
+                updateLibrary(scope.origins[0])
             })
 
-            let updateLibrary = async(server) => {
+            let updateLibrary = async(origin) => {
+                scope.currentOrigin = origin;
+                origin.loaded = false;
+                if ( origin.type !== 'plex' ) {
+                    scope.plexServer = undefined;
+                    await updateCustomShows();
+                    origin.loaded = true;
+                    return;
+                }
+                let server = scope.currentOrigin.server;
                 let lib = await plex.getLibrary(server);
                 let play = await plex.getPlaylists(server);
+                scope.currentOrigin.loaded = true;
+                scope.plexServer = server;
 
                 play.forEach( p => {
                     p.type = "playlist";

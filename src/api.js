@@ -24,10 +24,9 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService ) {
+function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService ) {
     let m3uService = _m3uService;
     const router = express.Router()
-    const plexServerDB = new PlexServerDB(channelService, fillerDB, customShowDB, db);
 
     router.get('/api/version', async (req, res) => {
       try {
@@ -216,7 +215,15 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
             );
         }
     })
-
+    router.get('/api/plex-server/:serverName64/:path(*)', async (req, res) => {
+      try {
+        let result = await plexProxyService.get(req.params.serverName64, req.params.path);
+        res.status(200).send(result);
+      } catch (err) {
+          console.error("Could not use plex proxy.", err);
+          res.status(404).send("Could not call plex server.");
+      }
+    });
 
     // Channels
     router.get('/api/channels', async (req, res) => {

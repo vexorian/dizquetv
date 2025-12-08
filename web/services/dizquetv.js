@@ -49,6 +49,15 @@ module.exports = function ($http, $q) {
             });
             return d.data;
         },
+        getFromPlexProxy: async (serverName, path) => {
+            let serverName64 = Buffer.from(serverName, 'utf-8').toString('base64');
+            let tmp = await ($http({
+                method: 'GET',
+                url : `api/plex-server/${serverName64}${path}`,
+                headers: { "Cache-Control": "no-cache"},
+            }))
+            return tmp.data.MediaContainer;
+        },
         getPlexSettings: () => {
             return $http.get('/api/plex-settings').then((d) => { return d.data })
         },
