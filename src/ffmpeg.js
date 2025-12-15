@@ -7,6 +7,7 @@ const REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE = 120;
 class FFMPEG extends events.EventEmitter {
     constructor(opts, channel) {
         super()
+        this.ffmpegPath = opts.ffmpegPath;
         this.opts = opts;
         this.errorPicturePath = `http://localhost:${process.env.PORT}/images/generic-error-screen.png`;
         this.ffmpegName = "unnamed ffmpeg";
@@ -22,7 +23,6 @@ class FFMPEG extends events.EventEmitter {
             this.opts.maxFPS = REALLY_RIDICULOUSLY_HIGH_FPS_FOR_DIZQUETVS_USECASE;
         }
         this.channel = channel
-        this.ffmpegPath = opts.ffmpegPath
 
         let resString = opts.targetResolution;
         if (
@@ -601,7 +601,7 @@ class FFMPEG extends events.EventEmitter {
                     return;
                 }
                 if (! this.sentData) {
-                    this.emit('error', { code: code, cmd: `${this.opts.ffmpegPath} ${ffmpegArgs.join(' ')}` })
+                    this.emit('error', { code: code, cmd: `${this.ffmpegPath} ${ffmpegArgs.join(' ')}` })
                 }
                 console.log( `${this.ffmpegName} exited with code 255.` );
                 this.emit('close', code)

@@ -20,8 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 805;
-const DAY_MS = 1000 * 60 * 60 * 24;
+const TARGET_VERSION = 900;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -44,8 +43,9 @@ const STEPS = [
     [    800,    801, (db) => addImageCache(db) ],
     [    801,    802, () => addGroupTitle() ],
     [    802,    803, () => fixNonIntegerDurations() ],
-    [    803,    805, (db) => addFFMpegLock(db) ],
-    [    804,    805, (db) => addFFMpegLock(db) ],
+    [    803,    900, (db) => fixFFMpegPathSetting(db) ],
+    [    804,    900, (db) => fixFFMpegPathSetting(db) ],
+    [    805,    900, (db) => fixFFMpegPathSetting(db) ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -75,7 +75,7 @@ function appNameChange(db) {
 
 function basicDB(db) {
     //this one should either try recovering the db from a very old version
-    //or buildl a completely empty db at version 0
+    //or build a completely empty db at version 0
     let ffmpegSettings = db['ffmpeg-settings'].find()
     let plexSettings = db['plex-settings'].find()
 
@@ -386,8 +386,6 @@ function ffmpeg() {
     return {
         //How default ffmpeg settings should look
         configVersion: 5,
-        ffmpegPath: "/usr/bin/ffmpeg",
-        ffmpegPathLockDate: new Date().getTime() + DAY_MS,
         threads: 4,
         concatMuxDelay: "0",
         logFfmpeg: false,
@@ -769,18 +767,22 @@ function addScalingAlgorithm(db) {
     fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
 }
 
-function addFFMpegLock(db) {
+function fixFFMpegPathSetting(db) {
     let ffmpegSettings = db['ffmpeg-settings'].find()[0];
     let f = path.join(process.env.DATABASE, 'ffmpeg-settings.json');
-    if ( typeof(ffmpegSettings.ffmpegPathLockDate) === 'undefined' || ffmpegSettings.ffmpegPathLockDate == null ) {
+    let f2 = path.join(process.env.DATABASE, 'ffmpeg-path.json');
+    delete ffmpegSettings.ffmpegPathLockDate;
+    let fpath = ffmpegSettings.ffmpegPath;
+    delete ffmpegSettings.ffmpegPath;
 
-        console.log("Adding ffmpeg lock. For your security it will not be possible to modify the ffmpeg path using the UI anymore unless you launch dizquetv by following special instructions..");
-        // We are migrating an existing db that had a ffmpeg path. Make sure
-        // it's already locked.
-        ffmpegSettings.ffmpegPathLockDate = new Date().getTime() - 2 * DAY_MS;
+    if (typeof(fpath) === "string" ) {
+        console.log(`Found existing setting ffmpegPath=${fpath}, creating setting file (This file will get ignored if you are already setting an environment variable (the docker images do that)).`);
+        let pathJson = { ffmpegPath : fpath };
+        fs.writeFileSync( f2, JSON.stringify( pathJson ) );
     }
     fs.writeFileSync( f, JSON.stringify( [ffmpegSettings] ) );
 }
+
 
 function moveBackup(path) {
     if (fs.existsSync(`${process.env.DATABASE}${path}`) ) {

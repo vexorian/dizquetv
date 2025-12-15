@@ -4,11 +4,8 @@ const path = require('path');
 const fs = require('fs');
 
 class FfmpegSettingsService {
-    constructor(db, unlock) {
+    constructor(db) {
         this.db = db;
-        if (unlock) {
-            this.unlock();
-        }
     }
 
     get() {
@@ -19,13 +16,6 @@ class FfmpegSettingsService {
         // Hid this info from the API
         delete ffmpeg.ffmpegPathLockDate;
         return ffmpeg;
-    }
-
-    unlock() {
-        let ffmpeg = this.getCurrentState();
-        console.log("ffmpeg path UI unlocked for another day...");
-        ffmpeg.ffmpegPathLockDate = new Date().getTime() + DAY_MS;
-        this.db['ffmpeg-settings'].update({ _id: ffmpeg._id }, ffmpeg)
     }
 
 
@@ -62,7 +52,6 @@ class FfmpegSettingsService {
     }
 
     reset() {
-        // Even if reseting, it's impossible to unlock the ffmpeg path
         let ffmpeg = databaseMigration.defaultFFMPEG() ;
         this.update(ffmpeg);
         return this.get();

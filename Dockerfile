@@ -10,5 +10,6 @@ FROM akashisn/ffmpeg:4.4.5
 EXPOSE 8000
 WORKDIR /home/node/app
 ENTRYPOINT [ "./dizquetv" ]
+ENV DIZQUETV_FFMPEG_PATH=/usr/bin/ffmpeg
 COPY --from=0 /home/node/app/dist/dizquetv /home/node/app/
 RUN ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg

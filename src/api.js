@@ -4,8 +4,6 @@ const path = require('path')
 const fs = require('fs')
 const constants = require('./constants');
 const JSONStream = require('JSONStream');
-const FFMPEGInfo = require('./ffmpeg-info');
-const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 
 const timeSlotsService = require('./services/time-slots-service');
@@ -24,14 +22,13 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService ) {
+function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService, ffmpegInfo ) {
     let m3uService = _m3uService;
     const router = express.Router()
 
     router.get('/api/version', async (req, res) => {
       try {
-        let ffmpegSettings = db['ffmpeg-settings'].find()[0];
-        let v = await (new FFMPEGInfo(ffmpegSettings)).getVersion();
+        let v = await ffmpegInfo.getVersion();
         res.send( {
             "dizquetv" : constants.VERSION_NAME,
             "ffmpeg" : v,
@@ -615,6 +612,18 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
       }
 
     })
+
+    router.get('/api/ffmpeg-info', async (req, res) => {
+      try {
+        let ffmpeg = await ffmpegInfo.getPath();
+        let obj = { ffmpegPath: ffmpeg }
+        res.send(obj)
+      } catch(err) {
+        console.error(err);
+        res.status(500).send("error");
+      }
+    })
+
 
     // PLEX SETTINGS
     router.get('/api/plex-settings', (req, res) => {
