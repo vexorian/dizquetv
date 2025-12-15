@@ -74,7 +74,6 @@ class FillerService extends events.EventEmitter {
         let serverKey = body.import.serverName;
         let key = body.import.key;
         let content = await this.plexProxyService.getKeyMediaContents(serverKey, key);
-        console.log(JSON.stringify(content));
         return content;
     }
 
