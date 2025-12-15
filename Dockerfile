@@ -6,7 +6,7 @@ COPY --from=vexorian/dizquetv:nexecache /var/nexe/linux-x64-12.16.2 /var/nexe/
 COPY . .
 RUN npm run build && LINUXBUILD=dizquetv sh make_dist.sh linuxonly
 
-FROM jrottenberg/ffmpeg:4.3-ubuntu1804
+FROM akashisn/ffmpeg:4.4.5
 EXPOSE 8000
 WORKDIR /home/node/app
 ENTRYPOINT [ "./dizquetv" ]
