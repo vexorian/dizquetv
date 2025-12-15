@@ -15,40 +15,20 @@
 
     <hr></hr>
     <h6>FFMPEG Executable Path</h6>
-    <div class="row" ng-show="settings.lock !== true">
+
+    <div class="row">
         <div class="col-sm-9">
             <div class="form-group">
                 <div class="form-group">
                     <label>Path</label>
-                    <input id="ffmpegPath" ria-describedby="ffmpegHelp" type="text" class="form-control form-control-sm" ng-model="settings.ffmpegPath"></input>
-                    <small class="form-text text-muted">
-                        The path to the ffmpeg executable. (e.g: /usr/bin/ffmpeg or C:\ffmpeg\bin\ffmpeg.exe) FFMPEG version 4.2+ required. Check by opening the version tab.
-
+                    <div class='loader' ng-show='ffmpegPathLoading'></div>
+                    <input id="ffmpegPath" ria-describedby="ffmpegHelp" type="text" class="form-control form-control-sm" ng-model="ffmpegPath" readonly ng-hide="ffmpegPathLoading"></input>
+                    <small class="form-text text-muted" ng-show="ffmpegPath != null">
+                        The path to the ffmpeg executable. Please check the instructions if you need to change it.
                     </small>
-
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-9">
-            <div class="form-group">
-                <input id="lockFfmpeg" type="checkbox" ng-model="settings.addLock"></input>
-                <label for="lockFfmpeg">Lock ffmpeg path setting</label>
-                <small class="form-text text-muted">This will lock the ffmpeg path setting so that it is no longer editable from UI. Even if you don't toggle this option, the setting will get locked in 24 hours.</small>
-            </div>
-        </div>
-    </div>
-    
-
-    <div class="row" ng-show="settings.lock === true">
-        <div class="col-sm-9">
-            <div class="form-group">
-                <div class="form-group">
-                    <label>Path</label>
-                    <input id="ffmpegPath" ria-describedby="ffmpegHelp" type="text" class="form-control form-control-sm" ng-model="settings.ffmpegPath" readonly></input>
-                    <small class="form-text text-muted">
-                        The ffmpeg path setting is currently locked and can't be edited from the UI. It's not usually necessary to update this path once it's known to be working. Run dizquetv with the <b>--unlock</b> command line argument to enable editing it again.
+                    <small class="form-text text-muted" ng-show="ffmpegPath == null">
+                        dizqueTV uses FFmpeg to create video streams. Please check the instructions for info about how to set this up.
                     </small>
-
                 </div>
             </div>
         </div>

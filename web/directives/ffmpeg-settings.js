@@ -6,7 +6,14 @@ module.exports = function (dizquetv, resolutionOptions) {
         scope: {
         },
         link: function (scope, element, attrs) {
-            //add validations to ffmpeg settings, speciall commas in codec name
+
+            scope.ffmpegPathLoading = true;
+            scope.ffmpegPath = ""
+            dizquetv.getFFMpegPath().then( (fpath) => {
+                scope.ffmpegPath = fpath.ffmpegPath;
+                scope.ffmpegPathLoading = false;
+            });
+            //add validations to ffmpeg settings, special commas in codec name
             dizquetv.getFfmpegSettings().then((settings) => {
                 scope.settings = settings
             })

@@ -17,6 +17,7 @@ const HDHR = require('./src/hdhr')
 const FileCacheService = require('./src/services/file-cache-service');
 const CacheImageService = require('./src/services/cache-image-service');
 const ChannelService = require("./src/services/channel-service");
+const FillerService = require("./src/services/filler-service");
 
 const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex');
@@ -32,6 +33,9 @@ const ProgrammingService = require("./src/services/programming-service");
 const ActiveChannelService = require('./src/services/active-channel-service')
 const ProgramPlayTimeDB = require('./src/dao/program-play-time-db')
 const FfmpegSettingsService = require('./src/services/ffmpeg-settings-service')
+const PlexProxyService = require('./src/services/plex-proxy-service')
+const PlexServerDB = require('./src/dao/plex-server-db');
+const FFMPEGInfo =  require('./src/ffmpeg-info');
 
 const onShutdown = require("node-graceful-shutdown").onShutdown;
 
@@ -51,16 +55,12 @@ if (NODE < 12) {
     console.error(`WARNING: Your nodejs version ${process.version} is lower than supported. dizqueTV has been tested best on nodejs 12.16.`);
 }
 
-unlockPath = false;
 for (let i = 0, l = process.argv.length; i < l; i++) {
     if ((process.argv[i] === "-p" || process.argv[i] === "--port") && i + 1 !== l)
         process.env.PORT = process.argv[i + 1]
     if ((process.argv[i] === "-d" || process.argv[i] === "--database") && i + 1 !== l)
         process.env.DATABASE = process.argv[i + 1]
 
-    if (process.argv[i] === "--unlock") {
-        unlockPath = true;
-    }
 }
 
 process.env.DATABASE = process.env.DATABASE ||  path.join(".", ".dizquetv")
@@ -92,6 +92,8 @@ if(!fs.existsSync(path.join(process.env.DATABASE, 'cache','images'))) {
     fs.mkdirSync(path.join(process.env.DATABASE, 'cache','images'))
 }
 
+const ffmpegInfo = new FFMPEGInfo(process.env, process.env.DATABASE);
+ffmpegInfo.initialize();
 
 channelDB = new ChannelDB( path.join(process.env.DATABASE, 'channels') );
 
@@ -103,10 +105,13 @@ initDB(db, channelDB)
 
 channelService = new ChannelService(channelDB);
 
-fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelService );
+let fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') );
 customShowDB = new CustomShowDB( path.join(process.env.DATABASE, 'custom-shows') );
 let programPlayTimeDB = new ProgramPlayTimeDB( path.join(process.env.DATABASE, 'play-cache') );
-let ffmpegSettingsService = new FfmpegSettingsService(db, unlockPath);
+let ffmpegSettingsService = new FfmpegSettingsService(db);
+let plexServerDB = new PlexServerDB(channelService, fillerDB, customShowDB, db);
+let plexProxyService = new PlexProxyService(plexServerDB);
+
 
 async function initializeProgramPlayTimeDB() {
     try {
@@ -129,6 +134,9 @@ programmingService = new ProgrammingService(onDemandService);
 activeChannelService = new ActiveChannelService(onDemandService, channelService);
 
 eventService = new EventService();
+
+let fillerService = new FillerService(fillerDB, plexProxyService,
+    channelService);
 
 i18next
     .use(i18nextBackend)
@@ -251,6 +259,38 @@ channelService.on("channel-update", (data) => {
 
 let hdhr = HDHR(db, channelDB)
 let app = express()
+
+const responseInterceptor = (
+  req,
+  res,
+  next
+) => {
+
+    let t0 = new Date().getTime();
+
+    const originalSend = res.send;
+    let responseSent = false;
+    console.log(`${req.method} ${req.url} ...`);
+    if (req.method === "GET" && req.url.includes("images/uploads") ) {
+        res.setHeader("Cache-Control", "public, max-age=86400");
+    }
+
+    res.send = function (body) {
+
+        if (!responseSent) {
+            let t1 = new Date().getTime();
+            let dt = t1 - t0;
+            console.log(`${req.method} ${req.url} ${res.statusCode} in ${dt}ms`);
+            responseSent = true;
+        }
+
+        return originalSend.call(this, body);
+    };
+
+    next();
+};
+app.use(responseInterceptor);
+
 eventService.setup(app);
 
 app.use(
@@ -290,12 +330,12 @@ app.use('/favicon.svg', express.static(
 app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.css')))
 
 // API Routers
-app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, ffmpegSettingsService))
+app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService, ffmpegInfo, fillerService))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 app.use('/' + fontAwesome, express.static(path.join(process.env.DATABASE, fontAwesome)))
 app.use('/' + bootstrap, express.static(path.join(process.env.DATABASE, bootstrap)))
 
-app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB  ))
+app.use(video.router( channelService, fillerService, db, programmingService, activeChannelService, programPlayTimeDB, ffmpegInfo  ))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)

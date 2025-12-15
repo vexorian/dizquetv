@@ -16,8 +16,7 @@
     <tr>
         <th>{{'settings_server.name' | i18next}}</th>
         <th>{{'settings_server.uri' | i18next}}</th>
-        <th>{{'settings_server.ui_route' | i18next}}</th>
-        <th>{{'settings_server.backend_route' | i18next}}</th>
+        <th>{{'settings_server.routeStatus' | i18next}}</th>
         <th></th>
     </tr>
     <tr ng-if="servers.length === 0">
@@ -32,11 +31,6 @@
         <td>{{ x.name }}</td>
         <td><span class='text-secondary text-small'>{{ x.uri }}</span></td>
         <td>
-            <div class='loader' ng-if="x.uiStatus == 0"></div>
-            <div class='text-success' ng-if="x.uiStatus == 1"><i class='fa fa-check'></i>{{'settings_server.ok' | i18next}}</div>
-            <div class='text-danger' ng-if="x.uiStatus == -1"><i class='fa fa-exclamation-triangle'></i>{{'settings_server.error' | i18next}}</div>
-        </td>
-        <td>
             <div class='loader' ng-if="x.backendStatus == 0"></div>
             <div class='text-success' ng-if="x.backendStatus == 1"><i class='fa fa-check'></i>{{'settings_server.ok' | i18next}}</div>
             <div class='text-danger' ng-if="x.backendStatus == -1"><i class='fa fa-exclamation-triangle'></i>{{'settings_server.error' | i18next}}</div>
@@ -49,11 +43,6 @@
     <tr ng-if="serverError.length &gt; 0">
         <td colspan="5">
             <p class="text-center text-danger small">{{serverError}}</p>
-        </td>
-    </tr>
-    <tr ng-if="isAnyUIBad()">
-        <td colspan="5">
-            <p class="text-center text-danger small">{{'settings_server.ui_bad' | i18next}}</p>
         </td>
     </tr>
     <tr ng-if="isAnyBackendBad()">

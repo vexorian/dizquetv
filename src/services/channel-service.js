@@ -69,9 +69,6 @@ function cleanUpProgram(program) {
         program.endPosition = parseInt(program.endPosition, 10);
     }
 
-    if (program.start && program.stop) {
-        program.duration = new Date(program.stop) - new Date(program.start);
-    }
     delete program.streams;
     delete program.durationStr;
     delete program.commercials;

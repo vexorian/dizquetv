@@ -3,8 +3,8 @@ module.exports = function ($http, $q) {
         getVersion: () => {
             return $http.get('/api/version').then((d) => { return d.data })
         },
-        getPlexServers: () => {
-            return $http.get('/api/plex-servers').then((d) => { return d.data })
+        getPlexServers: async () => {
+            return (await $http.get('/api/plex-servers')).data;
         },
         addPlexServer: (plexServer) => {
             return $http({
@@ -49,6 +49,15 @@ module.exports = function ($http, $q) {
             });
             return d.data;
         },
+        getFromPlexProxy: async (serverName, path) => {
+            let serverName64 = Buffer.from(serverName, 'utf-8').toString('base64');
+            let tmp = await ($http({
+                method: 'GET',
+                url : `api/plex-server/${serverName64}${path}`,
+                headers: { "Cache-Control": "no-cache"},
+            }))
+            return tmp.data.MediaContainer;
+        },
         getPlexSettings: () => {
             return $http.get('/api/plex-settings').then((d) => { return d.data })
         },
@@ -86,6 +95,9 @@ module.exports = function ($http, $q) {
                 data: angular.toJson(config),
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
+        },
+        getFFMpegPath: () => {
+            return $http.get('/api/ffmpeg-info').then((d) => { return d.data })
         },
         getXmltvSettings: () => {
             return $http.get('/api/xmltv-settings').then((d) => { return d.data })

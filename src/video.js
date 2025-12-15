@@ -18,17 +18,18 @@ async function shutdown() {
     stopPlayback = true;
 }
 
-function video( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB ) {
+function video( channelService, fillerService, db, programmingService, activeChannelService, programPlayTimeDB, ffmpegInfo ) {
     var router = express.Router()
 
-    router.get('/setup', (req, res) => {
+    router.get('/setup', async (req, res) => {
         let ffmpegSettings = db['ffmpeg-settings'].find()[0]
         // Check if ffmpeg path is valid
-        if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
-            res.status(500).send("FFMPEG path is invalid. The file (executable) doesn't exist.")
-            console.error("The FFMPEG Path is invalid. Please check your configuration.")
+        let ffmpegPath = await ffmpegInfo.getPath();
+        if (ffmpegPath == null) {
+            res.status(500).send("Missing FFmpeg.")
             return
         }
+        ffmpegSettings.ffmpegPath = ffmpegPath;
 
         console.log(`\r\nStream starting. Channel: 1 (dizqueTV)`)
 
@@ -72,14 +73,14 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
             return
         }
 
-        let ffmpegSettings = db['ffmpeg-settings'].find()[0]
-
         // Check if ffmpeg path is valid
-        if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
-            res.status(500).send("FFMPEG path is invalid. The file (executable) doesn't exist.")
-            console.error("The FFMPEG Path is invalid. Please check your configuration.")
+        let ffmpegSettings = db['ffmpeg-settings'].find()[0]
+        let ffmpegPath = await ffmpegInfo.getPath();
+        if (ffmpegPath == null) {
+            res.status(500).send("Missing FFmpeg.")
             return
         }
+        ffmpegSettings.ffmpegPath = ffmpegPath;
 
         if (step == 0) {
             res.writeHead(200, {
@@ -174,14 +175,14 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
 
         let isBetween = ( (typeof req.query.between !== 'undefined') && (req.query.between=='1') );
 
-        let ffmpegSettings = db['ffmpeg-settings'].find()[0]
-
         // Check if ffmpeg path is valid
-        if (!fs.existsSync(ffmpegSettings.ffmpegPath)) {
-            res.status(500).send("FFMPEG path is invalid. The file (executable) doesn't exist.")
-            console.error("The FFMPEG Path is invalid. Please check your configuration.")
+        let ffmpegSettings = db['ffmpeg-settings'].find()[0]
+        let ffmpegPath = await ffmpegInfo.getPath();
+        if (ffmpegPath == null) {
+            res.status(500).send("Missing FFmpeg.")
             return
         }
+        ffmpegSettings.ffmpegPath = ffmpegPath;
 
         if (ffmpegSettings.disablePreludes === true) {
             //disable the preludes
@@ -303,7 +304,7 @@ function video( channelService, fillerDB, db, programmingService, activeChannelS
         if ( (prog == null) || (typeof(prog) === 'undefined') || (prog.program == null) || (typeof(prog.program) == "undefined") ) {
             throw "No video to play, this means there's a serious unexpected bug or the channel db is corrupted."
         }
-        let fillers = await fillerDB.getFillersFromChannel(brandChannel);
+        let fillers = await fillerService.getFillersFromChannel(brandChannel);
         try {
             let lineup = helperFuncs.createLineup(programPlayTimeDB, prog, brandChannel, fillers, isFirst)
             lineupItem = lineup.shift();

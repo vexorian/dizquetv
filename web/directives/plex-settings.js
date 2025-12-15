@@ -20,12 +20,9 @@ module.exports = function (plex, dizquetv, $timeout) {
                 scope.servers = servers;
                 if(servers) {
                     for (let i = 0; i < scope.servers.length; i++) {
-                        scope.servers[i].uiStatus = 0;
                         scope.servers[i].backendStatus = 0;
                         let t = (new Date()).getTime();
-                        scope.servers[i].uiPending = t;
                         scope.servers[i].backendPending = t;
-                        scope.refreshUIStatus(t, i);
                         scope.refreshBackendStatus(t, i);
                     }
                 }
@@ -51,22 +48,6 @@ module.exports = function (plex, dizquetv, $timeout) {
                 scope.refreshServerList();
             }
 
-            scope.isAnyUIBad = () => {
-                let t = (new Date()).getTime();
-                if(scope.servers) {
-                    for (let i = 0; i < scope.servers.length; i++) {
-                        let s = scope.servers[i];
-                        if (
-                            (s.uiStatus == -1)
-                            || ( (s.uiStatus == 0) && (s.uiPending + 30000 < t) )
-                        ) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            };
-
             scope.isAnyBackendBad = () => {
                 let t = (new Date()).getTime();
                 if(scope.servers) {
@@ -83,15 +64,6 @@ module.exports = function (plex, dizquetv, $timeout) {
                 return false;
             };
 
-
-            scope.refreshUIStatus = async (t, i) => {
-                let s = await plex.check(scope.servers[i]);
-                if (scope.servers[i].uiPending == t) {
-                    // avoid updating for a previous instance of the row
-                    scope.servers[i].uiStatus = s;
-                }
-                scope.$apply();
-            };
 
             scope.refreshBackendStatus = async (t, i) => {
                 let s = await dizquetv.checkExistingPlexServer(scope.servers[i].name);

@@ -15,6 +15,17 @@ class PlexServerDB
         this.showDB = showDB;
     }
 
+    async getPlexServerByName(name) {
+        let servers = this.db['plex-servers'].find()
+        let server = servers.sort( (a,b) => { return a.index - b.index } )
+            .filter( (server) => name === server.name  )
+            [0];
+        if (typeof(server) === "undefined") {
+            return null;
+        }
+        return server;
+    }
+
     async fixupAllChannels(name, newServer) {
         let channelNumbers = await this.channelService.getAllChannelNumbers();
         let report = await Promise.all( channelNumbers.map( async (i) => {

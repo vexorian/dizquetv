@@ -4,8 +4,6 @@ const path = require('path')
 const fs = require('fs')
 const constants = require('./constants');
 const JSONStream = require('JSONStream');
-const FFMPEGInfo = require('./ffmpeg-info');
-const PlexServerDB = require('./dao/plex-server-db');
 const Plex = require("./plex.js");
 
 const timeSlotsService = require('./services/time-slots-service');
@@ -24,15 +22,13 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService ) {
+function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService, ffmpegInfo, fillerService ) {
     let m3uService = _m3uService;
     const router = express.Router()
-    const plexServerDB = new PlexServerDB(channelService, fillerDB, customShowDB, db);
 
     router.get('/api/version', async (req, res) => {
       try {
-        let ffmpegSettings = db['ffmpeg-settings'].find()[0];
-        let v = await (new FFMPEGInfo(ffmpegSettings)).getVersion();
+        let v = await ffmpegInfo.getVersion();
         res.send( {
             "dizquetv" : constants.VERSION_NAME,
             "ffmpeg" : v,
@@ -216,7 +212,15 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
             );
         }
     })
-
+    router.get('/api/plex-server/:serverName64/:path(*)', async (req, res) => {
+      try {
+        let result = await plexProxyService.get(req.params.serverName64, req.params.path);
+        res.status(200).send(result);
+      } catch (err) {
+          console.error("Could not use plex proxy.", err);
+          res.status(404).send("Could not call plex server.");
+      }
+    });
 
     // Channels
     router.get('/api/channels', async (req, res) => {
@@ -415,7 +419,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
         if (typeof(id) === 'undefined') {
           return res.status(400).send("Missing id");
         }
-        await fillerDB.saveFiller(id, req.body );
+        await fillerService.saveFiller(id, req.body );
         return res.status(204).send({});
       } catch(err) {
         console.error(err);
@@ -424,7 +428,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
     })
     router.put('/api/filler', async (req, res) => {
       try {
-        let uuid = await fillerDB.createFiller(req.body );
+        let uuid = await fillerService.createFiller(req.body );
         return res.status(201).send({id: uuid});
       } catch(err) {
         console.error(err);
@@ -437,7 +441,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
         if (typeof(id) === 'undefined') {
           return res.status(400).send("Missing id");
         }
-        await fillerDB.deleteFiller(id);
+        await fillerService.deleteFiller(id);
         return res.status(204).send({});
       } catch(err) {
         console.error(err);
@@ -451,7 +455,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
         if (typeof(id) === 'undefined') {
           return res.status(400).send("Missing id");
         }
-        let channels = await fillerDB.getFillerChannels(id);
+        let channels = await fillerService.getFillerChannels(id);
         if (channels == null) {
             return res.status(404).send("Filler not found");
         }
@@ -608,6 +612,18 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
       }
 
     })
+
+    router.get('/api/ffmpeg-info', async (req, res) => {
+      try {
+        let ffmpeg = await ffmpegInfo.getPath();
+        let obj = { ffmpegPath: ffmpeg }
+        res.send(obj)
+      } catch(err) {
+        console.error(err);
+        res.status(500).send("error");
+      }
+    })
+
 
     // PLEX SETTINGS
     router.get('/api/plex-settings', (req, res) => {
