@@ -271,6 +271,9 @@ const responseInterceptor = (
     const originalSend = res.send;
     let responseSent = false;
     console.log(`${req.method} ${req.url} ...`);
+    if (req.method === "GET" && req.url.includes("images/uploads") ) {
+        res.setHeader("Cache-Control", "public, max-age=86400");
+    }
 
     res.send = function (body) {
 

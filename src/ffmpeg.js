@@ -322,7 +322,7 @@ class FFMPEG extends events.EventEmitter {
                 if (watermark.animated === true) {
                     ffmpegArgs.push('-ignore_loop', '0');
                 }
-                ffmpegArgs.push(`-i`, `${watermark.url}`  );
+                ffmpegArgs.push(`-i`, `async:cache:${watermark.url}`  );
                 overlayFile = inputFiles++;
                 this.ensureResolution = true;
             }
