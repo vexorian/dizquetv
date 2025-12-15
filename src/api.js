@@ -22,7 +22,7 @@ function safeString(object) {
 }
 
 module.exports = { router: api }
-function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService, ffmpegInfo ) {
+function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideService, _m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService, ffmpegInfo, fillerService ) {
     let m3uService = _m3uService;
     const router = express.Router()
 
@@ -419,7 +419,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
         if (typeof(id) === 'undefined') {
           return res.status(400).send("Missing id");
         }
-        await fillerDB.saveFiller(id, req.body );
+        await fillerService.saveFiller(id, req.body );
         return res.status(204).send({});
       } catch(err) {
         console.error(err);
@@ -428,7 +428,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
     })
     router.put('/api/filler', async (req, res) => {
       try {
-        let uuid = await fillerDB.createFiller(req.body );
+        let uuid = await fillerService.createFiller(req.body );
         return res.status(201).send({id: uuid});
       } catch(err) {
         console.error(err);
@@ -441,7 +441,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
         if (typeof(id) === 'undefined') {
           return res.status(400).send("Missing id");
         }
-        await fillerDB.deleteFiller(id);
+        await fillerService.deleteFiller(id);
         return res.status(204).send({});
       } catch(err) {
         console.error(err);
@@ -455,7 +455,7 @@ function api(db, channelService, fillerDB, customShowDB, xmltvInterval,  guideSe
         if (typeof(id) === 'undefined') {
           return res.status(400).send("Missing id");
         }
-        let channels = await fillerDB.getFillerChannels(id);
+        let channels = await fillerService.getFillerChannels(id);
         if (channels == null) {
             return res.status(404).send("Filler not found");
         }

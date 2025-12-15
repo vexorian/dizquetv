@@ -20,7 +20,7 @@
 const path = require('path');
 var fs = require('fs');
 
-const TARGET_VERSION = 900;
+const TARGET_VERSION = 1000;
 
 const STEPS = [
     // [v, v2, x] : if the current version is v, call x(db), and version becomes v2
@@ -46,6 +46,7 @@ const STEPS = [
     [    803,    900, (db) => fixFFMpegPathSetting(db) ],
     [    804,    900, (db) => fixFFMpegPathSetting(db) ],
     [    805,    900, (db) => fixFFMpegPathSetting(db) ],
+    [    900,   1000, () => fixFillerModes() ],
 ]
 
 const { v4: uuidv4 } = require('uuid');
@@ -677,6 +678,25 @@ function extractFillersFromChannels() {
     }
     console.log("Done extracting fillers from channels.");
    
+}
+
+function fixFillerModes() {
+    console.log("Fixing filler modes...");
+    let fillers = path.join(process.env.DATABASE, 'filler');
+    let fillerFiles = fs.readdirSync(fillers);
+
+    for (let i = 0; i < fillerFiles.length; i++) {
+        if (path.extname( fillerFiles[i] ) === '.json') {
+            console.log("Migrating filler : " + fillerFiles[i] +"..." );
+            let fillerPath = path.join(fillers, fillerFiles[i]);
+            let filler = JSON.parse(fs.readFileSync(fillerPath, 'utf-8'));
+            if ( typeof(filler.mode) !== "string" )  {
+                filler.mode = "custom";
+            }
+            fs.writeFileSync( fillerPath, JSON.stringify(filler), 'utf-8');
+        }
+    }
+    console.log("Done fixing filler modes.");
 }
 
 function addFPS(db) {

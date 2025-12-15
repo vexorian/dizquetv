@@ -11,8 +11,52 @@
                         <div class="form-group">
                             <label for="name">Filler Name:</label>
                             <input type="text" class="form-control" id="name" placeholder="Filler Name" ng-model="name" ></input>
+
+                            <div>Mode:</div>
+                            <select class="custom-select"
+                                ng-model="mode"
+                                ng-options="theMode.name as theMode.description for theMode in modes" ></select>
                         </div>
-        
+
+                      <div ng-show="mode==='import'">
+                        <div class="form-group">
+                            <label for="server">Server:</label>
+
+                            <div class="loader" ng-show="loadingServers === true" ></div>
+                            <select
+                                ng-show="loadingServers !== true"
+                                id="server"
+                                class="custom-select"
+                                ng-change="serverChanged()"
+                                ng-model="server"
+                                ng-options="x.name as x.description for x in servers" ></select>
+                        </div>
+                        <div ng-show="server !==''">
+                            <label for="library">Library:</label>
+
+                            <div class="loader" ng-show="loadingLibraries === true" ></div>
+                            <select
+                                ng-show="loadingLibraries !== true"
+                                id="library"
+                                class="custom-select"
+                                ng-change="libraryChanged()"
+                                ng-model="libraryKey"
+                                ng-options="x.key as x.description for x in libraries" ></select>
+                        </div>
+                        <div ng-show="libraryKey !==''">
+                            <label for="source">Source:</label>
+
+                            <div class="loader" ng-show="loadingCollections === true" ></div>
+                            <select
+                                ng-show="loadingCollections !== true"
+                                id="source"
+                                class="custom-select"
+                                ng-model="sourceKey"
+                                ng-options="x.key as x.description for x in sources" ></select>
+                        </div>
+                      </div>
+
+                      <div ng-show="mode==='custom'">
                         <h6 style="margin-top: 10px;">Clips</h6>
         
                         <div class="flex-container">
@@ -65,10 +109,11 @@
                         <div ng-show="content.length === 0">
                             <p class="text-center text-info">Click the <span class="fa fa-plus"></span> to import filler content from your Plex server(s).</p>
                         </div>
+                      </div>
     
                     </div>
                 </div>
-                <div vs-repeat class="modal-body container list-group list-group-root filler-list" 
+                <div ng-show="mode==='custom'" vs-repeat class="modal-body container list-group list-group-root filler-list" 
                  dnd-list="content" ng-if="showList()"
                     vs-repeat-reinitialized="vsReinitialized(event, startIndex, endIndex)"
                     ng-init="setUpWatcher()"
@@ -76,8 +121,7 @@
                     dnd-list=""
 
                 >
-                    <div class="list-group-item flex-container filler-row"  style="cursor: default; height:1.1em; overflow:hidden" ng-repeat="x in content" track-by="x.$index"  dnd-draggable="x" 
-                        "
+                    <div class="list-group-item flex-container filler-row"  style="cursor: default; height:1.1em; overflow:hidden" ng-repeat="x in content" track-by="x.$index"  dnd-draggable="x"
                         dnd-effect-allowed="move"
                         dnd-moved="movedFunction(x.$index)"
                         >

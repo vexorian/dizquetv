@@ -3,8 +3,8 @@ module.exports = function ($http, $q) {
         getVersion: () => {
             return $http.get('/api/version').then((d) => { return d.data })
         },
-        getPlexServers: () => {
-            return $http.get('/api/plex-servers').then((d) => { return d.data })
+        getPlexServers: async () => {
+            return (await $http.get('/api/plex-servers')).data;
         },
         addPlexServer: (plexServer) => {
             return $http({
@@ -95,6 +95,9 @@ module.exports = function ($http, $q) {
                 data: angular.toJson(config),
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
             }).then((d) => { return d.data })
+        },
+        getFFMpegPath: () => {
+            return $http.get('/api/ffmpeg-info').then((d) => { return d.data })
         },
         getXmltvSettings: () => {
             return $http.get('/api/xmltv-settings').then((d) => { return d.data })

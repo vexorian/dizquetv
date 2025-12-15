@@ -17,6 +17,7 @@ const HDHR = require('./src/hdhr')
 const FileCacheService = require('./src/services/file-cache-service');
 const CacheImageService = require('./src/services/cache-image-service');
 const ChannelService = require("./src/services/channel-service");
+const FillerService = require("./src/services/filler-service");
 
 const xmltv = require('./src/xmltv')
 const Plex = require('./src/plex');
@@ -104,7 +105,7 @@ initDB(db, channelDB)
 
 channelService = new ChannelService(channelDB);
 
-fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') , channelService );
+let fillerDB = new FillerDB( path.join(process.env.DATABASE, 'filler') );
 customShowDB = new CustomShowDB( path.join(process.env.DATABASE, 'custom-shows') );
 let programPlayTimeDB = new ProgramPlayTimeDB( path.join(process.env.DATABASE, 'play-cache') );
 let ffmpegSettingsService = new FfmpegSettingsService(db);
@@ -133,6 +134,9 @@ programmingService = new ProgrammingService(onDemandService);
 activeChannelService = new ActiveChannelService(onDemandService, channelService);
 
 eventService = new EventService();
+
+let fillerService = new FillerService(fillerDB, plexProxyService,
+    channelService);
 
 i18next
     .use(i18nextBackend)
@@ -323,12 +327,12 @@ app.use('/favicon.svg', express.static(
 app.use('/custom.css', express.static(path.join(process.env.DATABASE, 'custom.css')))
 
 // API Routers
-app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService, ffmpegInfo))
+app.use(api.router(db, channelService, fillerDB, customShowDB, xmltvInterval, guideService, m3uService, eventService, ffmpegSettingsService, plexServerDB, plexProxyService, ffmpegInfo, fillerService))
 app.use('/api/cache/images', cacheImageService.apiRouters())
 app.use('/' + fontAwesome, express.static(path.join(process.env.DATABASE, fontAwesome)))
 app.use('/' + bootstrap, express.static(path.join(process.env.DATABASE, bootstrap)))
 
-app.use(video.router( channelService, fillerDB, db, programmingService, activeChannelService, programPlayTimeDB, ffmpegInfo  ))
+app.use(video.router( channelService, fillerService, db, programmingService, activeChannelService, programPlayTimeDB, ffmpegInfo  ))
 app.use(hdhr.router)
 app.listen(process.env.PORT, () => {
     console.log(`HTTP server running on port: http://*:${process.env.PORT}`)

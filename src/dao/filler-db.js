@@ -4,12 +4,9 @@ let fs = require('fs');
  
 class FillerDB {
 
-    constructor(folder,  channelService) {
+    constructor(folder) {
         this.folder = folder;
         this.cache = {};
-        this.channelService = channelService;
-
-
     }
 
     async $loadFiller(id) {
@@ -77,40 +74,8 @@ class FillerDB {
         return id;
     }
 
-    async getFillerChannels(id) {
-        let numbers = await this.channelService.getAllChannelNumbers();
-        let channels = [];
-        await Promise.all( numbers.map( async(number) => {
-            let ch = await this.channelService.getChannel(number);
-            let name = ch.name;
-            let fillerCollections = ch.fillerCollections;
-            for (let i = 0 ; i < fillerCollections.length; i++) {
-                if (fillerCollections[i].id === id) {
-                    channels.push( {
-                        number: number,
-                        name : name,
-                    } );
-                    break;
-                }
-            }
-            ch = null;
-
-        } ) );
-        return channels;
-    }
-
     async deleteFiller(id) {
         try {
-            let channels = await this.getFillerChannels(id);
-            await Promise.all( channels.map( async(channel) => {
-                console.log(`Updating channel ${channel.number} , remove filler: ${id}`);
-                let json = await channelService.getChannel(channel.number);
-                json.fillerCollections = json.fillerCollections.filter( (col) => {
-                    return col.id != id;
-                } );
-                await this.channelService.saveChannel( channel.number, json );
-            } ) );
-
             let f = path.join(this.folder, `${id}.json` );
             await new Promise( (resolve, reject) => {
                 fs.unlink(f, function (err) {
@@ -162,27 +127,6 @@ class FillerDB {
         } );
     }
 
-    async getFillersFromChannel(channel) {
-
-        let loadChannelFiller = async(fillerEntry) => {
-            let content = [];
-            try {
-                let filler = await this.getFiller(fillerEntry.id);
-                content = filler.content;
-            } catch(e) {
-                console.error(`Channel #${channel.number} - ${channel.name} references an unattainable filler id: ${fillerEntry.id}`);
-            }
-            return {
-                id: fillerEntry.id,
-                content: content,
-                weight: fillerEntry.weight,
-                cooldown: fillerEntry.cooldown,
-            }
-        };
-        return await Promise.all(
-            channel.fillerCollections.map(loadChannelFiller)
-        );
-    }
 
 
 }
