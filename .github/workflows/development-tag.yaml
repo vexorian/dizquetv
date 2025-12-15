@@ -3,7 +3,7 @@ name: Development Tag
 on:
   push:
     branches:
-      - dev/1.6.x
+      - development
 
 jobs:
   docker:
