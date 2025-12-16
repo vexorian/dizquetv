@@ -2,7 +2,7 @@
 module.exports = function ($timeout, dizquetv, getShowData ) {
     const DAY = 24*60*60*1000;
     const WEEK = 7 * DAY;
-    const WEEK_DAYS = [ "Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday" ];
+    const WEEK_DAYS = [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ];
     
     return {
         restrict: 'E',
