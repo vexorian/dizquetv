@@ -41,7 +41,7 @@ We agree to restrict the following behaviors in our community. Instances, threat
 3. **Promotional materials**. Sharing marketing or other commercial content in a way that is outside the norms of the community.
 4. **Irresponsible communication.** Failing to responsibly present content which includes, links or describes any other restricted behaviors.
 
-### 'AI' policy
+## 'AI' policy
 
 There are ways in which a LLM-based tool can be helpful such as when searching the web or for learning. More so, tools like github and google themselves are being modified to railroad users into using LLM-based tools. It'd be really impractical and neigh-impossible to ban 'AI' altogether from being used during the development of a contribution and that's not really the purpose of this policy.
 
