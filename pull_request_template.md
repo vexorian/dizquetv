@@ -19,3 +19,7 @@
 
 * [ ] I understand that the feature may not be accepted if it doesn't fit the upstream app's planned design direction. But that in this case I am encouraged to share this as an available modification other users can use if they want.
 
+### Code Standards
+
+* [ ] I understand the code being contributed and it's purpose. <!-- Please read CODE_OF_CONDUCT for more info. -->
+
