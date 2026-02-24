@@ -234,8 +234,9 @@ module.exports = function (plex, dizquetv, $timeout, commonProgramTools) {
             }
 
             let updateCustomShows = async() => {
-                scope.customShows = await dizquetv.getAllShowsInfo();
-                scope.$apply();
+                $timeout( async() => {
+                    scope.customShows = await dizquetv.getAllShowsInfo();
+                }, 0 );
             }
 
             scope.displayTitle = (show) => {
