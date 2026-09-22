@@ -43,11 +43,7 @@ We agree to restrict the following behaviors in our community. Instances, threat
 
 ## 'AI' policy
 
-There are ways in which a LLM-based tool can be helpful such as when searching the web or for learning. More so, tools like github and google themselves are being modified to railroad users into using LLM-based tools. It'd be really impractical and neigh-impossible to ban 'AI' altogether from being used during the development of a contribution and that's not really the purpose of this policy.
-
-HOWEVER, from a legal standpoint, it is too difficult to know the origin of LLM-generated code so there are risks of it infringing on copyright. And from a pragmatic stand point, we want to be able to trust the quality of the code. That is to say, we do not want contributions where the bulk of the code was AI-generated or or where the contributors themselves do not understand the code being pushed. This is also in relation to items 4 and 5 of the encouraged behaviors. We want contributors that can vouch for the code they contribute and can receive and act on constructive feedback to it.
-
-Note that this is only a policy affecting Pull Requests to this project. This project is released under a permissive FOSS licence, so there's nothing really that can stop forks from having a different policy on this and any individual is allowed to create such a fork should they want to.
+See [AI_POLICY.md](AI_POLICY.md)
 
 ## Reporting an Issue
 
