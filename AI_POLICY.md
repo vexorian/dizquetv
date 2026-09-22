@@ -2,11 +2,9 @@
 
 For lack of a better term, this policy will refer to LLM-based tools and similar generative methods as "AI".
 
-AI tools like any other come with their own advantages and disadvantages. In general, we neither advocate for nor prohibit the use of AI in contributions.
+You are responsible for any contributions you submit, and we are responsible for any contributions we merge and release. This includes long-term maintenance of features and code quality.
 
-You are responsible for any contributions you submit, and we are responsible for any contributions we merge and release. This includes long-term maintainance of features and code quality.
-
-Submitting AI-generated content that you have not personally reviewed and understood wastes that time and creates long-term work loads. If your submission gives the impression of falling within this description it will not be accepted.
+Submitting AI-generated content that you have not personally reviewed and understood wastes that time and creates long-term work loads. Even if you use AI to assist in your submission, we hope that you understand what the code does and have made sure to have reviewed the code and verified it properly.
 
 This is not a blanked prohibition of AI usage. The term "AI" is very broad so such a prohibition would be unenforceable. There are situations where LLMs can be helpful. And this technology and its outputs are close to being unavoidable when doing research on the public web.
 
