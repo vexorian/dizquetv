@@ -37,7 +37,7 @@
     "quickselect": "2.0.0",
     "random-js": "2.1.0",
     "request": "^2.88.2",
-    "uuid": "9.0.1",
+    "uuid": "14.0.0",
     "unzipper": "0.10.14",
     "xml-writer": "^1.7.0"
   },
