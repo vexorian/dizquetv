@@ -1,0 +1,9 @@
+FROM alpine:latest
+RUN apk add --update nodejs npm
+RUN apk add ffmpeg
+WORKDIR /usr/app
+COPY ./ /usr/app
+RUN npm install
+RUN npm run build
+EXPOSE 8000
+CMD [ "npm","run","start" ]
